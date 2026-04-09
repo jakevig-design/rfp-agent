@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw } from "lucide-react";
+import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle } from "lucide-react";
 import { saveAs } from "file-saver";
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
@@ -31,7 +30,7 @@ style.textContent = `
   .rq-step-num { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
   .rq-body { max-width: 820px; margin: 0 auto; padding: 40px 24px; }
   .rq-section-label { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #b0a899; margin-bottom: 10px; }
-  .rq-textarea { width: 100%; border: 1.5px solid #e3ddd6; border-radius: 6px; padding: 14px 16px; font-family: 'Lora', serif; font-size: 15px; color: #1a1714; background: #faf9f7; resize: vertical; min-height: 110px; outline: none; transition: border-color 0.15s; line-height: 1.65; }
+  .rq-textarea { width: 100%; border: 1.5px solid #e3ddd6; border-radius: 6px; padding: 14px 16px; font-family: 'Lora', serif; font-size: 15px; color: #1a1714; background: #faf9f7; resize: vertical; min-height: 80px; outline: none; transition: border-color 0.15s; line-height: 1.65; }
   .rq-textarea:focus { border-color: #c9b99a; background: #fff; }
   .rq-input { width: 100%; border: 1.5px solid #e3ddd6; border-radius: 6px; padding: 10px 14px; font-family: 'Lora', serif; font-size: 14px; color: #1a1714; background: #faf9f7; outline: none; transition: border-color 0.15s; }
   .rq-input:focus { border-color: #c9b99a; background: #fff; }
@@ -65,9 +64,16 @@ style.textContent = `
   .rq-error { background: #fff4f0; border: 1px solid #f0c4b4; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #b85030; margin-top: 10px; font-family: 'Lora', serif; }
   .rq-divider { border: none; border-top: 1px solid #e3ddd6; margin: 28px 0; }
   .rq-row { display: flex; gap: 8px; align-items: center; }
-  .rq-actions { display: flex; gap: 8px; margin-top: 16px; align-items: center; }
+  .rq-actions { display: flex; gap: 8px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
   .rq-req-group-label { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; color: #2e2925; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e3ddd6; }
   .rq-loading-center { padding: 36px 0; text-align: center; color: #8a7e72; font-style: italic; font-family: 'Lora', serif; }
+  .rq-5w-card { background: #fff; border: 1.5px solid #e3ddd6; border-radius: 8px; padding: 20px 22px; margin-bottom: 14px; }
+  .rq-5w-label { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #c9b99a; margin-bottom: 4px; }
+  .rq-5w-question { font-size: 14px; font-weight: 500; color: #1a1714; margin-bottom: 10px; font-family: 'Syne', sans-serif; }
+  .rq-flag-card { background: #fffbf0; border: 1.5px solid #e8d8a0; border-radius: 8px; padding: 16px 20px; margin-bottom: 14px; }
+  .rq-flag-title { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #a07820; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .rq-flag-text { font-size: 14px; color: #4a3800; line-height: 1.6; margin-bottom: 12px; }
+  .rq-scope-approved { background: #f0faf4; border: 1.5px solid #a0d8b4; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #2a7a4a; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin 0.8s linear infinite; display: inline-block; }
   .rq-fade { animation: fadeUp 0.3s ease both; }
@@ -79,14 +85,15 @@ document.head.appendChild(style);
 const genId = () => "SES-" + Math.random().toString(36).substring(2, 9).toUpperCase();
 
 async function callClaude(system, user) {
-  const res = await fetch('/api/claude', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/claude", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ system, user }),
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
   const d = await res.json();
-  return d.content.find(b => b.type === 'text')?.text ?? '';
+  if (d.error) throw new Error(d.error.message);
+  return d.content?.find(b => b.type === "text")?.text ?? "";
 }
 
 async function callJSON(system, user) {
@@ -94,10 +101,46 @@ async function callJSON(system, user) {
   return JSON.parse(t.replace(/```json\s*/g, "").replace(/```/g, "").trim());
 }
 
-// ─── Prompts ──────────────────────────────────────────────────────────────────
-const P_SCOPE = `You are a professional business analyst. The user gives you a rough informal description of a project or procurement need.
-Rewrite it as a concise, formal scope narrative (3-5 sentences) suitable for a requirements document.
-Use clear, direct language. Return plain prose only — no bullets, no headers, no preamble. Just the scope text.`;
+// ─── Prompts (edit these to tune AI behavior) ─────────────────────────────────
+
+const P_SCOPE_GENERATE = `You are a professional business analyst writing a project scope for a software procurement document.
+
+The user has answered the following 5 intake questions. Use their answers to write a formal scope narrative.
+
+SCOPE QUALITY RULES — the scope MUST:
+1. Be specific — include concrete details about deadlines, milestones, or deliverables where the user provided them
+2. Include exclusions — explicitly state what is out of scope to prevent scope creep
+3. Use plain language — no jargon, no acronyms without explanation
+4. Be 3-6 sentences of clear prose — no bullets, no headers
+
+Return ONLY the scope text. No preamble, no explanation.`;
+
+const P_SCOPE_EVALUATE = `You are a senior business analyst reviewing a project scope narrative for quality.
+
+Evaluate the scope against these criteria:
+1. SPECIFICITY — Are deadlines, milestones, or deliverables clearly defined?
+2. EXCLUSIONS — Does it explicitly state what is out of scope?
+3. PLAIN LANGUAGE — Is it free of unexplained jargon?
+4. COMPLETENESS — Does it address who, what, where, when, and why?
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "passed": true or false,
+  "flags": [
+    {
+      "criterion": "EXCLUSIONS",
+      "issue": "The scope does not define what is explicitly out of scope.",
+      "prompt": "What should be explicitly excluded from this project? For example, are there integrations, features, or departments that should not be included?"
+    }
+  ]
+}
+
+If all criteria pass, return { "passed": true, "flags": [] }.
+Only flag genuine gaps — do not invent issues if the scope is solid.`;
+
+const P_SCOPE_REFINE = `You are a professional business analyst refining a project scope narrative.
+
+The user has provided additional information to address a gap in the scope. Incorporate their response naturally into the existing scope. Keep the same tone and style. Return ONLY the updated scope text — no preamble, no explanation.`;
 
 const P_REQS = `You are a business analyst writing a software procurement RFP.
 Given a project scope, generate 5-8 binary functional requirements. Each must be phrased so a vendor can answer Yes or No.
@@ -110,6 +153,40 @@ Given a functional requirement, generate exactly 2-3 follow-up questions to help
 Use multiple choice when the answer space is predictable and finite; otherwise open-ended.
 Return ONLY valid JSON, no markdown:
 [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}]`;
+
+// ─── 5Ws Questions ────────────────────────────────────────────────────────────
+const FIVE_WS = [
+  {
+    key: "who",
+    label: "Who",
+    question: "Who will use this system, and who owns this initiative?",
+    placeholder: "e.g. Shop floor technicians will use it daily. The VP of Operations is the project sponsor.",
+  },
+  {
+    key: "what",
+    label: "What",
+    question: "What problem are you solving, or what capability are you adding?",
+    placeholder: "e.g. We lose track of tools constantly. We need real-time visibility into tool location and condition.",
+  },
+  {
+    key: "where",
+    label: "Where",
+    question: "Where does this fit in your current environment? Any existing systems it must work with?",
+    placeholder: "e.g. Must integrate with our SAP ERP. Deployed across 3 facilities in the US.",
+  },
+  {
+    key: "when",
+    label: "When",
+    question: "When is this needed, and what is driving the timeline?",
+    placeholder: "e.g. Must be live by Q3. We have an audit in September that requires this to be in place.",
+  },
+  {
+    key: "why",
+    label: "Why",
+    question: "Why is the current state inadequate?",
+    placeholder: "e.g. Everything is tracked on spreadsheets. We lose 10-15 tools per month and have no way to audit.",
+  },
+];
 
 // ─── DocX Export ──────────────────────────────────────────────────────────────
 async function buildDocx({ sessionId, projectTitle, formalScope, requirements, questions }) {
@@ -128,6 +205,12 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
     children: [new Paragraph({ children: [new TextRun({ text, font: "Arial", size: 20 })] })]
   });
 
+  // Build a unique alpha numbering reference per question so letters restart each time
+  const numberingConfig = [
+    { reference: "nums", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 440, hanging: 360 } } } }] },
+  ];
+  let alphaRefCounter = 0;
+
   const qChildren = [];
   for (const req of requirements) {
     const qs = questions[req.id] || [];
@@ -136,14 +219,20 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
       heading: HeadingLevel.HEADING_2,
       children: [new TextRun({ text: `${req.id}: ${req.text}`, font: "Arial" })]
     }));
-    qs.forEach((q, i) => {
+    qs.forEach(q => {
       qChildren.push(new Paragraph({
         numbering: { reference: "nums", level: 0 },
         children: [new TextRun({ text: q.text, font: "Arial", size: 22 })]
       }));
       if (q.type === "multiple_choice" && q.options?.length) {
+        // Create a fresh alpha reference for each MC question so letters restart at a)
+        const alphaRef = `alpha-${alphaRefCounter++}`;
+        numberingConfig.push({
+          reference: alphaRef,
+          levels: [{ level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }]
+        });
         q.options.forEach(opt => qChildren.push(new Paragraph({
-          numbering: { reference: "alpha", level: 0 },
+          numbering: { reference: alphaRef, level: 0 },
           children: [new TextRun({ text: opt, font: "Arial", size: 20, color: "5A5048" })]
         })));
       } else {
@@ -156,12 +245,7 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
   }
 
   const doc = new Document({
-    numbering: {
-      config: [
-        { reference: "nums", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 440, hanging: 360 } } } }] },
-        { reference: "alpha", levels: [{ level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
-      ]
-    },
+    numbering: { config: numberingConfig },
     styles: {
       default: { document: { run: { font: "Arial", size: 24 } } },
       paragraphStyles: [
@@ -182,14 +266,22 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
         new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "2. Functional Requirements", font: "Arial" })] }),
         new Table({
           width: { size: 9360, type: WidthType.DXA },
-          columnWidths: [1100, 6860, 1400],
+          columnWidths: [1440, 7920],
           rows: [
-            new TableRow({ children: [hCell("ID"), hCell("Requirement"), hCell("Type")] }),
-            ...requirements.map((r, i) => new TableRow({ children: [bCell(r.id, i % 2), bCell(r.text, i % 2), bCell("Binary", i % 2)] }))
+            new TableRow({ children: [hCell("ID"), hCell("Requirement")] }),
+            ...requirements.map((r, i) => new TableRow({ children: [
+              new TableCell({
+                borders: { top: { style: BorderStyle.SINGLE, size: 1, color: "D4CCC4" }, bottom: { style: BorderStyle.SINGLE, size: 1, color: "D4CCC4" }, left: { style: BorderStyle.SINGLE, size: 1, color: "D4CCC4" }, right: { style: BorderStyle.SINGLE, size: 1, color: "D4CCC4" } },
+                margins: { top: 90, bottom: 90, left: 130, right: 130 },
+                shading: { fill: i % 2 ? "FAF9F7" : "FFFFFF", type: ShadingType.CLEAR },
+                children: [new Paragraph({ children: [new TextRun({ text: r.id, font: "Arial Narrow", size: 20, noProof: true })] })]
+              }),
+              bCell(r.text, i % 2)
+            ]}))
           ]
         }),
         new Paragraph({ children: [new TextRun("")] }),
-        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "3. Discovery Questions", font: "Arial" })] }),
+        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "3. Questions", font: "Arial" })] }),
         ...qChildren,
       ]
     }]
@@ -205,14 +297,21 @@ const STEPS = ["Scope", "Requirements", "Questions", "Review"];
 export default function RequirementsAgent() {
   const [sessionId] = useState(genId);
   const [step, setStep] = useState(0);
-
   const [projectTitle, setProjectTitle] = useState("");
-  const [roughScope, setRoughScope] = useState("");
+
+  // 5Ws answers
+  const [answers, setAnswers] = useState({ who: "", what: "", where: "", when: "", why: "" });
+
+  // Scope iteration state
   const [formalScope, setFormalScope] = useState("");
-  const [editingScope, setEditingScope] = useState(false);
+  const [scopeFlags, setScopeFlags] = useState([]);
+  const [flagResponses, setFlagResponses] = useState({});
+  const [scopeApproved, setScopeApproved] = useState(false);
   const [scopeBusy, setScopeBusy] = useState(false);
   const [scopeErr, setScopeErr] = useState("");
+  const [editingScope, setEditingScope] = useState(false);
 
+  // Requirements
   const [requirements, setRequirements] = useState([]);
   const [reqsBusy, setReqsBusy] = useState(false);
   const [reqsErr, setReqsErr] = useState("");
@@ -220,25 +319,60 @@ export default function RequirementsAgent() {
   const [editId, setEditId] = useState(null);
   const [editText, setEditText] = useState("");
 
+  // Questions
   const [questions, setQuestions] = useState({});
   const [qBusy, setQBusy] = useState(false);
   const [qErr, setQErr] = useState("");
 
+  // Export
   const [exportBusy, setExportBusy] = useState(false);
   const [exportErr, setExportErr] = useState("");
 
-  // ── Scope handlers ──
-  const doFormalizeScope = async () => {
-    setScopeBusy(true); setScopeErr("");
+  const allAnswered = FIVE_WS.every(w => answers[w.key].trim().length > 0);
+
+  // ── Scope generation ──
+  const doGenerateScope = async () => {
+    setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
     try {
-      const r = await callClaude(P_SCOPE, roughScope);
-      setFormalScope(r.trim());
-      setEditingScope(false);
-    } catch { setScopeErr("Could not formalize scope. Please try again."); }
+      const userMsg = FIVE_WS.map(w => `${w.label.toUpperCase()}: ${answers[w.key]}`).join("\n");
+      const scope = await callClaude(P_SCOPE_GENERATE, userMsg);
+      setFormalScope(scope.trim());
+      await doEvaluateScope(scope.trim());
+    } catch { setScopeErr("Could not generate scope. Please try again."); }
     finally { setScopeBusy(false); }
   };
 
-  // ── Requirement handlers ──
+  const doEvaluateScope = async (scopeText) => {
+    try {
+      const result = await callJSON(P_SCOPE_EVALUATE, `Scope to evaluate:\n\n${scopeText}`);
+      if (result.passed && result.flags.length === 0) {
+        setScopeFlags([]);
+        setScopeApproved(true);
+      } else {
+        setScopeFlags(result.flags || []);
+        setScopeApproved(false);
+      }
+    } catch { setScopeFlags([]); setScopeApproved(true); }
+  };
+
+  const doRefineScope = async () => {
+    if (scopeFlags.length === 0) return;
+    setScopeBusy(true); setScopeErr("");
+    try {
+      const additions = scopeFlags.map(f => {
+        const resp = flagResponses[f.criterion] || "";
+        return `GAP: ${f.issue}\nUSER RESPONSE: ${resp}`;
+      }).join("\n\n");
+      const userMsg = `EXISTING SCOPE:\n${formalScope}\n\nADDITIONAL INFORMATION FROM USER:\n${additions}`;
+      const refined = await callClaude(P_SCOPE_REFINE, userMsg);
+      setFormalScope(refined.trim());
+      setFlagResponses({});
+      await doEvaluateScope(refined.trim());
+    } catch { setScopeErr("Could not refine scope. Please try again."); }
+    finally { setScopeBusy(false); }
+  };
+
+  // ── Requirements ──
   const doGenerateReqs = async () => {
     setReqsBusy(true); setReqsErr("");
     try {
@@ -256,13 +390,12 @@ export default function RequirementsAgent() {
   };
 
   const deleteReq = (id) => setRequirements(p => p.filter(r => r.id !== id));
-
   const saveEdit = (id) => {
     setRequirements(p => p.map(r => r.id === id ? { ...r, text: editText } : r));
     setEditId(null);
   };
 
-  // ── Question handlers ──
+  // ── Questions ──
   const doGenerateQuestions = async () => {
     setQBusy(true); setQErr("");
     try {
@@ -286,10 +419,10 @@ export default function RequirementsAgent() {
   };
 
   const pct = (step / (STEPS.length - 1)) * 100;
+  const allFlagResponsesFilled = scopeFlags.every(f => (flagResponses[f.criterion] || "").trim().length > 0);
 
   return (
     <div className="rq-root">
-      {/* Header */}
       <div className="rq-header">
         <div>
           <div className="rq-logo">Requirements Discovery</div>
@@ -302,20 +435,16 @@ export default function RequirementsAgent() {
         </button>
       </div>
 
-      {/* Stepper */}
       <div className="rq-stepper">
         {STEPS.map((label, i) => (
           <div key={label} className={`rq-step ${i === step ? "active" : i < step ? "done" : ""}`}>
-            <div className="rq-step-num">
-              {i < step ? <CheckCircle size={12} /> : i + 1}
-            </div>
+            <div className="rq-step-num">{i < step ? <CheckCircle size={12} /> : i + 1}</div>
             {label}
           </div>
         ))}
       </div>
 
       <div className="rq-body">
-        {/* Progress */}
         <div className="rq-progress">
           <div className="rq-pb-wrap"><div className="rq-pb" style={{ width: `${pct}%` }} /></div>
           <div className="rq-pb-label">Step {step + 1} / {STEPS.length}</div>
@@ -324,28 +453,36 @@ export default function RequirementsAgent() {
         {/* ── Step 0: Scope ── */}
         {step === 0 && (
           <div className="rq-fade">
-            <div className="rq-section-label" style={{ marginBottom: 8 }}>Project Title</div>
+            <div className="rq-section-label" style={{ marginBottom: 6 }}>Project Title</div>
             <input className="rq-input" style={{ marginBottom: 24 }} placeholder="e.g. Enterprise Tool Tracking System" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} />
 
-            <div className="rq-section-label">Describe Your Project</div>
-            <p className="rq-hint">Don't worry about perfect language — write what comes naturally. What problem are you solving? What should the system do?</p>
-            <textarea className="rq-textarea" placeholder="We need a system that can track tools on the shop floor, flag damaged ones, and sync with our ERP…" value={roughScope} onChange={e => setRoughScope(e.target.value)} rows={5} />
+            <div className="rq-section-label" style={{ marginBottom: 16 }}>Project Intake</div>
+
+            {FIVE_WS.map(w => (
+              <div className="rq-5w-card" key={w.key}>
+                <div className="rq-5w-label">{w.label}</div>
+                <div className="rq-5w-question">{w.question}</div>
+                <textarea
+                  className="rq-textarea"
+                  placeholder={w.placeholder}
+                  value={answers[w.key]}
+                  onChange={e => setAnswers(p => ({ ...p, [w.key]: e.target.value }))}
+                  rows={2}
+                />
+              </div>
+            ))}
+
             {scopeErr && <div className="rq-error">{scopeErr}</div>}
 
-            <div className="rq-actions">
-              <button className="rq-btn-primary" onClick={doFormalizeScope} disabled={!roughScope.trim() || scopeBusy}>
-                {scopeBusy ? <><Loader size={14} className="spin" /> Formalizing…</> : <>Formalize Scope <ChevronRight size={14} /></>}
-              </button>
-            </div>
-
+            {/* Scope output */}
             {formalScope && (
-              <div style={{ marginTop: 28 }} className="rq-fade">
-                <div className="rq-section-label">Formalized Scope</div>
+              <div style={{ marginTop: 24 }} className="rq-fade">
+                <div className="rq-section-label">Generated Scope</div>
                 {editingScope ? (
                   <>
-                    <textarea className="rq-textarea" value={formalScope} onChange={e => setFormalScope(e.target.value)} rows={4} />
+                    <textarea className="rq-textarea" value={formalScope} onChange={e => setFormalScope(e.target.value)} rows={5} style={{ marginBottom: 10 }} />
                     <div className="rq-actions">
-                      <button className="rq-btn-ghost" onClick={() => setEditingScope(false)}><Check size={12} /> Done</button>
+                      <button className="rq-btn-ghost" onClick={async () => { setEditingScope(false); await doEvaluateScope(formalScope); }}><Check size={12} /> Done editing</button>
                     </div>
                   </>
                 ) : (
@@ -353,15 +490,60 @@ export default function RequirementsAgent() {
                     <div className="rq-scope-box">{formalScope}</div>
                     <div className="rq-actions">
                       <button className="rq-btn-ghost" onClick={() => setEditingScope(true)}><Pencil size={12} /> Edit</button>
-                      <button className="rq-btn-ghost" onClick={doFormalizeScope} disabled={scopeBusy}><RefreshCw size={12} /> Regenerate</button>
+                      <button className="rq-btn-ghost" onClick={doGenerateScope} disabled={scopeBusy}><RefreshCw size={12} /> Regenerate</button>
                     </div>
                   </>
                 )}
-                <div style={{ marginTop: 20 }}>
-                  <button className="rq-btn-primary" onClick={() => { setStep(1); doGenerateReqs(); }}>
-                    Generate Requirements <ChevronRight size={14} />
-                  </button>
-                </div>
+
+                {/* Flags */}
+                {scopeFlags.length > 0 && !editingScope && (
+                  <div style={{ marginTop: 20 }} className="rq-fade">
+                    <div className="rq-section-label" style={{ marginBottom: 12 }}>Scope Review — Action Required</div>
+                    {scopeFlags.map(flag => (
+                      <div className="rq-flag-card" key={flag.criterion}>
+                        <div className="rq-flag-title">
+                          <AlertTriangle size={13} /> {flag.criterion}
+                        </div>
+                        <div className="rq-flag-text">{flag.prompt}</div>
+                        <textarea
+                          className="rq-textarea"
+                          placeholder="Your response…"
+                          value={flagResponses[flag.criterion] || ""}
+                          onChange={e => setFlagResponses(p => ({ ...p, [flag.criterion]: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                    ))}
+                    <div className="rq-actions">
+                      <button className="rq-btn-primary" onClick={doRefineScope} disabled={scopeBusy || !allFlagResponsesFilled}>
+                        {scopeBusy ? <><Loader size={13} className="spin" /> Refining…</> : <>Refine Scope <ChevronRight size={13} /></>}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Approved */}
+                {scopeApproved && !editingScope && (
+                  <div style={{ marginTop: 16 }} className="rq-fade">
+                    <div className="rq-scope-approved">
+                      <CheckCircle size={16} /> Scope approved — all criteria met
+                    </div>
+                    <div className="rq-actions">
+                      <button className="rq-btn-primary" onClick={() => { setStep(1); doGenerateReqs(); }}>
+                        Generate Requirements <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Generate button */}
+            {!formalScope && (
+              <div className="rq-actions" style={{ marginTop: 8 }}>
+                <button className="rq-btn-primary" onClick={doGenerateScope} disabled={!allAnswered || scopeBusy}>
+                  {scopeBusy ? <><Loader size={14} className="spin" /> Generating scope…</> : <>Generate Scope <ChevronRight size={14} /></>}
+                </button>
               </div>
             )}
           </div>
@@ -373,19 +555,14 @@ export default function RequirementsAgent() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
               <div>
                 <div className="rq-section-label">Functional Requirements</div>
-                <p className="rq-hint" style={{ marginBottom: 0 }}>Review, edit, delete, or add your own requirements below.</p>
+                <p className="rq-hint" style={{ marginBottom: 0 }}>Edit, delete, or add your own below.</p>
               </div>
               <button className="rq-btn-ghost" onClick={doGenerateReqs} disabled={reqsBusy}>
                 {reqsBusy ? <Loader size={12} className="spin" /> : <RefreshCw size={12} />} Regenerate
               </button>
             </div>
 
-            {reqsBusy && (
-              <div className="rq-loading-center">
-                <Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />
-                Generating requirements from scope…
-              </div>
-            )}
+            {reqsBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />Generating requirements…</div>}
             {reqsErr && <div className="rq-error">{reqsErr}</div>}
 
             {!reqsBusy && requirements.map(req => (
@@ -429,18 +606,13 @@ export default function RequirementsAgent() {
           </div>
         )}
 
-        {/* ── Step 2: Generate Questions ── */}
+        {/* ── Step 2: Questions ── */}
         {step === 2 && (
           <div className="rq-fade">
             <div className="rq-section-label">Discovery Questions</div>
             <p className="rq-hint">The agent will generate 2–3 follow-up questions per requirement — a mix of open-ended and multiple choice.</p>
             {qErr && <div className="rq-error">{qErr}</div>}
-            {qBusy && (
-              <div className="rq-loading-center">
-                <Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />
-                Generating questions for {requirements.length} requirement{requirements.length !== 1 ? "s" : ""}…
-              </div>
-            )}
+            {qBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />Generating questions for {requirements.length} requirement{requirements.length !== 1 ? "s" : ""}…</div>}
             {!qBusy && (
               <div className="rq-actions">
                 <button className="rq-btn-ghost" onClick={() => setStep(1)}>← Back</button>
