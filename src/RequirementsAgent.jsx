@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
-import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle, Calendar } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle, Calendar, Save, Database, Clock, ArrowLeft } from "lucide-react";
 import { saveAs } from "file-saver";
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel, LevelFormat
 } from "docx";
+import { saveSession, loadSessions, loadSession, deleteSession } from "./supabase";
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
 const link = document.createElement("link");
@@ -88,6 +89,22 @@ style.textContent = `
   .spin{animation:spin .8s linear infinite;display:inline-block}
   .rq-fade{animation:fadeUp .3s ease both}
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .sv-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e3ddd6;border-radius:8px;padding:10px 16px;margin-bottom:20px;gap:12px}
+  .sv-status{font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a7e72;display:flex;align-items:center;gap:6px}
+  .sv-status.saved{color:#2a7a4a}
+  .sv-status.saving{color:#a07820}
+  .sv-status.error{color:#b85030}
+  .sessions-panel{background:#fff;border:1px solid #e3ddd6;border-radius:8px;overflow:hidden;margin-bottom:24px}
+  .sessions-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e3ddd6;background:#faf9f7}
+  .sessions-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#b0a899}
+  .session-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #f0ede8;cursor:pointer;transition:background .15s;gap:12px}
+  .session-row:last-child{border-bottom:none}
+  .session-row:hover{background:#faf9f7}
+  .session-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#1a1714;margin-bottom:2px}
+  .session-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:#b0a899}
+  .session-status{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px}
+  .session-status.draft{background:#fdf0ea;color:#a05020}
+  .session-status.complete{background:#edf7f2;color:#2a6a4a}
 `;
 document.head.appendChild(style);
 
@@ -446,6 +463,17 @@ export default function RequirementsAgent() {
   const [step, setStep] = useState(0);
   const [projectTitle, setProjectTitle] = useState("");
 
+  // Sessions list view
+  const [view, setView] = useState("sessions"); // 'sessions' | 'agent'
+  const [sessionsList, setSessionsList] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Persistence
+  const [saveStatus, setSaveStatus] = useState("idle"); // 'idle' | 'saving' | 'saved' | 'error'
+  const [lastSaved, setLastSaved] = useState(null);
+  const autoSaveTimer = useRef(null);
+  const isDirty = useRef(false);
+
   // Scope
   const [answers, setAnswers] = useState({ who: "", what: "", where: "", when: "", why: "" });
   const [formalScope, setFormalScope] = useState("");
@@ -496,6 +524,77 @@ export default function RequirementsAgent() {
       setSchedule(buildSchedule(activities, rfpDate, goLiveDate));
     }
   }, [activities, rfpDate, goLiveDate, tlGenerated]);
+
+  // Load sessions list on mount
+  useEffect(() => {
+    setSessionsLoading(true);
+    loadSessions().then(rows => { setSessionsList(rows); setSessionsLoading(false); });
+  }, []);
+
+  // Mark dirty whenever key state changes
+  useEffect(() => { isDirty.current = true; }, [projectTitle, answers, formalScope, requirements, questions, rfpDate, goLiveDate, activities]);
+
+  // Auto-save every 30s if dirty
+  useEffect(() => {
+    autoSaveTimer.current = setInterval(() => {
+      if (isDirty.current && formalScope) doSave("draft");
+    }, 30000);
+    return () => clearInterval(autoSaveTimer.current);
+  }, [sessionId, projectTitle, answers, formalScope, requirements, questions, rfpDate, goLiveDate, activities, schedule]);
+
+  const getSessionData = () => ({
+    step, projectTitle, answers, formalScope, scopeApproved,
+    requirements, questions, rfpDate, goLiveDate,
+    activities, tlGenerated, schedule,
+  });
+
+  const doSave = async (status = "draft") => {
+    setSaveStatus("saving");
+    const ok = await saveSession({
+      id: sessionId,
+      projectTitle: projectTitle || "Untitled",
+      status,
+      data: getSessionData(),
+    });
+    if (ok) {
+      setSaveStatus("saved");
+      setLastSaved(new Date());
+      isDirty.current = false;
+      // Refresh sessions list
+      loadSessions().then(setSessionsList);
+      setTimeout(() => setSaveStatus("idle"), 2500);
+    } else {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  };
+
+  const doLoadSession = async (id) => {
+    const row = await loadSession(id);
+    if (!row?.data) return;
+    const d = row.data;
+    if (d.step !== undefined) setStep(d.step);
+    if (d.projectTitle) setProjectTitle(d.projectTitle);
+    if (d.answers) setAnswers(d.answers);
+    if (d.formalScope) setFormalScope(d.formalScope);
+    if (d.scopeApproved) setScopeApproved(d.scopeApproved);
+    if (d.requirements) setRequirements(d.requirements);
+    if (d.questions) setQuestions(d.questions);
+    if (d.rfpDate) setRfpDate(d.rfpDate);
+    if (d.goLiveDate) setGoLiveDate(d.goLiveDate);
+    if (d.activities) setActivities(d.activities);
+    if (d.tlGenerated) setTlGenerated(d.tlGenerated);
+    if (d.schedule) setSchedule(d.schedule);
+    setView("agent");
+    setLastSaved(new Date(row.updated_at));
+  };
+
+  const doDeleteSession = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Delete this session?")) return;
+    await deleteSession(id);
+    setSessionsList(p => p.filter(s => s.id !== id));
+  };
 
   // ── Scope ──
   const doGenerateScope = async () => {
@@ -597,11 +696,57 @@ export default function RequirementsAgent() {
     setExportBusy(true); setExportErr("");
     try {
       await buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, timeline: { rfpDate, goLiveDate, schedule } });
+      await doSave("complete");
     } catch (e) { setExportErr("Export failed. Please try again."); }
     finally { setExportBusy(false); }
   };
 
   const pct = (step / (STEPS.length - 1)) * 100;
+
+  // ── Sessions list view ──
+  if (view === "sessions") {
+    return (
+      <div className="rq-root">
+        <div className="rq-header">
+          <div>
+            <div className="rq-logo">Requirements Discovery</div>
+            <div className="rq-title">Procurement Agent</div>
+          </div>
+          <button className="rq-export-btn" onClick={() => setView("agent")}>
+            <Plus size={15} /> New Session
+          </button>
+        </div>
+        <div className="rq-body">
+          <div className="rq-section-label" style={{ marginBottom: 16 }}>Sessions</div>
+          {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
+          {!sessionsLoading && sessionsList.length === 0 && (
+            <div style={{ textAlign: "center", padding: "48px 0", color: "#8a7e72", fontStyle: "italic", fontSize: 14 }}>
+              No sessions yet. Start a new one.
+            </div>
+          )}
+          {!sessionsLoading && sessionsList.length > 0 && (
+            <div className="sessions-panel">
+              <div className="sessions-header">
+                <div className="sessions-title">{sessionsList.length} session{sessionsList.length !== 1 ? "s" : ""}</div>
+              </div>
+              {sessionsList.map(s => (
+                <div className="session-row" key={s.id} onClick={() => doLoadSession(s.id)}>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="session-name">{s.project_title || "Untitled"}</div>
+                    <div className="session-meta">{s.id} · {new Date(s.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                    <span className={`session-status ${s.status}`}>{s.status}</span>
+                    <button className="rq-btn-icon rq-btn-del" onClick={(e) => doDeleteSession(s.id, e)} style={{ padding: "5px 7px" }}><Trash2 size={12} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rq-root">
@@ -611,9 +756,14 @@ export default function RequirementsAgent() {
           <div className="rq-title">Procurement Agent</div>
           <div className="rq-session">{sessionId}</div>
         </div>
-        <button className="rq-export-btn" onClick={doExport} disabled={step < 3 || exportBusy}>
-          {exportBusy ? <Loader size={15} className="spin" /> : <FileText size={15} />} Export .docx
-        </button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button className="rq-btn-ghost" style={{ color: "#c9b99a", borderColor: "#3a3530" }} onClick={() => setView("sessions")}>
+            <ArrowLeft size={13} /> Sessions
+          </button>
+          <button className="rq-export-btn" onClick={doExport} disabled={step < 3 || exportBusy}>
+            {exportBusy ? <Loader size={15} className="spin" /> : <FileText size={15} />} Export .docx
+          </button>
+        </div>
       </div>
 
       <div className="rq-stepper">
@@ -626,6 +776,20 @@ export default function RequirementsAgent() {
       </div>
 
       <div className="rq-body">
+        {/* Save bar */}
+        <div className="sv-bar">
+          <div className={`sv-status ${saveStatus === "idle" ? "" : saveStatus}`}>
+            {saveStatus === "saving" && <><Loader size={12} className="spin" /> Saving…</>}
+            {saveStatus === "saved" && <><CheckCircle size={12} /> Saved</>}
+            {saveStatus === "error" && <>Save failed</>}
+            {saveStatus === "idle" && lastSaved && <><Clock size={12} /> Last saved {lastSaved.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</>}
+            {saveStatus === "idle" && !lastSaved && <><Clock size={12} /> Not yet saved</>}
+          </div>
+          <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}>
+            <Save size={12} /> Save Draft
+          </button>
+        </div>
+
         <div className="rq-progress">
           <div className="rq-pb-wrap"><div className="rq-pb" style={{ width: `${pct}%` }} /></div>
           <div className="rq-pb-label">Step {step + 1} / {STEPS.length}</div>
