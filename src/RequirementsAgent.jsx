@@ -153,15 +153,36 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function buildSchedule(activities, rfpDate, goLiveDate) {
-  if (!rfpDate || !goLiveDate || activities.length === 0) return [];
+function buildSchedule(activities, rfpDate) {
+  if (!rfpDate || activities.length === 0) return [];
   const start = new Date(rfpDate + "T00:00:00");
+  // Track end date of each activity by id so parallel activities can share a parent's start
+  const endDateById = {};
   let cursor = new Date(start);
+
   return activities.map(a => {
     const dur = Math.max(parseInt(a.duration) || 1, 1);
-    const actStart = new Date(cursor);
-    const actEnd = addWorkingDays(cursor, dur - 1);
-    cursor = addWorkingDays(actEnd, 1);
+    let actStart;
+
+    if (a.parallelWith && endDateById[a.parallelWith]) {
+      // Start same day as parent — find parent's start
+      const parentEntry = activities.find(p => p.id === a.parallelWith);
+      actStart = parentEntry?._startDate || new Date(cursor);
+    } else {
+      actStart = new Date(cursor);
+    }
+
+    const actEnd = addWorkingDays(actStart, dur - 1);
+
+    // Only advance cursor for serial activities
+    if (!a.parallelWith) {
+      cursor = addWorkingDays(actEnd, 1);
+    }
+
+    endDateById[a.id] = actEnd;
+    // Temporarily store startDate on the activity object for parallel children to reference
+    a._startDate = actStart;
+
     return { ...a, startDate: actStart, endDate: actEnd, businessDays: dur };
   });
 }
@@ -218,12 +239,16 @@ Use multiple choice when the answer space is predictable and finite; otherwise o
 Return ONLY valid JSON, no markdown:
 [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}]`;
 
-const P_TIMELINE = `You are a procurement project manager. Given an RFP issue date, a go-live date, and a list of procurement activities, assign a realistic duration in working days to each activity. 
+const P_TIMELINE = `You are a procurement project manager. Given an RFP issue date, a go-live date, and a list of procurement activities, assign a realistic duration in working days to each activity. Also identify activities that can realistically run in parallel with another activity.
 
-Distribute the total working days proportionally based on the typical effort each activity requires. Activities like "Vendor Q&A" and "NDA" are short; activities like "Evaluate" and "Negotiate Agreement" are longer.
+Rules:
+- Assign durations based on typical procurement effort. NDA and clarifying questions are short (2-5 days). Evaluation, negotiation, and implementation are longer.
+- For parallel_with: use the id of the activity this one runs concurrently with, or null if it runs serially.
+- Only mark an activity as parallel if it genuinely can run at the same time (e.g. "Vendor Identification" can run in parallel with "Market Analysis").
+- Do not make every activity parallel — most should be serial.
 
 Return ONLY a valid JSON array in the same order as the input, no markdown:
-[{"id":"...","name":"...","duration":10},...]`;
+[{"id":"...","name":"...","duration":10,"parallel_with":null},{"id":"...","name":"...","duration":5,"parallel_with":"a3"},...]`;
 
 // ─── Default activities ───────────────────────────────────────────────────────
 const DEFAULT_ACTIVITIES = [
@@ -251,26 +276,31 @@ function GanttChart({ schedule, rfpDate, goLiveDate }) {
   const end = new Date(goLiveDate + "T00:00:00");
   const totalDays = workingDaysBetween(start, end);
 
-  const COLORS = [
-    "#2e5984", "#3d7ab5", "#5a9fd4", "#7ab8e8",
-    "#c9b99a", "#a89070", "#8a7258", "#6b5642",
-    "#4a8a6a", "#3a6a52", "#2a4a3a", "#c87840",
-    "#a05828",
+  const SERIAL_COLORS = [
+    "#2e5984","#3a6a52","#a05828","#6b3a7a","#2a6a8a",
+    "#7a4a2a","#3a5a2a","#8a3a4a","#4a5a8a","#6a5a2a",
   ];
-
-  const BAR_H = 28;
-  const LABEL_W = 180;
-  const CHART_H = schedule.length * (BAR_H + 8) + 60;
+  const BAR_H = 26;
+  const INDENT = 20;
 
   const xPct = (date) => {
-    const days = workingDaysBetween(start, date);
-    return Math.min((days / totalDays) * 100, 100);
+    const d = new Date(date);
+    const days = workingDaysBetween(start, d);
+    return Math.min(Math.max((days / totalDays) * 100, 0), 100);
   };
 
   const widthPct = (s, e) => {
-    const days = workingDaysBetween(s, e) + 1;
+    const days = workingDaysBetween(new Date(s), new Date(e)) + 1;
     return Math.min((days / totalDays) * 100, 100);
   };
+
+  // Assign color index by serial parent
+  let colorIdx = 0;
+  const colorMap = {};
+  schedule.forEach(a => {
+    if (!a.parallelWith) { colorMap[a.id] = colorIdx++; }
+    else { colorMap[a.id] = colorMap[a.parallelWith] ?? 0; }
+  });
 
   return (
     <div className="gantt-wrap">
@@ -278,11 +308,13 @@ function GanttChart({ schedule, rfpDate, goLiveDate }) {
         <div className="gantt-title">Procurement Timeline — {fmtDate(start)} to {fmtDate(end)}</div>
         <div style={{ display: "flex" }}>
           {/* Labels */}
-          <div style={{ width: LABEL_W, flexShrink: 0 }}>
-            <div style={{ height: 28, marginBottom: 8 }} />
-            {schedule.map((a, i) => (
-              <div key={a.id} style={{ height: BAR_H, marginBottom: 8, display: "flex", alignItems: "center" }}>
-                <span style={{ fontFamily: "'Lora', serif", fontSize: 12, color: "#2e2925", lineHeight: 1.3, paddingRight: 10 }}>{a.name}</span>
+          <div style={{ width: 200, flexShrink: 0 }}>
+            <div style={{ height: 28, marginBottom: 6 }} />
+            {schedule.map(a => (
+              <div key={a.id} style={{ height: BAR_H, marginBottom: 6, display: "flex", alignItems: "center", paddingLeft: a.parallelWith ? INDENT : 0 }}>
+                <span style={{ fontFamily: "'Lora', serif", fontSize: a.parallelWith ? 11 : 12, color: a.parallelWith ? "#6b5f52" : "#2e2925", lineHeight: 1.3, paddingRight: 10, fontStyle: a.parallelWith ? "italic" : "normal" }}>
+                  {a.parallelWith ? "↳ " : ""}{a.name}
+                </span>
               </div>
             ))}
           </div>
@@ -290,21 +322,19 @@ function GanttChart({ schedule, rfpDate, goLiveDate }) {
           {/* Chart */}
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* Month markers */}
-            <div style={{ height: 28, position: "relative", marginBottom: 8, borderBottom: "1px solid #e3ddd6" }}>
+            <div style={{ height: 28, position: "relative", marginBottom: 6, borderBottom: "1px solid #e3ddd6" }}>
               {(() => {
                 const markers = [];
                 let d = new Date(start.getFullYear(), start.getMonth(), 1);
                 while (d <= end) {
                   const pct = xPct(d);
-                  if (pct >= 0 && pct <= 100) {
-                    markers.push(
-                      <div key={d.toISOString()} style={{ position: "absolute", left: `${pct}%`, top: 0, height: "100%", borderLeft: "1px solid #e3ddd6" }}>
-                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "#b0a899", paddingLeft: 3, whiteSpace: "nowrap" }}>
-                          {d.toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
-                        </span>
-                      </div>
-                    );
-                  }
+                  markers.push(
+                    <div key={d.toISOString()} style={{ position: "absolute", left: `${pct}%`, top: 0, height: "100%", borderLeft: "1px solid #e3ddd6" }}>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "#b0a899", paddingLeft: 3, whiteSpace: "nowrap" }}>
+                        {d.toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
+                      </span>
+                    </div>
+                  );
                   d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
                 }
                 return markers;
@@ -312,26 +342,45 @@ function GanttChart({ schedule, rfpDate, goLiveDate }) {
             </div>
 
             {/* Bars */}
-            {schedule.map((a, i) => (
-              <div key={a.id} style={{ height: BAR_H, marginBottom: 8, position: "relative" }}>
-                <div style={{
-                  position: "absolute",
-                  left: `${xPct(a.startDate)}%`,
-                  width: `${widthPct(a.startDate, a.endDate)}%`,
-                  height: "100%",
-                  background: COLORS[i % COLORS.length],
-                  borderRadius: 4,
-                  display: "flex",
-                  alignItems: "center",
-                  paddingLeft: 8,
-                  minWidth: 4,
-                }}>
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {a.businessDays}d
-                  </span>
+            {schedule.map(a => {
+              const baseColor = SERIAL_COLORS[colorMap[a.id] % SERIAL_COLORS.length];
+              const isParallel = !!a.parallelWith;
+              return (
+                <div key={a.id} style={{ height: BAR_H, marginBottom: 6, position: "relative" }}>
+                  <div style={{
+                    position: "absolute",
+                    left: `${xPct(a.startDate)}%`,
+                    width: `${widthPct(a.startDate, a.endDate)}%`,
+                    height: isParallel ? "70%" : "100%",
+                    top: isParallel ? "15%" : 0,
+                    background: isParallel ? "transparent" : baseColor,
+                    border: isParallel ? `2px solid ${baseColor}` : "none",
+                    borderRadius: 4,
+                    display: "flex",
+                    alignItems: "center",
+                    paddingLeft: 6,
+                    minWidth: 4,
+                    opacity: isParallel ? 0.85 : 1,
+                  }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: isParallel ? baseColor : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {a.businessDays}d
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div style={{ marginTop: 12, display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 16, height: 10, background: "#2e5984", borderRadius: 2 }} />
+            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 10, color: "#8a7e72" }}>Serial</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 16, height: 10, border: "2px solid #2e5984", borderRadius: 2 }} />
+            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 10, color: "#8a7e72" }}>Parallel</span>
           </div>
         </div>
       </div>
@@ -394,10 +443,10 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
       rows: [
         new TableRow({ children: [hCell("Activity", 3200), hCell("Start", 2080), hCell("End", 2080), hCell("Duration (Business Days)", 2000)] }),
         ...timeline.schedule.map((a, i) => new TableRow({ children: [
-          bCell(a.name, 3200, i % 2),
+          bCell((a.parallelWith ? "  ↳ " : "") + a.name, 3200, i % 2),
           bCell(fmtDate(a.startDate), 2080, i % 2),
           bCell(fmtDate(a.endDate), 2080, i % 2),
-          bCell(a.businessDays, 2000, i % 2),
+          bCell(String(a.businessDays) + (a.parallelWith ? " (parallel)" : ""), 2000, i % 2),
         ]}))
       ]
     }));
@@ -520,8 +569,8 @@ export default function RequirementsAgent() {
 
   // Rebuild schedule whenever activities or dates change
   useEffect(() => {
-    if (tlGenerated && rfpDate && goLiveDate) {
-      setSchedule(buildSchedule(activities, rfpDate, goLiveDate));
+    if (tlGenerated && rfpDate) {
+      setSchedule(buildSchedule(activities, rfpDate));
     }
   }, [activities, rfpDate, goLiveDate, tlGenerated]);
 
@@ -671,17 +720,31 @@ export default function RequirementsAgent() {
       const result = await callJSON(P_TIMELINE, userMsg);
       const updated = activities.map(a => {
         const match = result.find(r => r.id === a.id || r.name === a.name);
-        return { ...a, duration: match ? String(match.duration) : "5" };
+        return {
+          ...a,
+          duration: match ? String(match.duration) : "5",
+          parallelWith: match?.parallel_with || null,
+        };
       });
       setActivities(updated);
       setTlGenerated(true);
-      setSchedule(buildSchedule(updated, rfpDate, goLiveDate));
+      setSchedule(buildSchedule(updated, rfpDate));
     } catch { setTlErr("Could not generate timeline. Please try again."); }
     finally { setTlBusy(false); }
   };
 
   const updateActivity = (id, field, val) => {
-    setActivities(p => p.map(a => a.id === id ? { ...a, [field]: val } : a));
+    setActivities(p => p.map(a => {
+      if (a.id !== id) return a;
+      if (field === "overrideStart") {
+        // When user sets a start date, compute new duration to keep end date and rebuild
+        return { ...a, overrideStart: val };
+      }
+      if (field === "parallelWith") {
+        return { ...a, parallelWith: val || null };
+      }
+      return { ...a, [field]: val };
+    }));
   };
   const deleteActivity = (id) => setActivities(p => p.filter(a => a.id !== id));
   const addActivity = () => {
@@ -1030,8 +1093,8 @@ export default function RequirementsAgent() {
               const start = new Date(rfpDate + "T00:00:00");
               const end = new Date(goLiveDate + "T00:00:00");
               const calDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
-              const totalBizDays = activities.reduce((s, a) => s + (parseInt(a.duration) || 0), 0);
-              const diff = totalBizDays - workingDaysBetween(start, end);
+              const serialDays = activities.filter(a => !a.parallelWith).reduce((s, a) => s + (parseInt(a.duration) || 0), 0);
+              const diff = serialDays - workingDaysBetween(start, end);
               const overUnder = diff === 0 ? null : diff > 0 ? `${diff} business days over` : `${Math.abs(diff)} business days under`;
               return (
                 <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
@@ -1040,8 +1103,8 @@ export default function RequirementsAgent() {
                     <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1714" }}>{calDays} calendar days</div>
                   </div>
                   <div style={{ background: "#fff", border: "1.5px solid #e3ddd6", borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <div className="tl-col-label">Allocated Business Days</div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1714" }}>{totalBizDays} days</div>
+                    <div className="tl-col-label">Serial Business Days</div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1714" }}>{serialDays} days</div>
                   </div>
                   {overUnder && (
                     <div style={{ background: diff > 0 ? "#fff4f0" : "#f0faf4", border: `1.5px solid ${diff > 0 ? "#f0c4b4" : "#a0d8b4"}`, borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
@@ -1055,10 +1118,12 @@ export default function RequirementsAgent() {
 
             {/* Activity list headers */}
             {activities.length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 32px", gap: 8, marginBottom: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 90px 100px 90px 32px", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                <div />
                 <div className="tl-col-label">Activity</div>
-                <div className="tl-col-label">Duration (business days)</div>
-                <div className="tl-col-label">Start</div>
+                <div className="tl-col-label">Duration (days)</div>
+                <div className="tl-col-label">Start Date</div>
+                <div className="tl-col-label">Parallel with</div>
                 <div />
               </div>
             )}
@@ -1066,12 +1131,44 @@ export default function RequirementsAgent() {
             {activities.map((a, i) => {
               const sched = schedule.find(s => s.id === a.id);
               return (
-                <div className="tl-activity-row" key={a.id}>
-                  <input value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} />
-                  <input type="number" min="1" value={a.duration} onChange={e => updateActivity(a.id, "duration", e.target.value)} placeholder="days" style={{ textAlign: "center" }} />
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#8a7e72" }}>
-                    {sched ? fmtDate(sched.startDate) : "—"}
+                <div key={a.id} style={{ display: "grid", gridTemplateColumns: "44px 1fr 90px 100px 90px 32px", gap: 8, marginBottom: 8, alignItems: "center", paddingLeft: a.parallelWith ? 12 : 0, borderLeft: a.parallelWith ? "3px solid #c9b99a" : "3px solid transparent", borderRadius: 2 }}>
+                  {/* Reorder buttons */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <button className="rq-btn-icon" style={{ padding: "3px 8px", fontSize: 10 }} disabled={i === 0} onClick={() => {
+                      const arr = [...activities];
+                      [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                      setActivities(arr);
+                    }}>▲</button>
+                    <button className="rq-btn-icon" style={{ padding: "3px 8px", fontSize: 10 }} disabled={i === activities.length - 1} onClick={() => {
+                      const arr = [...activities];
+                      [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                      setActivities(arr);
+                    }}>▼</button>
                   </div>
+                  {/* Name */}
+                  <input style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "8px 10px", fontFamily: "'Lora', serif", fontSize: 13, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%" }} value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} />
+                  {/* Duration */}
+                  <input type="number" min="1" style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "8px 10px", fontFamily: "'Lora', serif", fontSize: 13, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%", textAlign: "center" }} value={a.duration} onChange={e => updateActivity(a.id, "duration", e.target.value)} placeholder="days" />
+                  {/* Start date */}
+                  <input type="date" style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "7px 8px", fontFamily: "'Lora', serif", fontSize: 12, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%" }}
+                    value={sched ? sched.startDate.toISOString().split("T")[0] : ""}
+                    onChange={e => {
+                      if (!e.target.value) return;
+                      // Override start date by adjusting duration calculation upstream
+                      updateActivity(a.id, "overrideStart", e.target.value);
+                    }}
+                  />
+                  {/* Parallel toggle */}
+                  <select style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "7px 6px", fontFamily: "'Syne', sans-serif", fontSize: 11, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%" }}
+                    value={a.parallelWith || ""}
+                    onChange={e => updateActivity(a.id, "parallelWith", e.target.value || null)}
+                  >
+                    <option value="">Serial</option>
+                    {activities.filter(o => o.id !== a.id && !o.parallelWith).map(o => (
+                      <option key={o.id} value={o.id}>{o.name.length > 16 ? o.name.slice(0, 16) + "…" : o.name}</option>
+                    ))}
+                  </select>
+                  {/* Delete */}
                   <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "5px 7px" }}><Trash2 size={12} /></button>
                 </div>
               );
