@@ -139,18 +139,13 @@ function fmtDate(d) {
 function buildSchedule(activities, rfpDate, goLiveDate) {
   if (!rfpDate || !goLiveDate || activities.length === 0) return [];
   const start = new Date(rfpDate + "T00:00:00");
-  const end = new Date(goLiveDate + "T00:00:00");
-  const totalDays = workingDaysBetween(start, end);
-  const totalDuration = activities.reduce((s, a) => s + (parseInt(a.duration) || 1), 0);
-  const scale = totalDays / totalDuration;
-
   let cursor = new Date(start);
   return activities.map(a => {
-    const dur = Math.max(Math.round((parseInt(a.duration) || 1) * scale), 1);
+    const dur = Math.max(parseInt(a.duration) || 1, 1);
     const actStart = new Date(cursor);
     const actEnd = addWorkingDays(cursor, dur - 1);
     cursor = addWorkingDays(actEnd, 1);
-    return { ...a, startDate: actStart, endDate: actEnd, scaledDays: dur };
+    return { ...a, startDate: actStart, endDate: actEnd, businessDays: dur };
   });
 }
 
@@ -218,16 +213,18 @@ const DEFAULT_ACTIVITIES = [
   { id: "a1", name: "NDA" },
   { id: "a2", name: "Scope & Requirements" },
   { id: "a3", name: "Market Analysis" },
-  { id: "a4", name: "Internal Alignment (Budget)" },
-  { id: "a5", name: "Issue RFP" },
-  { id: "a6", name: "Vendor Q&A" },
-  { id: "a7", name: "Submit RFP Response" },
-  { id: "a8", name: "Evaluate Responses" },
-  { id: "a9", name: "Recommendation to Leadership" },
-  { id: "a10", name: "Demo / POC & Evaluate" },
-  { id: "a11", name: "Final Recommendation" },
-  { id: "a12", name: "Negotiate Agreement" },
-  { id: "a13", name: "Implementation" },
+  { id: "a4", name: "Vendor Identification" },
+  { id: "a5", name: "Internal Alignment (Budget)" },
+  { id: "a6", name: "Issue RFP" },
+  { id: "a7", name: "Vendors Submit Clarifying Questions" },
+  { id: "a8", name: "Respond to Vendor Questions" },
+  { id: "a9", name: "Submit RFP Response" },
+  { id: "a10", name: "Evaluate Responses" },
+  { id: "a11", name: "Recommendation to Leadership" },
+  { id: "a12", name: "Demo / POC & Evaluate" },
+  { id: "a13", name: "Final Recommendation" },
+  { id: "a14", name: "Negotiate Agreement" },
+  { id: "a15", name: "Implementation" },
 ];
 
 // ─── Gantt Chart Component ────────────────────────────────────────────────────
@@ -313,7 +310,7 @@ function GanttChart({ schedule, rfpDate, goLiveDate }) {
                   minWidth: 4,
                 }}>
                   <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {a.scaledDays}d
+                    {a.businessDays}d
                   </span>
                 </div>
               </div>
@@ -378,12 +375,12 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
       width: { size: 9360, type: WidthType.DXA },
       columnWidths: [3200, 2080, 2080, 2000],
       rows: [
-        new TableRow({ children: [hCell("Activity", 3200), hCell("Start", 2080), hCell("End", 2080), hCell("Working Days", 2000)] }),
+        new TableRow({ children: [hCell("Activity", 3200), hCell("Start", 2080), hCell("End", 2080), hCell("Duration (Business Days)", 2000)] }),
         ...timeline.schedule.map((a, i) => new TableRow({ children: [
           bCell(a.name, 3200, i % 2),
           bCell(fmtDate(a.startDate), 2080, i % 2),
           bCell(fmtDate(a.endDate), 2080, i % 2),
-          bCell(a.scaledDays, 2000, i % 2),
+          bCell(a.businessDays, 2000, i % 2),
         ]}))
       ]
     }));
@@ -865,11 +862,38 @@ export default function RequirementsAgent() {
               </div>
             </div>
 
+            {rfpDate && goLiveDate && (() => {
+              const start = new Date(rfpDate + "T00:00:00");
+              const end = new Date(goLiveDate + "T00:00:00");
+              const calDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
+              const totalBizDays = activities.reduce((s, a) => s + (parseInt(a.duration) || 0), 0);
+              const diff = totalBizDays - workingDaysBetween(start, end);
+              const overUnder = diff === 0 ? null : diff > 0 ? `${diff} business days over` : `${Math.abs(diff)} business days under`;
+              return (
+                <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+                  <div style={{ background: "#fff", border: "1.5px solid #e3ddd6", borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div className="tl-col-label">Total Span</div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1714" }}>{calDays} calendar days</div>
+                  </div>
+                  <div style={{ background: "#fff", border: "1.5px solid #e3ddd6", borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div className="tl-col-label">Allocated Business Days</div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1714" }}>{totalBizDays} days</div>
+                  </div>
+                  {overUnder && (
+                    <div style={{ background: diff > 0 ? "#fff4f0" : "#f0faf4", border: `1.5px solid ${diff > 0 ? "#f0c4b4" : "#a0d8b4"}`, borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
+                      <div className="tl-col-label">vs. Available</div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: diff > 0 ? "#b85030" : "#2a7a4a" }}>{overUnder}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Activity list headers */}
             {activities.length > 0 && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 32px", gap: 8, marginBottom: 6 }}>
                 <div className="tl-col-label">Activity</div>
-                <div className="tl-col-label">Days</div>
+                <div className="tl-col-label">Duration (business days)</div>
                 <div className="tl-col-label">Start</div>
                 <div />
               </div>
