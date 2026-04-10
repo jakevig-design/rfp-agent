@@ -733,7 +733,7 @@ export default function RequirementsAgent() {
 
   const allAnswered = FIVE_WS.every(w => answers[w.key].trim().length > 0);
   const isSkipped = (val) => val.trim().toLowerCase() === "skip";
-  const allFlagResponsesFilled = scopeFlags.every(f => (flagResponses[f.criterion] || "").trim().length > 0);
+  const allFlagResponsesFilled = scopeFlags.every((f, idx) => (flagResponses[`${f.criterion}_${idx}`] || "").trim().length > 0);
 
   useEffect(() => { isDirty.current = true; }, [projectTitle, answers, formalScope, requirements, questions, activities]);
 
@@ -893,9 +893,13 @@ export default function RequirementsAgent() {
   const doRefineScope = async () => {
     setScopeBusy(true); setScopeErr("");
     try {
-      const activeFlags = scopeFlags.filter(f => !isSkipped(flagResponses[f.criterion] || ""));
+      const activeFlags = scopeFlags.filter((f, idx) => !isSkipped(flagResponses[`${f.criterion}_${idx}`] || ""));
       if (activeFlags.length === 0) { setScopeFlags([]); setScopeApproved(true); setScopeBusy(false); return; }
-      const additions = activeFlags.map(f => `GAP: ${f.issue}\nUSER RESPONSE: ${flagResponses[f.criterion] || ""}`).join("\n\n");
+      const additions = scopeFlags.map((f, idx) => {
+        const val = flagResponses[`${f.criterion}_${idx}`] || "";
+        if (isSkipped(val)) return null;
+        return `GAP: ${f.issue}\nUSER RESPONSE: ${val}`;
+      }).filter(Boolean).join("\n\n");
       const refined = await callClaude(P_SCOPE_REFINE, `EXISTING SCOPE:\n${formalScope}\n\nADDITIONAL INFORMATION:\n${additions}`);
       setFormalScope(refined.trim()); setFlagResponses({});
       await doEvaluateScope(refined.trim());
@@ -1335,14 +1339,15 @@ export default function RequirementsAgent() {
                     {scopeFlags.length > 0 && !editingScope && (
                       <div style={{ marginTop: 18 }} className="rq-fade">
                         <div className="rq-section-label" style={{ marginBottom: 10 }}>Scope review — action required</div>
-                        {scopeFlags.map(flag => {
-                          const val = flagResponses[flag.criterion] || "";
+                        {scopeFlags.map((flag, idx) => {
+                          const key = `${flag.criterion}_${idx}`;
+                          const val = flagResponses[key] || "";
                           const skipped = isSkipped(val);
                           return (
-                            <div className="rq-flag-card" key={flag.criterion} style={{ opacity: skipped ? 0.5 : 1 }}>
+                            <div className="rq-flag-card" key={key} style={{ opacity: skipped ? 0.5 : 1 }}>
                               <div className="rq-flag-title"><AlertTriangle size={13} /> {flag.criterion}{skipped && <span style={{ marginLeft: 8, fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#EF9F27", background: "rgba(239,159,39,0.15)", padding: "2px 7px", borderRadius: 3 }}>SKIPPED</span>}</div>
                               {!skipped && <div className="rq-flag-text">{flag.prompt}</div>}
-                              <textarea className="rq-textarea" placeholder={`Your response… (type "skip" to dismiss)`} value={val} onChange={e => setFlagResponses(p => ({ ...p, [flag.criterion]: e.target.value }))} rows={skipped ? 1 : 2} style={{ opacity: skipped ? 0.6 : 1 }} />
+                              <textarea className="rq-textarea" placeholder={`Your response… (type "skip" to dismiss)`} value={val} onChange={e => setFlagResponses(p => ({ ...p, [key]: e.target.value }))} rows={skipped ? 1 : 2} style={{ opacity: skipped ? 0.6 : 1 }} />
                             </div>
                           );
                         })}
