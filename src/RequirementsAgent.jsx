@@ -135,7 +135,7 @@ _style.textContent = `
   .rq-req-group-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#a8c8d8;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.07)}
   .rq-loading-center{padding:36px 0;text-align:center;color:#607a8a;font-style:italic;font-family:'Lora',serif}
 
-  /* ── Sessions ── */
+  /* ── Drafts ── */
   .sessions-panel{background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:24px}
   .sessions-header{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.07);background:#1f2e3a}
   .sessions-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#607a8a}
@@ -959,7 +959,7 @@ export default function RequirementsAgent() {
     market: "Market Research", timeline: "Timeline", review: "Review",
   };
   const topbarSubs = {
-    splash: "Jake's RFP Builder", sessions: "All sessions",
+    splash: "RFP Agent", sessions: "All drafts",
     scope: projectTitle || "Untitled project",
     requirements: projectTitle || "Untitled project",
     questions: projectTitle || "Untitled project",
@@ -975,31 +975,32 @@ export default function RequirementsAgent() {
         <div className="rq-shell">
           <div className="rq-sidebar">
             <div className="rq-sidebar-logo" style={{ cursor: "pointer" }} onClick={() => setView("splash")}>
-              <div className="rq-sidebar-brand">Procurement</div>
+              <div className="rq-sidebar-brand">RFP Agent</div>
               <div className="rq-sidebar-title">Agent</div>
             </div>
             <div className="rq-nav">
               <div className="rq-nav-item active"><div className="rq-nav-num" style={{ fontSize: 8 }}>⌂</div>Home</div>
-              <div className="rq-nav-item" onClick={() => setView("sessions")}><div className="rq-nav-num" style={{ fontSize: 8 }}>S</div>Sessions</div>
+              <div className="rq-nav-item" onClick={() => setView("sessions")}><div className="rq-nav-num" style={{ fontSize: 8 }}>S</div>Drafts</div>
             </div>
           </div>
           <div className="rq-main">
             <div className="rq-topbar">
               <div className="rq-topbar-left">
                 <div className="rq-topbar-title">Home</div>
-                <div className="rq-topbar-sub">Jake's RFP Builder</div>
+                <div className="rq-topbar-sub">RFP Agent</div>
               </div>
             </div>
             <div className="rq-content" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ textAlign: "center", maxWidth: 480 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 12 }}>Procurement</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#d8eaf2", marginBottom: 12, lineHeight: 1.15 }}>Jake's RFP Builder</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 12 }}>RFP Agent</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#d8eaf2", marginBottom: 4, lineHeight: 1.15 }}>Don't Be Sold On Value.</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#5DCAA5", marginBottom: 20, lineHeight: 1.15 }}>Buy Based On Needs.</div>
                 <div style={{ fontFamily: "'Lora',serif", fontSize: 15, color: "#607a8a", lineHeight: 1.7, marginBottom: 36 }}>AI-powered procurement requirements tool. Build a scoped, structured RFP in minutes — scope, requirements, discovery questions, timeline, and vendor shortlist.</div>
                 <button className="rq-btn-primary" style={{ padding: "14px 32px", fontSize: 13 }} onClick={resetSession}>
                   <Plus size={15} /> Start new session
                 </button>
                 <div style={{ marginTop: 16 }}>
-                  <button className="rq-btn-ghost" onClick={() => setView("sessions")}>View sessions</button>
+                  <button className="rq-btn-ghost" onClick={() => setView("sessions")}>View drafts</button>
                 </div>
               </div>
             </div>
@@ -1013,7 +1014,7 @@ export default function RequirementsAgent() {
   const sidebarNav = (
     <div className="rq-sidebar">
       <div className="rq-sidebar-logo" style={{ cursor: "pointer" }} onClick={() => setView("splash")}>
-        <div className="rq-sidebar-brand">Procurement</div>
+        <div className="rq-sidebar-brand">RFP Agent</div>
         <div className="rq-sidebar-title">Agent</div>
         <div className="rq-sidebar-session">{sessionId}</div>
       </div>
@@ -1069,7 +1070,7 @@ export default function RequirementsAgent() {
           {topbar}
           <div className="rq-content">
 
-            {/* ── Sessions ── */}
+            {/* ── Drafts ── */}
             {view === "sessions" && (
               <div className="rq-fade">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -1078,11 +1079,11 @@ export default function RequirementsAgent() {
                 </div>
                 {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
                 {!sessionsLoading && sessionsList.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "48px 0", color: "#3a5060", fontSize: 14, fontStyle: "italic" }}>No sessions yet.</div>
+                  <div style={{ textAlign: "center", padding: "48px 0", color: "#3a5060", fontSize: 14, fontStyle: "italic" }}>No drafts yet.</div>
                 )}
                 {!sessionsLoading && sessionsList.length > 0 && (
                   <div className="sessions-panel">
-                    <div className="sessions-header"><div className="sessions-title">All sessions</div></div>
+                    <div className="sessions-header"><div className="sessions-title">All drafts</div></div>
                     {sessionsList.map(s => (
                       <div className="session-row" key={s.id} onClick={() => doLoadSession(s.id)}>
                         <div style={{ minWidth: 0 }}>
@@ -1160,7 +1161,6 @@ export default function RequirementsAgent() {
                   </select>
                   <button className="rq-btn-ghost" onClick={addActivity} disabled={!newActName.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={12} /> Add</button>
                 </div>
-                <GanttChart activities={activities} />
               </div>
             )}
 
@@ -1391,6 +1391,33 @@ export default function RequirementsAgent() {
             {/* ── Review ── */}
             {view === "review" && (
               <div className="rq-fade">
+
+                {/* Summary tiles */}
+                <div className="rq-metrics" style={{ marginBottom: 28 }}>
+                  <div className="rq-metric">
+                    <div className="rq-metric-label">Requirements</div>
+                    <div className="rq-metric-val">{requirements.length || "—"}</div>
+                    <div className="rq-metric-sub">{requirements.length > 0 ? "binary" : "none yet"}</div>
+                  </div>
+                  <div className="rq-metric">
+                    <div className="rq-metric-label">Questions</div>
+                    <div className="rq-metric-val">{openQ + mcQ || "—"}</div>
+                    <div className="rq-metric-sub">{openQ + mcQ > 0 ? `${openQ} open · ${mcQ} mc` : "none yet"}</div>
+                  </div>
+                  <div className="rq-metric">
+                    <div className="rq-metric-label">Vendors shortlisted</div>
+                    <div className="rq-metric-val" style={{ color: vendors.length === 0 ? "#3a5060" : "#EF9F27" }}>
+                      {vendors.length === 0 ? "—" : vendors.filter(v => vendorStatus[v.name] === "shortlisted").length}
+                    </div>
+                    <div className="rq-metric-sub amber">{vendors.length === 0 ? "run market first" : `of ${vendors.length} found`}</div>
+                  </div>
+                  <div className="rq-metric">
+                    <div className="rq-metric-label">Timeline</div>
+                    <div className="rq-metric-val">{activities.length}</div>
+                    <div className="rq-metric-sub">{rfpStart && goLive ? `${calDaysBetween(rfpStart, goLive)}d total` : "activities"}</div>
+                  </div>
+                </div>
+
                 {/* Scope */}
                 <div className="rq-section-label">Scope</div>
                 {formalScope
@@ -1418,8 +1445,13 @@ export default function RequirementsAgent() {
                 {/* Vendor shortlist */}
                 <div className="rq-section-label">Vendor shortlist</div>
                 {vendors.length === 0 ? (
-                  <div style={{ color: "#3a5060", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>
-                    No vendors yet — go to Market to run vendor research.
+                  <div style={{ background: "#1b2530", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "20px 22px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, color: "#3a5060" }}>—</div>
+                    <div>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 600, color: "#607a8a", marginBottom: 3 }}>No market research yet</div>
+                      <div style={{ fontSize: 12, color: "#3a5060" }}>Go to Market to search for vendors and score them against your requirements.</div>
+                    </div>
+                    <button className="rq-btn-ghost" style={{ marginLeft: "auto", flexShrink: 0 }} onClick={() => setView("market")}>Go to Market <ChevronRight size={12} /></button>
                   </div>
                 ) : (
                   <div style={{ marginBottom: 24 }}>
