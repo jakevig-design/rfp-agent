@@ -190,28 +190,28 @@ function makeDefaultActivities(startDate) {
 
   return [
     // ── Pre-RFP ──
-    { id: "a1",  group: "Pre-RFP",  parentId: null, name: "Draft Scope & Requirements",           startDate: scopeStart,  endDate: scopeEnd,     offsetDays: 7  },
-    { id: "a2",  group: "Pre-RFP",  parentId: null, name: "Execute NDA",                           startDate: scopeStart,  endDate: issueStart,   offsetDays: calDaysBetween(scopeStart, issueStart) },
-    { id: "a3",  group: "Pre-RFP",  parentId: null, name: "Market Analysis",                       startDate: scopeStart,  endDate: marketEnd,    offsetDays: 14 },
-    { id: "a4",  group: "Pre-RFP",  parentId: null, name: "Vendor Identification",                 startDate: scopeStart,  endDate: vendorEnd,    offsetDays: calDaysBetween(scopeStart, vendorEnd) },
-    { id: "a5",  group: "Pre-RFP",  parentId: null, name: "Draft RFP",                             startDate: vendorEnd,   endDate: issueStart,   offsetDays: calDaysBetween(vendorEnd, issueStart) },
-    { id: "a5a", group: "Pre-RFP",  parentId: "a5", name: "Finalize Scope & Requirements",         startDate: vendorEnd,   endDate: finScopeEnd,  offsetDays: 7  },
-    { id: "a5b", group: "Pre-RFP",  parentId: "a5", name: "Establish Evaluation Team, Criteria & Weighting", startDate: vendorEnd, endDate: evalTeamEnd, offsetDays: 14 },
+    { id: "a1",  group: "Pre-RFP",  parentId: null, name: "Draft Scope & Requirements",           startDate: scopeStart,  endDate: scopeEnd,     offsetDays: 7,  startOffsetDays: 0 },
+    { id: "a2",  group: "Pre-RFP",  parentId: null, name: "Execute NDA",                           startDate: scopeStart,  endDate: issueStart,   offsetDays: calDaysBetween(scopeStart, issueStart), startOffsetDays: 0 },
+    { id: "a3",  group: "Pre-RFP",  parentId: null, name: "Market Analysis",                       startDate: scopeStart,  endDate: marketEnd,    offsetDays: 14, startOffsetDays: 0 },
+    { id: "a4",  group: "Pre-RFP",  parentId: null, name: "Vendor Identification",                 startDate: scopeStart,  endDate: vendorEnd,    offsetDays: calDaysBetween(scopeStart, vendorEnd), startOffsetDays: 0 },
+    { id: "a5",  group: "Pre-RFP",  parentId: null, name: "Draft RFP",                             startDate: vendorEnd,   endDate: issueStart,   offsetDays: calDaysBetween(vendorEnd, issueStart), startOffsetDays: calDaysBetween(t, vendorEnd) },
+    { id: "a5a", group: "Pre-RFP",  parentId: "a5", name: "Finalize Scope & Requirements",         startDate: vendorEnd,   endDate: finScopeEnd,  offsetDays: 7,  startOffsetDays: calDaysBetween(t, vendorEnd) },
+    { id: "a5b", group: "Pre-RFP",  parentId: "a5", name: "Establish Evaluation Team, Criteria & Weighting", startDate: vendorEnd, endDate: evalTeamEnd, offsetDays: 14, startOffsetDays: calDaysBetween(t, vendorEnd) },
     // ── RFP ──
-    { id: "a6",  group: "RFP",      parentId: null, name: "Issue RFP",                             startDate: issueStart,  endDate: issueEnd,     offsetDays: 14 },
-    { id: "a6a", group: "RFP",      parentId: "a6", name: "Vendors Submit Clarifying Questions",   startDate: d(issueStart, 4), endDate: vendorQEnd, offsetDays: 2 },
-    { id: "a6b", group: "RFP",      parentId: "a6", name: "Respond to Vendor Questions",           startDate: vendorQEnd,  endDate: respondEnd,   offsetDays: 3  },
-    { id: "a6c", group: "RFP",      parentId: "a6", name: "Submit RFP Response",                   startDate: submitStart, endDate: submitEnd,    offsetDays: 7  },
-    { id: "a7",  group: "RFP",      parentId: null, name: "Evaluate RFP",                          startDate: evalStart,   endDate: evalTechEnd,  offsetDays: calDaysBetween(evalStart, evalTechEnd) },
-    { id: "a7a", group: "RFP",      parentId: "a7", name: "Evaluate Responses",                    startDate: evalStart,   endDate: evalRespEnd,  offsetDays: 8  },
-    { id: "a7b", group: "RFP",      parentId: "a7", name: "Shortlist (Recommendation to Leadership)", startDate: d(evalRespEnd, 1), endDate: shortlistEnd, offsetDays: 5 },
-    { id: "a7c", group: "RFP",      parentId: "a7", name: "Technical Evaluation (Demo / POC)",     startDate: techStart,   endDate: techEnd,      offsetDays: 28 },
-    { id: "a7d", group: "RFP",      parentId: "a7", name: "Evaluate Technical Evaluation",         startDate: techStart,   endDate: evalTechEnd,  offsetDays: 5  },
+    { id: "a6",  group: "RFP",      parentId: null, name: "Issue RFP",                             startDate: issueStart,  endDate: issueEnd,     offsetDays: 14, startOffsetDays: calDaysBetween(t, issueStart) },
+    { id: "a6a", group: "RFP",      parentId: "a6", name: "Vendors Submit Clarifying Questions",   startDate: d(issueStart, 4), endDate: vendorQEnd, offsetDays: 2, startOffsetDays: calDaysBetween(t, d(issueStart, 4)) },
+    { id: "a6b", group: "RFP",      parentId: "a6", name: "Respond to Vendor Questions",           startDate: vendorQEnd,  endDate: respondEnd,   offsetDays: 3,  startOffsetDays: calDaysBetween(t, vendorQEnd) },
+    { id: "a6c", group: "RFP",      parentId: "a6", name: "Submit RFP Response",                   startDate: submitStart, endDate: submitEnd,    offsetDays: 7,  startOffsetDays: calDaysBetween(t, submitStart) },
+    { id: "a7",  group: "RFP",      parentId: null, name: "Evaluate RFP",                          startDate: evalStart,   endDate: evalTechEnd,  offsetDays: calDaysBetween(evalStart, evalTechEnd), startOffsetDays: calDaysBetween(t, evalStart) },
+    { id: "a7a", group: "RFP",      parentId: "a7", name: "Evaluate Responses",                    startDate: evalStart,   endDate: evalRespEnd,  offsetDays: 8,  startOffsetDays: calDaysBetween(t, evalStart) },
+    { id: "a7b", group: "RFP",      parentId: "a7", name: "Shortlist (Recommendation to Leadership)", startDate: d(evalRespEnd, 1), endDate: shortlistEnd, offsetDays: 5, startOffsetDays: calDaysBetween(t, d(evalRespEnd, 1)) },
+    { id: "a7c", group: "RFP",      parentId: "a7", name: "Technical Evaluation (Demo / POC)",     startDate: techStart,   endDate: techEnd,      offsetDays: 28, startOffsetDays: calDaysBetween(t, techStart) },
+    { id: "a7d", group: "RFP",      parentId: "a7", name: "Evaluate Technical Evaluation",         startDate: techStart,   endDate: evalTechEnd,  offsetDays: 5,  startOffsetDays: calDaysBetween(t, techStart) },
     // ── Post-RFP ──
-    { id: "a8",  group: "Post-RFP", parentId: null, name: "Internal Alignment & Confirm Budget",   startDate: alignStart,  endDate: alignEnd,     offsetDays: 5  },
-    { id: "a9",  group: "Post-RFP", parentId: null, name: "Final Recommendation",                  startDate: finalStart,  endDate: finalEnd,     offsetDays: 5  },
-    { id: "a10", group: "Post-RFP", parentId: null, name: "Negotiate Contract",                    startDate: negoStart,   endDate: negoEnd,      offsetDays: 45 },
-    { id: "a11", group: "Post-RFP", parentId: null, name: "Implementation",                        startDate: implStart,   endDate: implEnd,      offsetDays: 45 },
+    { id: "a8",  group: "Post-RFP", parentId: null, name: "Internal Alignment & Confirm Budget",   startDate: alignStart,  endDate: alignEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
+    { id: "a9",  group: "Post-RFP", parentId: null, name: "Final Recommendation",                  startDate: finalStart,  endDate: finalEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
+    { id: "a10", group: "Post-RFP", parentId: null, name: "Negotiate Contract",                    startDate: negoStart,   endDate: negoEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, negoStart) },
+    { id: "a11", group: "Post-RFP", parentId: null, name: "Implementation",                        startDate: implStart,   endDate: implEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
   ];
 }
 
@@ -387,15 +387,32 @@ const P_SCOPE_REFINE = `You are a professional business analyst refining a proje
 
 The user has provided additional information to address a gap in the scope. Incorporate their response naturally into the existing scope. Keep the same tone and style. Return ONLY the updated scope text — no preamble, no explanation.`;
 
-const P_REQS = `You are a business analyst writing a software procurement RFP.
-Given a project scope, generate 5-8 binary functional requirements. Each must be phrased so a vendor can answer Yes or No.
-Start each with "The solution shall..." or "The system must...".
+const P_REQS = `You are a business analyst writing functional requirements for a software procurement RFP.
+
+Generate 5-8 binary functional requirements from the project scope.
+
+RULES FOR A GOOD BINARY REQUIREMENT:
+1. One thing only — a single, testable capability. No compound statements joined by "and", "including", "such as", or lists.
+2. Yes or no — a vendor must be able to answer it with a single yes or no. No partial answers possible.
+3. No detail about how — do not specify fields, methods, integrations, sub-features, or implementation details. Those belong in discovery questions.
+4. Short and direct — one sentence, starting with "The solution shall..." or "The system must..."
+
+BAD example (compound, lists detail): "The solution shall track hardware assets including computers, mobile devices, and peripherals with fields for asset identification, assignment, location, and lifecycle status."
+GOOD example (single, testable): "The solution shall track hardware assets within the ServiceNow CMDB."
+
 Return ONLY a valid JSON array, no markdown, no preamble:
 [{"id":"R-F1","text":"The solution shall..."},...]`;
 
 const P_QS = `You are a business analyst writing a vendor discovery questionnaire.
-Given a functional requirement, generate exactly 2-3 follow-up questions to help evaluate vendor compliance.
-Use multiple choice when the answer space is predictable and finite; otherwise open-ended.
+
+Given a binary functional requirement, generate 2-3 follow-up questions that unpack the detail behind it. These questions should explore how the vendor implements the capability, what limitations exist, and what configuration or customization may be needed.
+
+RULES:
+- Ask about the specifics that were intentionally left out of the requirement (asset types, fields, methods, integrations, sub-features)
+- Use multiple choice when the answer space is finite and predictable
+- Use open-ended when the answer requires explanation or varies significantly by vendor
+- Do not re-ask the requirement itself — assume the vendor said yes
+
 Return ONLY valid JSON, no markdown:
 [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}]`;
 
@@ -603,7 +620,12 @@ export default function RequirementsAgent() {
 
   const handleRfpStartChange = (newStart) => {
     setRfpStart(newStart);
-    setActivities(makeDefaultActivities(newStart));
+    // Recompute all dates from stored offsets relative to new start
+    setActivities(prev => prev.map(a => ({
+      ...a,
+      startDate: addCalDays(newStart, a.startOffsetDays ?? 0),
+      endDate: addCalDays(newStart, (a.startOffsetDays ?? 0) + (a.offsetDays ?? 7)),
+    })));
   };
 
   const handleGoLiveChange = (newEnd) => {
@@ -666,23 +688,34 @@ export default function RequirementsAgent() {
 
   // ── Timeline ──
   const updateActivity = (id, field, val) => {
-    setActivities(prev => {
-      const updated = prev.map(a => {
-        if (a.id !== id) return a;
-        const next = { ...a, [field]: val };
-        // If startDate changes, shift endDate by same offset
-        if (field === "startDate" && a.startDate && a.endDate) {
-          const oldDur = calDaysBetween(a.startDate, a.endDate);
-          next.endDate = addCalDays(val, oldDur);
+    setActivities(prev => prev.map(a => {
+      if (a.id !== id) return a;
+      const next = { ...a, [field]: val };
+
+      if (field === "startDate") {
+        // Preserve duration, shift end date, recalculate startOffsetDays
+        const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : (a.offsetDays ?? 7);
+        next.endDate = addCalDays(val, dur);
+        next.startOffsetDays = rfpStart ? calDaysBetween(rfpStart, val) : 0;
+        next.offsetDays = dur;
+      }
+
+      if (field === "endDate") {
+        // Recalculate offsetDays from start to new end
+        if (a.startDate) {
+          next.offsetDays = calDaysBetween(a.startDate, val);
         }
-        // If offsetDays changes, recompute endDate
-        if (field === "offsetDays" && a.startDate) {
+      }
+
+      if (field === "offsetDays") {
+        // Recompute end date from start + new offset
+        if (a.startDate) {
           next.endDate = addCalDays(a.startDate, parseInt(val) || 0);
         }
-        return next;
-      });
-      return updated;
-    });
+      }
+
+      return next;
+    }));
   };
 
   const deleteActivity = (id) => setActivities(p => p.filter(a => a.id !== id && a.parentId !== id));
