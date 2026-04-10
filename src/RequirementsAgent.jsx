@@ -409,7 +409,7 @@ const FIVE_WS = [
 ];
 
 // ─── DocX Export ──────────────────────────────────────────────────────────────
-async function buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities }) {
+async function buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities, rfpStart, goLive }) {
   const b = { style: BorderStyle.SINGLE, size: 1, color: "D4CCC4" };
   const borders = { top: b, bottom: b, left: b, right: b };
   const cm = { top: 90, bottom: 90, left: 130, right: 130 };
@@ -486,6 +486,8 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
         ...qChildren,
         new Paragraph({ children: [new TextRun("")] }),
         new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "4. Procurement Timeline", font: "Arial" })] }),
+        new Paragraph({ children: [new TextRun({ text: `Start: ${fmtDate(rfpStart)}   |   Go-Live: ${fmtDate(goLive)}${rfpStart && goLive ? `   |   ${calDaysBetween(rfpStart, goLive)} calendar days` : ""}`, font: "Arial", size: 20, color: "6A6058" })] }),
+        new Paragraph({ children: [new TextRun("")] }),
         new Table({ width: { size: 9360, type: WidthType.DXA }, columnWidths: [3400, 1900, 1900, 2160], rows: tlRows }),
       ]
     }]
@@ -531,8 +533,10 @@ export default function RequirementsAgent() {
   const [qErr, setQErr] = useState("");
 
   // Timeline
-  const [activities, setActivities] = useState(() => makeDefaultActivities());
-  const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [rfpStart, setRfpStart] = useState(today);
+  const [goLive, setGoLive] = useState(() => addCalDays(today(), 180));
+  const [activities, setActivities] = useState(() => makeDefaultActivities(today()));
+  const [collapsedGroups, setCollapsedGroups] = useState({ "Pre-RFP": false, "RFP": false, "Post-RFP": false });
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
   const [newActName, setNewActName] = useState("");
@@ -558,7 +562,7 @@ export default function RequirementsAgent() {
     return () => clearInterval(t);
   });
 
-  const getSessionData = () => ({ step, projectTitle, answers, formalScope, scopeApproved, requirements, questions, activities });
+  const getSessionData = () => ({ step, projectTitle, answers, formalScope, scopeApproved, requirements, questions, activities, rfpStart, goLive });
 
   const doSave = async (status = "draft") => {
     setSaveStatus("saving");
@@ -578,7 +582,14 @@ export default function RequirementsAgent() {
     if (d.scopeApproved) setScopeApproved(d.scopeApproved);
     if (d.requirements) setRequirements(d.requirements);
     if (d.questions) setQuestions(d.questions);
-    if (d.activities) setActivities(d.activities);
+    if (d.rfpStart) setRfpStart(d.rfpStart);
+    if (d.goLive) setGoLive(d.goLive);
+    // Only restore activities if they have the new group structure
+    if (d.activities && d.activities.length > 0 && d.activities[0].group) {
+      setActivities(d.activities);
+    } else {
+      setActivities(makeDefaultActivities(d.rfpStart || today()));
+    }
     setView("agent");
     setLastSaved(new Date(row.updated_at));
   };
@@ -590,7 +601,14 @@ export default function RequirementsAgent() {
     setSessionsList(p => p.filter(s => s.id !== id));
   };
 
-  // ── Scope ──
+  const handleRfpStartChange = (newStart) => {
+    setRfpStart(newStart);
+    setActivities(makeDefaultActivities(newStart));
+  };
+
+  const handleGoLiveChange = (newEnd) => {
+    setGoLive(newEnd);
+  };
   const doGenerateScope = async () => {
     setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
     try {
@@ -703,7 +721,7 @@ export default function RequirementsAgent() {
   const doExport = async () => {
     setExportBusy(true); setExportErr("");
     try {
-      await buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities });
+      await buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities, rfpStart, goLive });
       await doSave("complete");
     } catch { setExportErr("Export failed. Please try again."); }
     finally { setExportBusy(false); }
@@ -959,7 +977,25 @@ export default function RequirementsAgent() {
 
             {/* 4. Timeline */}
             <div className="rq-section-label">4. Procurement Timeline</div>
-            <p className="rq-hint">Dates cascade automatically — changing a start date shifts the end date by the same offset. Drag activities between groups. Sub-activities are indented under their parent.</p>
+            <p className="rq-hint">Set your start and go-live dates — all activity dates will cascade automatically from the start date. Adjust individual dates or offsets as needed.</p>
+
+            {/* Date drivers */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+              <div style={{ background: "#fff", border: "1.5px solid #e3ddd6", borderRadius: 8, padding: "14px 18px" }}>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#2e5984", marginBottom: 6 }}>RFP Start Date</div>
+                <input type="date" className="rq-input" value={rfpStart} onChange={e => handleRfpStartChange(e.target.value)} />
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#b0a899", marginTop: 6 }}>Drives all activity start dates</div>
+              </div>
+              <div style={{ background: "#fff", border: "1.5px solid #e3ddd6", borderRadius: 8, padding: "14px 18px" }}>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#a05828", marginBottom: 6 }}>Go-Live Date</div>
+                <input type="date" className="rq-input" value={goLive} onChange={e => handleGoLiveChange(e.target.value)} />
+                {rfpStart && goLive && (
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#6b5f52", marginTop: 6 }}>
+                    {calDaysBetween(rfpStart, goLive)} calendar days total
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Column headers */}
             <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", gap: 6, marginBottom: 6, paddingLeft: 10, paddingRight: 4 }}>
