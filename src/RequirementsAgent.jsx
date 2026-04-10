@@ -1,20 +1,17 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle, Calendar, Save, Database, Clock, ArrowLeft } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle, Calendar, Save, Clock, ArrowLeft, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { saveAs } from "file-saver";
-import {
-  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel, LevelFormat
-} from "docx";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel, LevelFormat } from "docx";
 import { saveSession, loadSessions, loadSession, deleteSession } from "./supabase";
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
-const link = document.createElement("link");
-link.rel = "stylesheet";
-link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap";
-document.head.appendChild(link);
+const _link = document.createElement("link");
+_link.rel = "stylesheet";
+_link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap";
+document.head.appendChild(_link);
 
-const style = document.createElement("style");
-style.textContent = `
+const _style = document.createElement("style");
+_style.textContent = `
   .rq-root{font-family:'Lora',Georgia,serif;background:#f7f5f2;min-height:100vh;color:#1a1714}
   .rq-root *{box-sizing:border-box}
   .rq-header{background:#1a1714;padding:28px 40px;display:flex;justify-content:space-between;align-items:center}
@@ -29,7 +26,7 @@ style.textContent = `
   .rq-step.active{color:#1a1714;border-bottom-color:#c9b99a}
   .rq-step.done{color:#5a8a6a}
   .rq-step-num{width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
-  .rq-body{max-width:820px;margin:0 auto;padding:40px 24px}
+  .rq-body{max-width:900px;margin:0 auto;padding:40px 24px}
   .rq-section-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#b0a899;margin-bottom:10px}
   .rq-textarea{width:100%;border:1.5px solid #e3ddd6;border-radius:6px;padding:14px 16px;font-family:'Lora',serif;font-size:15px;color:#1a1714;background:#faf9f7;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;line-height:1.65}
   .rq-textarea:focus{border-color:#c9b99a;background:#fff}
@@ -43,6 +40,7 @@ style.textContent = `
   .rq-btn-ghost:disabled{opacity:.4;cursor:not-allowed}
   .rq-btn-icon{display:inline-flex;align-items:center;justify-content:center;background:transparent;padding:6px 8px;border:1.5px solid #e3ddd6;border-radius:4px;cursor:pointer;transition:all .15s;color:#8a7e72}
   .rq-btn-icon:hover{border-color:#c9b99a;color:#1a1714}
+  .rq-btn-icon:disabled{opacity:.35;cursor:not-allowed}
   .rq-btn-del{color:#b85050;border-color:#e8c8c8}
   .rq-btn-del:hover{background:#fff0f0;border-color:#d09090;color:#8a2020}
   .rq-req-card{background:#fff;border:1.5px solid #e3ddd6;border-radius:8px;padding:18px 20px;margin-bottom:10px;transition:border-color .15s}
@@ -75,20 +73,6 @@ style.textContent = `
   .rq-flag-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#a07820;margin-bottom:6px;display:flex;align-items:center;gap:6px}
   .rq-flag-text{font-size:14px;color:#4a3800;line-height:1.6;margin-bottom:12px}
   .rq-scope-approved{background:#f0faf4;border:1.5px solid #a0d8b4;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a7a4a}
-  .tl-date-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-  .tl-date-card{background:#fff;border:1.5px solid #e3ddd6;border-radius:8px;padding:16px 18px}
-  .tl-date-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#c9b99a;margin-bottom:6px}
-  .tl-activity-row{display:grid;grid-template-columns:1fr 80px 80px 32px;gap:8px;align-items:center;margin-bottom:8px}
-  .tl-activity-row input{border:1.5px solid #e3ddd6;border-radius:6px;padding:8px 10px;font-family:'Lora',serif;font-size:13px;color:#1a1714;background:#faf9f7;outline:none;width:100%}
-  .tl-activity-row input:focus{border-color:#c9b99a}
-  .tl-col-label{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#b0a899;margin-bottom:4px}
-  .gantt-wrap{overflow-x:auto;margin-top:24px}
-  .gantt-container{min-width:600px;background:#fff;border:1px solid #e3ddd6;border-radius:8px;padding:20px}
-  .gantt-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#b0a899;margin-bottom:16px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .spin{animation:spin .8s linear infinite;display:inline-block}
-  .rq-fade{animation:fadeUp .3s ease both}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
   .sv-bar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e3ddd6;border-radius:8px;padding:10px 16px;margin-bottom:20px;gap:12px}
   .sv-status{font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a7e72;display:flex;align-items:center;gap:6px}
   .sv-status.saved{color:#2a7a4a}
@@ -105,18 +89,37 @@ style.textContent = `
   .session-status{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px}
   .session-status.draft{background:#fdf0ea;color:#a05020}
   .session-status.complete{background:#edf7f2;color:#2a6a4a}
+  .tl-group-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f0ede8;border-radius:6px;margin-bottom:6px;cursor:pointer;user-select:none;border:1px solid #e3ddd6}
+  .tl-group-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#6b5f52}
+  .tl-group-pre{color:#2e5984}
+  .tl-group-rfp{color:#3a6a52}
+  .tl-group-post{color:#a05828}
+  .tl-act-row{display:grid;gap:6px;align-items:center;margin-bottom:6px;padding:8px 10px;background:#fff;border:1px solid #e3ddd6;border-radius:6px;transition:border-color .15s}
+  .tl-act-row:hover{border-color:#d0c4b4}
+  .tl-act-row.is-child{margin-left:24px;background:#faf9f7;border-left:3px solid #c9b99a}
+  .tl-act-row.is-parent{border-left:3px solid #1a1714}
+  .tl-act-row.dragging{opacity:.5}
+  .tl-act-row.drag-over{border-color:#c9b99a;border-style:dashed}
+  .tl-cell-input{border:1px solid #e3ddd6;border-radius:4px;padding:5px 7px;font-family:'Lora',serif;font-size:12px;color:#1a1714;background:#faf9f7;outline:none;width:100%}
+  .tl-cell-input:focus{border-color:#c9b99a}
+  .tl-col-hdr{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#b0a899}
+  .gantt-wrap{overflow-x:auto;margin-top:24px}
+  .gantt-container{min-width:640px;background:#fff;border:1px solid #e3ddd6;border-radius:8px;padding:20px}
+  .gantt-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#b0a899;margin-bottom:16px}
+  .gantt-group-bar{height:6px;border-radius:3px;margin-bottom:4px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin{animation:spin .8s linear infinite;display:inline-block}
+  .rq-fade{animation:fadeUp .3s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 `;
-document.head.appendChild(style);
+document.head.appendChild(_style);
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 const genId = () => "SES-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+const uid = () => "a" + Date.now() + Math.random().toString(36).substring(2, 5);
 
 async function callClaude(system, user) {
-  const res = await fetch("/api/claude", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ system, user }),
-  });
+  const res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ system, user }) });
   if (!res.ok) throw new Error(`API ${res.status}`);
   const d = await res.json();
   if (d.error) throw new Error(d.error.message);
@@ -128,63 +131,220 @@ async function callJSON(system, user) {
   return JSON.parse(t.replace(/```json\s*/g, "").replace(/```/g, "").trim());
 }
 
-// ─── Working day helpers ──────────────────────────────────────────────────────
-function addWorkingDays(date, days) {
-  let d = new Date(date);
-  let added = 0;
-  while (added < days) {
-    d.setDate(d.getDate() + 1);
-    if (d.getDay() !== 0 && d.getDay() !== 6) added++;
+// ─── Date helpers ─────────────────────────────────────────────────────────────
+function addCalDays(dateStr, days) {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
+function calDaysBetween(startStr, endStr) {
+  const s = new Date(startStr + "T00:00:00");
+  const e = new Date(endStr + "T00:00:00");
+  return Math.round((e - s) / 86400000);
+}
+
+function fmtDate(str) {
+  if (!str) return "—";
+  return new Date(str + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function today() { return new Date().toISOString().split("T")[0]; }
+
+// ─── Default activities ───────────────────────────────────────────────────────
+// offsetDays: n+ days after startDate for endDate default
+// parentId: sub-activity of another
+// group: Pre-RFP | RFP | Post-RFP
+function makeDefaultActivities(startDate) {
+  const t = startDate || today();
+
+  // Helper: date string from a reference + offset
+  const d = (base, offset) => addCalDays(base, offset);
+
+  const scopeStart = t;
+  const scopeEnd = d(t, 7);           // +1 week
+  const marketEnd = d(t, 14);         // +2 weeks from scope start
+  const vendorEnd = d(marketEnd, 7);  // +1 week from market end
+  const finScopeEnd = d(vendorEnd, 7);
+  const evalTeamEnd = d(vendorEnd, 14);
+  const issueStart = d(evalTeamEnd, 3);
+  const issueEnd = d(issueStart, 14);
+  const vendorQEnd = d(issueStart, 4 + 2); // n+4 days start, +2 days duration
+  const respondEnd = d(vendorQEnd, 3);
+  const submitStart = d(respondEnd, 2);
+  const submitEnd = d(submitStart, 7);
+  const evalStart = d(respondEnd, 3);
+  const evalRespEnd = d(evalStart, 8);
+  const shortlistEnd = d(d(evalRespEnd, 1), 5);
+  const techStart = d(d(shortlistEnd, 0), 28);
+  const techEnd = d(techStart, 28);
+  const evalTechEnd = d(techStart, 5);
+  const alignStart = d(evalTechEnd, 10);
+  const alignEnd = d(alignStart, 5);
+  const finalStart = d(alignEnd, 10);
+  const finalEnd = d(finalStart, 5);
+  const negoStart = d(finalEnd, 1);
+  const negoEnd = d(negoStart, 45);
+  const implStart = d(negoEnd, 10);
+  const implEnd = d(implStart, 45);
+
+  return [
+    // ── Pre-RFP ──
+    { id: "a1",  group: "Pre-RFP",  parentId: null, name: "Draft Scope & Requirements",           startDate: scopeStart,  endDate: scopeEnd,     offsetDays: 7  },
+    { id: "a2",  group: "Pre-RFP",  parentId: null, name: "Execute NDA",                           startDate: scopeStart,  endDate: issueStart,   offsetDays: calDaysBetween(scopeStart, issueStart) },
+    { id: "a3",  group: "Pre-RFP",  parentId: null, name: "Market Analysis",                       startDate: scopeStart,  endDate: marketEnd,    offsetDays: 14 },
+    { id: "a4",  group: "Pre-RFP",  parentId: null, name: "Vendor Identification",                 startDate: scopeStart,  endDate: vendorEnd,    offsetDays: calDaysBetween(scopeStart, vendorEnd) },
+    { id: "a5",  group: "Pre-RFP",  parentId: null, name: "Draft RFP",                             startDate: vendorEnd,   endDate: issueStart,   offsetDays: calDaysBetween(vendorEnd, issueStart) },
+    { id: "a5a", group: "Pre-RFP",  parentId: "a5", name: "Finalize Scope & Requirements",         startDate: vendorEnd,   endDate: finScopeEnd,  offsetDays: 7  },
+    { id: "a5b", group: "Pre-RFP",  parentId: "a5", name: "Establish Evaluation Team, Criteria & Weighting", startDate: vendorEnd, endDate: evalTeamEnd, offsetDays: 14 },
+    // ── RFP ──
+    { id: "a6",  group: "RFP",      parentId: null, name: "Issue RFP",                             startDate: issueStart,  endDate: issueEnd,     offsetDays: 14 },
+    { id: "a6a", group: "RFP",      parentId: "a6", name: "Vendors Submit Clarifying Questions",   startDate: d(issueStart, 4), endDate: vendorQEnd, offsetDays: 2 },
+    { id: "a6b", group: "RFP",      parentId: "a6", name: "Respond to Vendor Questions",           startDate: vendorQEnd,  endDate: respondEnd,   offsetDays: 3  },
+    { id: "a6c", group: "RFP",      parentId: "a6", name: "Submit RFP Response",                   startDate: submitStart, endDate: submitEnd,    offsetDays: 7  },
+    { id: "a7",  group: "RFP",      parentId: null, name: "Evaluate RFP",                          startDate: evalStart,   endDate: evalTechEnd,  offsetDays: calDaysBetween(evalStart, evalTechEnd) },
+    { id: "a7a", group: "RFP",      parentId: "a7", name: "Evaluate Responses",                    startDate: evalStart,   endDate: evalRespEnd,  offsetDays: 8  },
+    { id: "a7b", group: "RFP",      parentId: "a7", name: "Shortlist (Recommendation to Leadership)", startDate: d(evalRespEnd, 1), endDate: shortlistEnd, offsetDays: 5 },
+    { id: "a7c", group: "RFP",      parentId: "a7", name: "Technical Evaluation (Demo / POC)",     startDate: techStart,   endDate: techEnd,      offsetDays: 28 },
+    { id: "a7d", group: "RFP",      parentId: "a7", name: "Evaluate Technical Evaluation",         startDate: techStart,   endDate: evalTechEnd,  offsetDays: 5  },
+    // ── Post-RFP ──
+    { id: "a8",  group: "Post-RFP", parentId: null, name: "Internal Alignment & Confirm Budget",   startDate: alignStart,  endDate: alignEnd,     offsetDays: 5  },
+    { id: "a9",  group: "Post-RFP", parentId: null, name: "Final Recommendation",                  startDate: finalStart,  endDate: finalEnd,     offsetDays: 5  },
+    { id: "a10", group: "Post-RFP", parentId: null, name: "Negotiate Contract",                    startDate: negoStart,   endDate: negoEnd,      offsetDays: 45 },
+    { id: "a11", group: "Post-RFP", parentId: null, name: "Implementation",                        startDate: implStart,   endDate: implEnd,      offsetDays: 45 },
+  ];
+}
+
+const GROUPS = ["Pre-RFP", "RFP", "Post-RFP"];
+const GROUP_COLORS = { "Pre-RFP": "#2e5984", "RFP": "#3a6a52", "Post-RFP": "#a05828" };
+
+// ─── Gantt ────────────────────────────────────────────────────────────────────
+function GanttChart({ activities }) {
+  const allDates = activities.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
+  if (!allDates.length) return null;
+  const minDate = allDates[0];
+  const maxDate = allDates[allDates.length - 1];
+  const totalDays = Math.max(calDaysBetween(minDate, maxDate), 1);
+  const BAR_H = 22;
+
+  const xPct = (dateStr) => {
+    if (!dateStr) return 0;
+    return Math.min(Math.max((calDaysBetween(minDate, dateStr) / totalDays) * 100, 0), 100);
+  };
+  const wPct = (s, e) => {
+    if (!s || !e) return 1;
+    return Math.max(Math.min((calDaysBetween(s, e) / totalDays) * 100, 100), 0.5);
+  };
+
+  // Month markers
+  const markers = [];
+  const mStart = new Date(minDate + "T00:00:00");
+  const mEnd = new Date(maxDate + "T00:00:00");
+  let md = new Date(mStart.getFullYear(), mStart.getMonth(), 1);
+  while (md <= mEnd) {
+    const ds = md.toISOString().split("T")[0];
+    markers.push({ ds, pct: xPct(ds), label: md.toLocaleDateString("en-US", { month: "short", year: "2-digit" }) });
+    md = new Date(md.getFullYear(), md.getMonth() + 1, 1);
   }
-  return d;
-}
 
-function workingDaysBetween(start, end) {
-  let count = 0;
-  let d = new Date(start);
-  while (d <= end) {
-    if (d.getDay() !== 0 && d.getDay() !== 6) count++;
-    d.setDate(d.getDate() + 1);
-  }
-  return Math.max(count, 1);
-}
+  return (
+    <div className="gantt-wrap">
+      <div className="gantt-container">
+        <div className="gantt-title">Procurement Timeline — {fmtDate(minDate)} to {fmtDate(maxDate)}</div>
+        <div style={{ display: "flex" }}>
+          {/* Labels */}
+          <div style={{ width: 210, flexShrink: 0 }}>
+            <div style={{ height: 28, marginBottom: 4 }} />
+            {GROUPS.map(g => {
+              const gas = activities.filter(a => a.group === g);
+              if (!gas.length) return null;
+              return (
+                <div key={g}>
+                  <div style={{ height: 20, marginBottom: 4, display: "flex", alignItems: "center" }}>
+                    <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: GROUP_COLORS[g] }}>{g}</span>
+                  </div>
+                  {gas.map(a => (
+                    <div key={a.id} style={{ height: BAR_H, marginBottom: 4, display: "flex", alignItems: "center", paddingLeft: a.parentId ? 14 : 0 }}>
+                      <span style={{ fontFamily: "'Lora',serif", fontSize: a.parentId ? 10 : 11, color: a.parentId ? "#6b5f52" : "#2e2925", lineHeight: 1.2, paddingRight: 8, fontStyle: a.parentId ? "italic" : "normal", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {a.parentId ? "↳ " : ""}{a.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
 
-function fmtDate(d) {
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+          {/* Chart area */}
+          <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+            {/* Month markers */}
+            <div style={{ height: 28, position: "relative", marginBottom: 4, borderBottom: "1px solid #e3ddd6" }}>
+              {markers.map(m => (
+                <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, height: "100%", borderLeft: "1px solid #e3ddd6" }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "#b0a899", paddingLeft: 3, whiteSpace: "nowrap" }}>{m.label}</span>
+                </div>
+              ))}
+            </div>
 
-function buildSchedule(activities, rfpDate) {
-  if (!rfpDate || activities.length === 0) return [];
-  const start = new Date(rfpDate + "T00:00:00");
-  // Track end date of each activity by id so parallel activities can share a parent's start
-  const endDateById = {};
-  let cursor = new Date(start);
-
-  return activities.map(a => {
-    const dur = Math.max(parseInt(a.duration) || 1, 1);
-    let actStart;
-
-    if (a.parallelWith && endDateById[a.parallelWith]) {
-      // Start same day as parent — find parent's start
-      const parentEntry = activities.find(p => p.id === a.parallelWith);
-      actStart = parentEntry?._startDate || new Date(cursor);
-    } else {
-      actStart = new Date(cursor);
-    }
-
-    const actEnd = addWorkingDays(actStart, dur - 1);
-
-    // Only advance cursor for serial activities
-    if (!a.parallelWith) {
-      cursor = addWorkingDays(actEnd, 1);
-    }
-
-    endDateById[a.id] = actEnd;
-    // Temporarily store startDate on the activity object for parallel children to reference
-    a._startDate = actStart;
-
-    return { ...a, startDate: actStart, endDate: actEnd, businessDays: dur };
-  });
+            {GROUPS.map(g => {
+              const gas = activities.filter(a => a.group === g);
+              if (!gas.length) return null;
+              const color = GROUP_COLORS[g];
+              return (
+                <div key={g}>
+                  {/* Group span bar */}
+                  <div style={{ height: 20, marginBottom: 4, position: "relative" }}>
+                    {(() => {
+                      const gDates = gas.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
+                      if (gDates.length < 2) return null;
+                      return (
+                        <div style={{ position: "absolute", left: `${xPct(gDates[0])}%`, width: `${wPct(gDates[0], gDates[gDates.length - 1])}%`, height: 6, top: 7, background: color, opacity: 0.25, borderRadius: 3 }} />
+                      );
+                    })()}
+                  </div>
+                  {gas.map(a => {
+                    const isChild = !!a.parentId;
+                    return (
+                      <div key={a.id} style={{ height: BAR_H, marginBottom: 4, position: "relative" }}>
+                        <div style={{
+                          position: "absolute",
+                          left: `${xPct(a.startDate)}%`,
+                          width: `${wPct(a.startDate, a.endDate)}%`,
+                          height: isChild ? "70%" : "100%",
+                          top: isChild ? "15%" : 0,
+                          background: isChild ? "transparent" : color,
+                          border: isChild ? `1.5px solid ${color}` : "none",
+                          opacity: isChild ? 0.8 : 1,
+                          borderRadius: 3,
+                          display: "flex", alignItems: "center", paddingLeft: 5, minWidth: 3,
+                        }}>
+                          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: isChild ? color : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {a.endDate && a.startDate ? calDaysBetween(a.startDate, a.endDate) + "d" : ""}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{ marginTop: 12, display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {GROUPS.map(g => (
+            <div key={g} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 14, height: 8, background: GROUP_COLORS[g], borderRadius: 2 }} />
+              <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#8a7e72" }}>{g}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 14, height: 8, border: "1.5px solid #2e5984", borderRadius: 2 }} />
+            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#8a7e72" }}>Sub-activity</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
@@ -239,179 +399,26 @@ Use multiple choice when the answer space is predictable and finite; otherwise o
 Return ONLY valid JSON, no markdown:
 [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}]`;
 
-const P_TIMELINE = `You are a procurement project manager. Given an RFP issue date, a go-live date, and a list of procurement activities, assign a realistic duration in working days to each activity. Also identify activities that can realistically run in parallel with another activity.
-
-Rules:
-- Assign durations based on typical procurement effort. NDA and clarifying questions are short (2-5 days). Evaluation, negotiation, and implementation are longer.
-- For parallel_with: use the id of the activity this one runs concurrently with, or null if it runs serially.
-- Only mark an activity as parallel if it genuinely can run at the same time (e.g. "Vendor Identification" can run in parallel with "Market Analysis").
-- Do not make every activity parallel — most should be serial.
-
-Return ONLY a valid JSON array in the same order as the input, no markdown:
-[{"id":"...","name":"...","duration":10,"parallel_with":null},{"id":"...","name":"...","duration":5,"parallel_with":"a3"},...]`;
-
-// ─── Default activities ───────────────────────────────────────────────────────
-const DEFAULT_ACTIVITIES = [
-  { id: "a1", name: "NDA" },
-  { id: "a2", name: "Scope & Requirements" },
-  { id: "a3", name: "Market Analysis" },
-  { id: "a4", name: "Vendor Identification" },
-  { id: "a5", name: "Internal Alignment (Budget)" },
-  { id: "a6", name: "Issue RFP" },
-  { id: "a7", name: "Vendors Submit Clarifying Questions" },
-  { id: "a8", name: "Respond to Vendor Questions" },
-  { id: "a9", name: "Submit RFP Response" },
-  { id: "a10", name: "Evaluate Responses" },
-  { id: "a11", name: "Recommendation to Leadership" },
-  { id: "a12", name: "Demo / POC & Evaluate" },
-  { id: "a13", name: "Final Recommendation" },
-  { id: "a14", name: "Negotiate Agreement" },
-  { id: "a15", name: "Implementation" },
+const STEPS = ["Scope", "Requirements", "Questions", "Review"];
+const FIVE_WS = [
+  { key: "who", label: "Who", question: "Who will use this system, and who owns this initiative?", placeholder: "e.g. Shop floor technicians will use it daily. The VP of Operations is the project sponsor." },
+  { key: "what", label: "What", question: "What problem are you solving, or what capability are you adding?", placeholder: "e.g. We lose track of tools constantly. We need real-time visibility into tool location and condition." },
+  { key: "where", label: "Where", question: "Where does this fit in your current environment? Any existing systems it must work with?", placeholder: "e.g. Must integrate with our SAP ERP. Deployed across 3 facilities in the US." },
+  { key: "when", label: "When", question: "When is this needed, and what is driving the timeline?", placeholder: "e.g. Must be live by Q3. We have an audit in September that requires this to be in place." },
+  { key: "why", label: "Why", question: "Why is the current state inadequate?", placeholder: "e.g. Everything is tracked on spreadsheets. We lose 10-15 tools per month and have no way to audit." },
 ];
 
-// ─── Gantt Chart Component ────────────────────────────────────────────────────
-function GanttChart({ schedule, rfpDate, goLiveDate }) {
-  if (!schedule.length) return null;
-  const start = new Date(rfpDate + "T00:00:00");
-  const end = new Date(goLiveDate + "T00:00:00");
-  const totalDays = workingDaysBetween(start, end);
-
-  const SERIAL_COLORS = [
-    "#2e5984","#3a6a52","#a05828","#6b3a7a","#2a6a8a",
-    "#7a4a2a","#3a5a2a","#8a3a4a","#4a5a8a","#6a5a2a",
-  ];
-  const BAR_H = 26;
-  const INDENT = 20;
-
-  const xPct = (date) => {
-    const d = new Date(date);
-    const days = workingDaysBetween(start, d);
-    return Math.min(Math.max((days / totalDays) * 100, 0), 100);
-  };
-
-  const widthPct = (s, e) => {
-    const days = workingDaysBetween(new Date(s), new Date(e)) + 1;
-    return Math.min((days / totalDays) * 100, 100);
-  };
-
-  // Assign color index by serial parent
-  let colorIdx = 0;
-  const colorMap = {};
-  schedule.forEach(a => {
-    if (!a.parallelWith) { colorMap[a.id] = colorIdx++; }
-    else { colorMap[a.id] = colorMap[a.parallelWith] ?? 0; }
-  });
-
-  return (
-    <div className="gantt-wrap">
-      <div className="gantt-container">
-        <div className="gantt-title">Procurement Timeline — {fmtDate(start)} to {fmtDate(end)}</div>
-        <div style={{ display: "flex" }}>
-          {/* Labels */}
-          <div style={{ width: 200, flexShrink: 0 }}>
-            <div style={{ height: 28, marginBottom: 6 }} />
-            {schedule.map(a => (
-              <div key={a.id} style={{ height: BAR_H, marginBottom: 6, display: "flex", alignItems: "center", paddingLeft: a.parallelWith ? INDENT : 0 }}>
-                <span style={{ fontFamily: "'Lora', serif", fontSize: a.parallelWith ? 11 : 12, color: a.parallelWith ? "#6b5f52" : "#2e2925", lineHeight: 1.3, paddingRight: 10, fontStyle: a.parallelWith ? "italic" : "normal" }}>
-                  {a.parallelWith ? "↳ " : ""}{a.name}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Chart */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Month markers */}
-            <div style={{ height: 28, position: "relative", marginBottom: 6, borderBottom: "1px solid #e3ddd6" }}>
-              {(() => {
-                const markers = [];
-                let d = new Date(start.getFullYear(), start.getMonth(), 1);
-                while (d <= end) {
-                  const pct = xPct(d);
-                  markers.push(
-                    <div key={d.toISOString()} style={{ position: "absolute", left: `${pct}%`, top: 0, height: "100%", borderLeft: "1px solid #e3ddd6" }}>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "#b0a899", paddingLeft: 3, whiteSpace: "nowrap" }}>
-                        {d.toLocaleDateString("en-US", { month: "short", year: "2-digit" })}
-                      </span>
-                    </div>
-                  );
-                  d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-                }
-                return markers;
-              })()}
-            </div>
-
-            {/* Bars */}
-            {schedule.map(a => {
-              const baseColor = SERIAL_COLORS[colorMap[a.id] % SERIAL_COLORS.length];
-              const isParallel = !!a.parallelWith;
-              return (
-                <div key={a.id} style={{ height: BAR_H, marginBottom: 6, position: "relative" }}>
-                  <div style={{
-                    position: "absolute",
-                    left: `${xPct(a.startDate)}%`,
-                    width: `${widthPct(a.startDate, a.endDate)}%`,
-                    height: isParallel ? "70%" : "100%",
-                    top: isParallel ? "15%" : 0,
-                    background: isParallel ? "transparent" : baseColor,
-                    border: isParallel ? `2px solid ${baseColor}` : "none",
-                    borderRadius: 4,
-                    display: "flex",
-                    alignItems: "center",
-                    paddingLeft: 6,
-                    minWidth: 4,
-                    opacity: isParallel ? 0.85 : 1,
-                  }}>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: isParallel ? baseColor : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {a.businessDays}d
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div style={{ marginTop: 12, display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 16, height: 10, background: "#2e5984", borderRadius: 2 }} />
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 10, color: "#8a7e72" }}>Serial</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 16, height: 10, border: "2px solid #2e5984", borderRadius: 2 }} />
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 10, color: "#8a7e72" }}>Parallel</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── DocX Export ──────────────────────────────────────────────────────────────
-async function buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, timeline }) {
+async function buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities }) {
   const b = { style: BorderStyle.SINGLE, size: 1, color: "D4CCC4" };
   const borders = { top: b, bottom: b, left: b, right: b };
   const cm = { top: 90, bottom: 90, left: 130, right: 130 };
 
-  const hCell = (text, w) => new TableCell({
-    borders, margins: cm,
-    width: { size: w, type: WidthType.DXA },
-    shading: { fill: "2E2925", type: ShadingType.CLEAR },
-    children: [new Paragraph({ children: [new TextRun({ text, bold: true, color: "F7F5F2", font: "Arial", size: 20 })] })]
-  });
-  const bCell = (text, w, shade) => new TableCell({
-    borders, margins: cm,
-    width: { size: w, type: WidthType.DXA },
-    shading: { fill: shade ? "FAF9F7" : "FFFFFF", type: ShadingType.CLEAR },
-    children: [new Paragraph({ children: [new TextRun({ text: String(text), font: "Arial", size: 20 })] })]
-  });
+  const hCell = (text, w) => new TableCell({ borders, margins: cm, width: { size: w, type: WidthType.DXA }, shading: { fill: "2E2925", type: ShadingType.CLEAR }, children: [new Paragraph({ children: [new TextRun({ text, bold: true, color: "F7F5F2", font: "Arial", size: 20 })] })] });
+  const bCell = (text, w, shade) => new TableCell({ borders, margins: cm, width: { size: w, type: WidthType.DXA }, shading: { fill: shade ? "FAF9F7" : "FFFFFF", type: ShadingType.CLEAR }, children: [new Paragraph({ children: [new TextRun({ text: String(text), font: "Arial", size: 20 })] })] });
 
-  // Numbering config — unique alpha ref per MC question
-  const numberingConfig = [
-    { reference: "nums", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 440, hanging: 360 } } } }] },
-  ];
-  let alphaRefCounter = 0;
+  const numberingConfig = [{ reference: "nums", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 440, hanging: 360 } } } }] }];
+  let alphaCounter = 0;
 
   const qChildren = [];
   for (const req of requirements) {
@@ -421,9 +428,9 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
     qs.forEach(q => {
       qChildren.push(new Paragraph({ numbering: { reference: "nums", level: 0 }, children: [new TextRun({ text: q.text, font: "Arial", size: 22 })] }));
       if (q.type === "multiple_choice" && q.options?.length) {
-        const alphaRef = `alpha-${alphaRefCounter++}`;
-        numberingConfig.push({ reference: alphaRef, levels: [{ level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] });
-        q.options.forEach(opt => qChildren.push(new Paragraph({ numbering: { reference: alphaRef, level: 0 }, children: [new TextRun({ text: opt, font: "Arial", size: 20, color: "5A5048" })] })));
+        const ref = `alpha-${alphaCounter++}`;
+        numberingConfig.push({ reference: ref, levels: [{ level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] });
+        q.options.forEach(opt => qChildren.push(new Paragraph({ numbering: { reference: ref, level: 0 }, children: [new TextRun({ text: opt, font: "Arial", size: 20, color: "5A5048" })] })));
       } else {
         qChildren.push(new Paragraph({ children: [new TextRun({ text: "[Open response]", font: "Arial", size: 20, italics: true, color: "9A8E82" })] }));
       }
@@ -431,25 +438,17 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
     });
   }
 
-  // Timeline table
-  const tlChildren = [];
-  if (timeline.schedule && timeline.schedule.length > 0) {
-    tlChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "4. Procurement Timeline", font: "Arial" })] }));
-    tlChildren.push(new Paragraph({ children: [new TextRun({ text: `RFP Issue Date: ${fmtDate(timeline.rfpDate + "T00:00:00")}   |   Go-Live Date: ${fmtDate(timeline.goLiveDate + "T00:00:00")}`, font: "Arial", size: 20, color: "6A6058" })] }));
-    tlChildren.push(new Paragraph({ children: [new TextRun("")] }));
-    tlChildren.push(new Table({
-      width: { size: 9360, type: WidthType.DXA },
-      columnWidths: [3200, 2080, 2080, 2000],
-      rows: [
-        new TableRow({ children: [hCell("Activity", 3200), hCell("Start", 2080), hCell("End", 2080), hCell("Duration (Business Days)", 2000)] }),
-        ...timeline.schedule.map((a, i) => new TableRow({ children: [
-          bCell((a.parallelWith ? "  ↳ " : "") + a.name, 3200, i % 2),
-          bCell(fmtDate(a.startDate), 2080, i % 2),
-          bCell(fmtDate(a.endDate), 2080, i % 2),
-          bCell(String(a.businessDays) + (a.parallelWith ? " (parallel)" : ""), 2000, i % 2),
-        ]}))
-      ]
-    }));
+  const tlRows = [new TableRow({ children: [hCell("Activity", 3400), hCell("Start", 1900), hCell("End", 1900), hCell("Duration (days)", 2160)] })];
+  let rowIdx = 0;
+  for (const g of GROUPS) {
+    const gas = activities.filter(a => a.group === g);
+    if (!gas.length) continue;
+    tlRows.push(new TableRow({ children: [new TableCell({ borders, margins: cm, columnSpan: 4, width: { size: 9360, type: WidthType.DXA }, shading: { fill: "F0EDE8", type: ShadingType.CLEAR }, children: [new Paragraph({ children: [new TextRun({ text: g, bold: true, font: "Arial", size: 20, color: "6B5F52" })] })] })] }));
+    gas.forEach(a => {
+      const shade = rowIdx++ % 2 === 1;
+      const dur = a.startDate && a.endDate ? String(calDaysBetween(a.startDate, a.endDate)) : "—";
+      tlRows.push(new TableRow({ children: [bCell((a.parentId ? "    ↳ " : "") + a.name, 3400, shade), bCell(fmtDate(a.startDate), 1900, shade), bCell(fmtDate(a.endDate), 1900, shade), bCell(dur, 2160, shade)] }));
+    });
   }
 
   const doc = new Document({
@@ -473,8 +472,7 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
         new Paragraph({ children: [new TextRun("")] }),
         new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "2. Functional Requirements", font: "Arial" })] }),
         new Table({
-          width: { size: 9360, type: WidthType.DXA },
-          columnWidths: [1440, 7920],
+          width: { size: 9360, type: WidthType.DXA }, columnWidths: [1440, 7920],
           rows: [
             new TableRow({ children: [hCell("ID", 1440), hCell("Requirement", 7920)] }),
             ...requirements.map((r, i) => new TableRow({ children: [
@@ -487,7 +485,8 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
         new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "3. Questions", font: "Arial" })] }),
         ...qChildren,
         new Paragraph({ children: [new TextRun("")] }),
-        ...tlChildren,
+        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "4. Procurement Timeline", font: "Arial" })] }),
+        new Table({ width: { size: 9360, type: WidthType.DXA }, columnWidths: [3400, 1900, 1900, 2160], rows: tlRows }),
       ]
     }]
   });
@@ -496,31 +495,16 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
   saveAs(blob, `Requirements_${sessionId}.docx`);
 }
 
-// ─── Steps ────────────────────────────────────────────────────────────────────
-const STEPS = ["Scope", "Requirements", "Questions", "Review"];
-const FIVE_WS = [
-  { key: "who", label: "Who", question: "Who will use this system, and who owns this initiative?", placeholder: "e.g. Shop floor technicians will use it daily. The VP of Operations is the project sponsor." },
-  { key: "what", label: "What", question: "What problem are you solving, or what capability are you adding?", placeholder: "e.g. We lose track of tools constantly. We need real-time visibility into tool location and condition." },
-  { key: "where", label: "Where", question: "Where does this fit in your current environment? Any existing systems it must work with?", placeholder: "e.g. Must integrate with our SAP ERP. Deployed across 3 facilities in the US." },
-  { key: "when", label: "When", question: "When is this needed, and what is driving the timeline?", placeholder: "e.g. Must be live by Q3. We have an audit in September that requires this to be in place." },
-  { key: "why", label: "Why", question: "Why is the current state inadequate?", placeholder: "e.g. Everything is tracked on spreadsheets. We lose 10-15 tools per month and have no way to audit." },
-];
-
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function RequirementsAgent() {
   const [sessionId] = useState(genId);
   const [step, setStep] = useState(0);
   const [projectTitle, setProjectTitle] = useState("");
-
-  // Sessions list view
-  const [view, setView] = useState("sessions"); // 'sessions' | 'agent'
+  const [view, setView] = useState("sessions");
   const [sessionsList, setSessionsList] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
-
-  // Persistence
-  const [saveStatus, setSaveStatus] = useState("idle"); // 'idle' | 'saving' | 'saved' | 'error'
+  const [saveStatus, setSaveStatus] = useState("idle");
   const [lastSaved, setLastSaved] = useState(null);
-  const autoSaveTimer = useRef(null);
   const isDirty = useRef(false);
 
   // Scope
@@ -547,14 +531,12 @@ export default function RequirementsAgent() {
   const [qErr, setQErr] = useState("");
 
   // Timeline
-  const [rfpDate, setRfpDate] = useState("");
-  const [goLiveDate, setGoLiveDate] = useState("");
-  const [activities, setActivities] = useState(DEFAULT_ACTIVITIES.map(a => ({ ...a, duration: "" })));
-  const [tlBusy, setTlBusy] = useState(false);
-  const [tlGenerated, setTlGenerated] = useState(false);
-  const [tlErr, setTlErr] = useState("");
-  const [newActivity, setNewActivity] = useState("");
-  const [schedule, setSchedule] = useState([]);
+  const [activities, setActivities] = useState(() => makeDefaultActivities());
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [dragId, setDragId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+  const [newActName, setNewActName] = useState("");
+  const [newActGroup, setNewActGroup] = useState("Pre-RFP");
 
   // Export
   const [exportBusy, setExportBusy] = useState(false);
@@ -562,60 +544,27 @@ export default function RequirementsAgent() {
 
   const allAnswered = FIVE_WS.every(w => answers[w.key].trim().length > 0);
   const isSkipped = (val) => val.trim().toLowerCase() === "skip";
-  const allFlagResponsesFilled = scopeFlags.every(f => {
-    const val = flagResponses[f.criterion] || "";
-    return val.trim().length > 0;
-  });
+  const allFlagResponsesFilled = scopeFlags.every(f => (flagResponses[f.criterion] || "").trim().length > 0);
 
-  // Rebuild schedule whenever activities or dates change
-  useEffect(() => {
-    if (tlGenerated && rfpDate) {
-      setSchedule(buildSchedule(activities, rfpDate));
-    }
-  }, [activities, rfpDate, goLiveDate, tlGenerated]);
+  useEffect(() => { isDirty.current = true; }, [projectTitle, answers, formalScope, requirements, questions, activities]);
 
-  // Load sessions list on mount
   useEffect(() => {
     setSessionsLoading(true);
     loadSessions().then(rows => { setSessionsList(rows); setSessionsLoading(false); });
   }, []);
 
-  // Mark dirty whenever key state changes
-  useEffect(() => { isDirty.current = true; }, [projectTitle, answers, formalScope, requirements, questions, rfpDate, goLiveDate, activities]);
-
-  // Auto-save every 30s if dirty
   useEffect(() => {
-    autoSaveTimer.current = setInterval(() => {
-      if (isDirty.current && formalScope) doSave("draft");
-    }, 30000);
-    return () => clearInterval(autoSaveTimer.current);
-  }, [sessionId, projectTitle, answers, formalScope, requirements, questions, rfpDate, goLiveDate, activities, schedule]);
-
-  const getSessionData = () => ({
-    step, projectTitle, answers, formalScope, scopeApproved,
-    requirements, questions, rfpDate, goLiveDate,
-    activities, tlGenerated, schedule,
+    const t = setInterval(() => { if (isDirty.current && formalScope) doSave("draft"); }, 30000);
+    return () => clearInterval(t);
   });
+
+  const getSessionData = () => ({ step, projectTitle, answers, formalScope, scopeApproved, requirements, questions, activities });
 
   const doSave = async (status = "draft") => {
     setSaveStatus("saving");
-    const ok = await saveSession({
-      id: sessionId,
-      projectTitle: projectTitle || "Untitled",
-      status,
-      data: getSessionData(),
-    });
-    if (ok) {
-      setSaveStatus("saved");
-      setLastSaved(new Date());
-      isDirty.current = false;
-      // Refresh sessions list
-      loadSessions().then(setSessionsList);
-      setTimeout(() => setSaveStatus("idle"), 2500);
-    } else {
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
-    }
+    const ok = await saveSession({ id: sessionId, projectTitle: projectTitle || "Untitled", status, data: getSessionData() });
+    if (ok) { setSaveStatus("saved"); setLastSaved(new Date()); isDirty.current = false; loadSessions().then(setSessionsList); setTimeout(() => setSaveStatus("idle"), 2500); }
+    else { setSaveStatus("error"); setTimeout(() => setSaveStatus("idle"), 3000); }
   };
 
   const doLoadSession = async (id) => {
@@ -629,11 +578,7 @@ export default function RequirementsAgent() {
     if (d.scopeApproved) setScopeApproved(d.scopeApproved);
     if (d.requirements) setRequirements(d.requirements);
     if (d.questions) setQuestions(d.questions);
-    if (d.rfpDate) setRfpDate(d.rfpDate);
-    if (d.goLiveDate) setGoLiveDate(d.goLiveDate);
     if (d.activities) setActivities(d.activities);
-    if (d.tlGenerated) setTlGenerated(d.tlGenerated);
-    if (d.schedule) setSchedule(d.schedule);
     setView("agent");
     setLastSaved(new Date(row.updated_at));
   };
@@ -669,10 +614,7 @@ export default function RequirementsAgent() {
     setScopeBusy(true); setScopeErr("");
     try {
       const activeFlags = scopeFlags.filter(f => !isSkipped(flagResponses[f.criterion] || ""));
-      if (activeFlags.length === 0) {
-        // All flags skipped — just approve as-is
-        setScopeFlags([]); setScopeApproved(true); setScopeBusy(false); return;
-      }
+      if (activeFlags.length === 0) { setScopeFlags([]); setScopeApproved(true); setScopeBusy(false); return; }
       const additions = activeFlags.map(f => `GAP: ${f.issue}\nUSER RESPONSE: ${flagResponses[f.criterion] || ""}`).join("\n\n");
       const refined = await callClaude(P_SCOPE_REFINE, `EXISTING SCOPE:\n${formalScope}\n\nADDITIONAL INFORMATION:\n${additions}`);
       setFormalScope(refined.trim()); setFlagResponses({});
@@ -684,18 +626,12 @@ export default function RequirementsAgent() {
   // ── Requirements ──
   const doGenerateReqs = async () => {
     setReqsBusy(true); setReqsErr("");
-    try {
-      const arr = await callJSON(P_REQS, `Scope: ${formalScope}`);
-      setRequirements(arr);
-    } catch { setReqsErr("Could not generate requirements. Please try again."); }
+    try { const arr = await callJSON(P_REQS, `Scope: ${formalScope}`); setRequirements(arr); }
+    catch { setReqsErr("Could not generate requirements. Please try again."); }
     finally { setReqsBusy(false); }
   };
 
-  const addReq = () => {
-    if (!newReq.trim()) return;
-    setRequirements(p => [...p, { id: `R-C${p.length + 1}`, text: newReq.trim() }]);
-    setNewReq("");
-  };
+  const addReq = () => { if (!newReq.trim()) return; setRequirements(p => [...p, { id: `R-C${p.length + 1}`, text: newReq.trim() }]); setNewReq(""); };
   const deleteReq = (id) => setRequirements(p => p.filter(r => r.id !== id));
   const saveEdit = (id) => { setRequirements(p => p.map(r => r.id === id ? { ...r, text: editText } : r)); setEditId(null); };
 
@@ -711,87 +647,87 @@ export default function RequirementsAgent() {
   };
 
   // ── Timeline ──
-  const doGenerateTimeline = async () => {
-    if (!rfpDate || !goLiveDate) { setTlErr("Please enter both dates before generating."); return; }
-    setTlBusy(true); setTlErr("");
-    try {
-      const actList = activities.map(a => ({ id: a.id, name: a.name }));
-      const userMsg = `RFP Issue Date: ${rfpDate}\nGo-Live Date: ${goLiveDate}\nActivities: ${JSON.stringify(actList)}`;
-      const result = await callJSON(P_TIMELINE, userMsg);
-      const updated = activities.map(a => {
-        const match = result.find(r => r.id === a.id || r.name === a.name);
-        return {
-          ...a,
-          duration: match ? String(match.duration) : "5",
-          parallelWith: match?.parallel_with || null,
-        };
+  const updateActivity = (id, field, val) => {
+    setActivities(prev => {
+      const updated = prev.map(a => {
+        if (a.id !== id) return a;
+        const next = { ...a, [field]: val };
+        // If startDate changes, shift endDate by same offset
+        if (field === "startDate" && a.startDate && a.endDate) {
+          const oldDur = calDaysBetween(a.startDate, a.endDate);
+          next.endDate = addCalDays(val, oldDur);
+        }
+        // If offsetDays changes, recompute endDate
+        if (field === "offsetDays" && a.startDate) {
+          next.endDate = addCalDays(a.startDate, parseInt(val) || 0);
+        }
+        return next;
       });
-      setActivities(updated);
-      setTlGenerated(true);
-      setSchedule(buildSchedule(updated, rfpDate));
-    } catch { setTlErr("Could not generate timeline. Please try again."); }
-    finally { setTlBusy(false); }
+      return updated;
+    });
   };
 
-  const updateActivity = (id, field, val) => {
-    setActivities(p => p.map(a => {
-      if (a.id !== id) return a;
-      if (field === "overrideStart") {
-        // When user sets a start date, compute new duration to keep end date and rebuild
-        return { ...a, overrideStart: val };
-      }
-      if (field === "parallelWith") {
-        return { ...a, parallelWith: val || null };
-      }
-      return { ...a, [field]: val };
-    }));
-  };
-  const deleteActivity = (id) => setActivities(p => p.filter(a => a.id !== id));
+  const deleteActivity = (id) => setActivities(p => p.filter(a => a.id !== id && a.parentId !== id));
+
   const addActivity = () => {
-    if (!newActivity.trim()) return;
-    const newId = "a" + Date.now();
-    setActivities(p => [...p, { id: newId, name: newActivity.trim(), duration: "5" }]);
-    setNewActivity("");
+    if (!newActName.trim()) return;
+    setActivities(p => [...p, { id: uid(), group: newActGroup, parentId: null, name: newActName.trim(), startDate: today(), endDate: addCalDays(today(), 7), offsetDays: 7 }]);
+    setNewActName("");
+  };
+
+  const toggleGroup = (g) => setCollapsedGroups(p => ({ ...p, [g]: !p[g] }));
+
+  // Drag handlers
+  const onDragStart = (id) => setDragId(id);
+  const onDragOver = (e, id) => { e.preventDefault(); setDragOverId(id); };
+  const onDrop = (e, targetId) => {
+    e.preventDefault();
+    if (!dragId || dragId === targetId) { setDragId(null); setDragOverId(null); return; }
+    setActivities(prev => {
+      const arr = [...prev];
+      const fromIdx = arr.findIndex(a => a.id === dragId);
+      const toIdx = arr.findIndex(a => a.id === targetId);
+      if (fromIdx === -1 || toIdx === -1) return prev;
+      // Move group to match target
+      const targetGroup = arr[toIdx].group;
+      const [moved] = arr.splice(fromIdx, 1);
+      moved.group = targetGroup;
+      if (moved.parentId) moved.parentId = null; // reset parent on drag
+      arr.splice(toIdx, 0, moved);
+      return arr;
+    });
+    setDragId(null); setDragOverId(null);
   };
 
   // ── Export ──
   const doExport = async () => {
     setExportBusy(true); setExportErr("");
     try {
-      await buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, timeline: { rfpDate, goLiveDate, schedule } });
+      await buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities });
       await doSave("complete");
-    } catch (e) { setExportErr("Export failed. Please try again."); }
+    } catch { setExportErr("Export failed. Please try again."); }
     finally { setExportBusy(false); }
   };
 
   const pct = (step / (STEPS.length - 1)) * 100;
 
-  // ── Sessions list view ──
+  // ── Sessions view ──
   if (view === "sessions") {
     return (
       <div className="rq-root">
         <div className="rq-header">
-          <div>
-            <div className="rq-logo">Requirements Discovery</div>
-            <div className="rq-title">Procurement Agent</div>
-          </div>
-          <button className="rq-export-btn" onClick={() => setView("agent")}>
-            <Plus size={15} /> New Session
-          </button>
+          <div><div className="rq-logo">Requirements Discovery</div><div className="rq-title">Procurement Agent</div></div>
+          <button className="rq-export-btn" onClick={() => setView("agent")}><Plus size={15} /> New Session</button>
         </div>
         <div className="rq-body">
           <div className="rq-section-label" style={{ marginBottom: 16 }}>Sessions</div>
           {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
           {!sessionsLoading && sessionsList.length === 0 && (
-            <div style={{ textAlign: "center", padding: "48px 0", color: "#8a7e72", fontStyle: "italic", fontSize: 14 }}>
-              No sessions yet. Start a new one.
-            </div>
+            <div style={{ textAlign: "center", padding: "48px 0", color: "#8a7e72", fontStyle: "italic", fontSize: 14 }}>No sessions yet. Start a new one.</div>
           )}
           {!sessionsLoading && sessionsList.length > 0 && (
             <div className="sessions-panel">
-              <div className="sessions-header">
-                <div className="sessions-title">{sessionsList.length} session{sessionsList.length !== 1 ? "s" : ""}</div>
-              </div>
+              <div className="sessions-header"><div className="sessions-title">{sessionsList.length} session{sessionsList.length !== 1 ? "s" : ""}</div></div>
               {sessionsList.map(s => (
                 <div className="session-row" key={s.id} onClick={() => doLoadSession(s.id)}>
                   <div style={{ minWidth: 0 }}>
@@ -811,35 +747,26 @@ export default function RequirementsAgent() {
     );
   }
 
+  // ── Agent view ──
   return (
     <div className="rq-root">
       <div className="rq-header">
-        <div>
-          <div className="rq-logo">Requirements Discovery</div>
-          <div className="rq-title">Procurement Agent</div>
-          <div className="rq-session">{sessionId}</div>
-        </div>
+        <div><div className="rq-logo">Requirements Discovery</div><div className="rq-title">Procurement Agent</div><div className="rq-session">{sessionId}</div></div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <button className="rq-btn-ghost" style={{ color: "#c9b99a", borderColor: "#3a3530" }} onClick={() => setView("sessions")}>
-            <ArrowLeft size={13} /> Sessions
-          </button>
-          <button className="rq-export-btn" onClick={doExport} disabled={step < 3 || exportBusy}>
-            {exportBusy ? <Loader size={15} className="spin" /> : <FileText size={15} />} Export .docx
-          </button>
+          <button className="rq-btn-ghost" style={{ color: "#c9b99a", borderColor: "#3a3530" }} onClick={() => setView("sessions")}><ArrowLeft size={13} /> Sessions</button>
+          <button className="rq-export-btn" onClick={doExport} disabled={step < 3 || exportBusy}>{exportBusy ? <Loader size={15} className="spin" /> : <FileText size={15} />} Export .docx</button>
         </div>
       </div>
 
       <div className="rq-stepper">
         {STEPS.map((label, i) => (
           <div key={label} className={`rq-step ${i === step ? "active" : i < step ? "done" : ""}`}>
-            <div className="rq-step-num">{i < step ? <CheckCircle size={12} /> : i + 1}</div>
-            {label}
+            <div className="rq-step-num">{i < step ? <CheckCircle size={12} /> : i + 1}</div>{label}
           </div>
         ))}
       </div>
 
       <div className="rq-body">
-        {/* Save bar */}
         <div className="sv-bar">
           <div className={`sv-status ${saveStatus === "idle" ? "" : saveStatus}`}>
             {saveStatus === "saving" && <><Loader size={12} className="spin" /> Saving…</>}
@@ -848,9 +775,7 @@ export default function RequirementsAgent() {
             {saveStatus === "idle" && lastSaved && <><Clock size={12} /> Last saved {lastSaved.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</>}
             {saveStatus === "idle" && !lastSaved && <><Clock size={12} /> Not yet saved</>}
           </div>
-          <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}>
-            <Save size={12} /> Save Draft
-          </button>
+          <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}><Save size={12} /> Save Draft</button>
         </div>
 
         <div className="rq-progress">
@@ -868,19 +793,7 @@ export default function RequirementsAgent() {
               <div className="rq-5w-card" key={w.key}>
                 <div className="rq-5w-label">{w.label}</div>
                 <div className="rq-5w-question">{w.question}</div>
-                <textarea
-                  key={`textarea-${w.key}`}
-                  name={w.key}
-                  className="rq-textarea"
-                  placeholder={w.placeholder}
-                  value={answers[w.key]}
-                  onChange={e => {
-                    const key = w.key;
-                    const val = e.target.value;
-                    setAnswers(prev => ({ ...prev, [key]: val }));
-                  }}
-                  rows={2}
-                />
+                <textarea key={`ta-${w.key}`} name={w.key} className="rq-textarea" placeholder={w.placeholder} value={answers[w.key]} onChange={e => { const k = w.key, v = e.target.value; setAnswers(p => ({ ...p, [k]: v })); }} rows={2} />
               </div>
             ))}
             {scopeErr && <div className="rq-error">{scopeErr}</div>}
@@ -890,9 +803,7 @@ export default function RequirementsAgent() {
                 {editingScope ? (
                   <>
                     <textarea className="rq-textarea" value={formalScope} onChange={e => setFormalScope(e.target.value)} rows={5} style={{ marginBottom: 10 }} />
-                    <div className="rq-actions">
-                      <button className="rq-btn-ghost" onClick={async () => { setEditingScope(false); await doEvaluateScope(formalScope); }}><Check size={12} /> Done editing</button>
-                    </div>
+                    <div className="rq-actions"><button className="rq-btn-ghost" onClick={async () => { setEditingScope(false); await doEvaluateScope(formalScope); }}><Check size={12} /> Done editing</button></div>
                   </>
                 ) : (
                   <>
@@ -910,20 +821,10 @@ export default function RequirementsAgent() {
                       const val = flagResponses[flag.criterion] || "";
                       const skipped = isSkipped(val);
                       return (
-                        <div className="rq-flag-card" key={flag.criterion} style={{ opacity: skipped ? 0.5 : 1, transition: "opacity 0.2s" }}>
-                          <div className="rq-flag-title">
-                            <AlertTriangle size={13} /> {flag.criterion}
-                            {skipped && <span style={{ marginLeft: 8, fontFamily: "'Syne', sans-serif", fontSize: 9, color: "#a07820", background: "#f0e0a0", padding: "2px 7px", borderRadius: 3 }}>SKIPPED</span>}
-                          </div>
+                        <div className="rq-flag-card" key={flag.criterion} style={{ opacity: skipped ? 0.5 : 1 }}>
+                          <div className="rq-flag-title"><AlertTriangle size={13} /> {flag.criterion}{skipped && <span style={{ marginLeft: 8, fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#a07820", background: "#f0e0a0", padding: "2px 7px", borderRadius: 3 }}>SKIPPED</span>}</div>
                           {!skipped && <div className="rq-flag-text">{flag.prompt}</div>}
-                          <textarea
-                            className="rq-textarea"
-                            placeholder={`Your response… (type "skip" to dismiss this flag)`}
-                            value={val}
-                            onChange={e => setFlagResponses(p => ({ ...p, [flag.criterion]: e.target.value }))}
-                            rows={skipped ? 1 : 2}
-                            style={{ opacity: skipped ? 0.6 : 1 }}
-                          />
+                          <textarea className="rq-textarea" placeholder={`Your response… (type "skip" to dismiss)`} value={val} onChange={e => setFlagResponses(p => ({ ...p, [flag.criterion]: e.target.value }))} rows={skipped ? 1 : 2} style={{ opacity: skipped ? 0.6 : 1 }} />
                         </div>
                       );
                     })}
@@ -937,9 +838,7 @@ export default function RequirementsAgent() {
                 {scopeApproved && !editingScope && (
                   <div style={{ marginTop: 16 }} className="rq-fade">
                     <div className="rq-scope-approved"><CheckCircle size={16} /> Scope approved — all criteria met</div>
-                    <div className="rq-actions">
-                      <button className="rq-btn-primary" onClick={() => { setStep(1); doGenerateReqs(); }}>Generate Requirements <ChevronRight size={14} /></button>
-                    </div>
+                    <div className="rq-actions"><button className="rq-btn-primary" onClick={() => { setStep(1); doGenerateReqs(); }}>Generate Requirements <ChevronRight size={14} /></button></div>
                   </div>
                 )}
               </div>
@@ -958,13 +857,8 @@ export default function RequirementsAgent() {
         {step === 1 && (
           <div className="rq-fade">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-              <div>
-                <div className="rq-section-label">Functional Requirements</div>
-                <p className="rq-hint" style={{ marginBottom: 0 }}>Edit, delete, or add your own below.</p>
-              </div>
-              <button className="rq-btn-ghost" onClick={doGenerateReqs} disabled={reqsBusy}>
-                {reqsBusy ? <Loader size={12} className="spin" /> : <RefreshCw size={12} />} Regenerate
-              </button>
+              <div><div className="rq-section-label">Functional Requirements</div><p className="rq-hint" style={{ marginBottom: 0 }}>Edit, delete, or add your own below.</p></div>
+              <button className="rq-btn-ghost" onClick={doGenerateReqs} disabled={reqsBusy}>{reqsBusy ? <Loader size={12} className="spin" /> : <RefreshCw size={12} />} Regenerate</button>
             </div>
             {reqsBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />Generating requirements…</div>}
             {reqsErr && <div className="rq-error">{reqsErr}</div>}
@@ -974,10 +868,7 @@ export default function RequirementsAgent() {
                 {editId === req.id ? (
                   <>
                     <input className="rq-input" value={editText} onChange={e => setEditText(e.target.value)} style={{ marginBottom: 10 }} />
-                    <div className="rq-row">
-                      <button className="rq-btn-ghost" onClick={() => saveEdit(req.id)}><Check size={12} /> Save</button>
-                      <button className="rq-btn-ghost" onClick={() => setEditId(null)}><X size={12} /> Cancel</button>
-                    </div>
+                    <div className="rq-row"><button className="rq-btn-ghost" onClick={() => saveEdit(req.id)}><Check size={12} /> Save</button><button className="rq-btn-ghost" onClick={() => setEditId(null)}><X size={12} /> Cancel</button></div>
                   </>
                 ) : (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
@@ -1025,19 +916,14 @@ export default function RequirementsAgent() {
         {step === 3 && (
           <div className="rq-fade">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-              <div>
-                <div className="rq-section-label">Review &amp; Export</div>
-                <p className="rq-hint" style={{ marginBottom: 0 }}>Review everything, build your timeline, then export.</p>
-              </div>
+              <div><div className="rq-section-label">Review &amp; Export</div><p className="rq-hint" style={{ marginBottom: 0 }}>Review everything, adjust the timeline, then export.</p></div>
               <button className="rq-btn-ghost" onClick={() => setStep(2)}>← Back</button>
             </div>
 
-            {/* 1. Scope */}
             <div className="rq-section-label">1. Scope</div>
             <div className="rq-scope-box" style={{ marginBottom: 28 }}>{formalScope}</div>
             <hr className="rq-divider" />
 
-            {/* 2. Requirements */}
             <div className="rq-section-label">2. Functional Requirements ({requirements.length})</div>
             <div style={{ marginBottom: 28 }}>
               {requirements.map(req => (
@@ -1049,7 +935,6 @@ export default function RequirementsAgent() {
             </div>
             <hr className="rq-divider" />
 
-            {/* 3. Questions */}
             <div className="rq-section-label">3. Questions</div>
             <div style={{ marginBottom: 28 }}>
               {requirements.map(req => {
@@ -1062,9 +947,7 @@ export default function RequirementsAgent() {
                         <div className={`rq-badge ${q.type === "open_ended" ? "rq-badge-open" : "rq-badge-mc"}`}>{q.type === "open_ended" ? "Open Ended" : "Multiple Choice"}</div>
                         <div className="rq-q-text">{q.text}</div>
                         {q.type === "multiple_choice" && q.options?.length && (
-                          <div className="rq-mc-opts">
-                            {q.options.map((o, j) => <span key={j} className="rq-mc-opt">{String.fromCharCode(65 + j)}. {o}</span>)}
-                          </div>
+                          <div className="rq-mc-opts">{q.options.map((o, j) => <span key={j} className="rq-mc-opt">{String.fromCharCode(65 + j)}. {o}</span>)}</div>
                         )}
                       </div>
                     ))}
@@ -1076,121 +959,64 @@ export default function RequirementsAgent() {
 
             {/* 4. Timeline */}
             <div className="rq-section-label">4. Procurement Timeline</div>
-            <p className="rq-hint">Enter your RFP issue date and go-live date. The agent will distribute working days across all activities. You can adjust, add, or remove activities before exporting.</p>
+            <p className="rq-hint">Dates cascade automatically — changing a start date shifts the end date by the same offset. Drag activities between groups. Sub-activities are indented under their parent.</p>
 
-            <div className="tl-date-row">
-              <div className="tl-date-card">
-                <div className="tl-date-label">RFP Issue Date</div>
-                <input type="date" className="rq-input" value={rfpDate} onChange={e => setRfpDate(e.target.value)} />
-              </div>
-              <div className="tl-date-card">
-                <div className="tl-date-label">Go-Live Date</div>
-                <input type="date" className="rq-input" value={goLiveDate} onChange={e => setGoLiveDate(e.target.value)} />
-              </div>
+            {/* Column headers */}
+            <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", gap: 6, marginBottom: 6, paddingLeft: 10, paddingRight: 4 }}>
+              <div /><div className="tl-col-hdr">Activity</div><div className="tl-col-hdr">Start</div><div className="tl-col-hdr">End</div><div className="tl-col-hdr">Offset (days)</div><div className="tl-col-hdr">Duration</div><div />
             </div>
 
-            {rfpDate && goLiveDate && (() => {
-              const start = new Date(rfpDate + "T00:00:00");
-              const end = new Date(goLiveDate + "T00:00:00");
-              const calDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
-              const serialDays = activities.filter(a => !a.parallelWith).reduce((s, a) => s + (parseInt(a.duration) || 0), 0);
-              const diff = serialDays - workingDaysBetween(start, end);
-              const overUnder = diff === 0 ? null : diff > 0 ? `${diff} business days over` : `${Math.abs(diff)} business days under`;
+            {GROUPS.map(g => {
+              const gas = activities.filter(a => a.group === g);
+              const collapsed = collapsedGroups[g];
+              const colorClass = g === "Pre-RFP" ? "tl-group-pre" : g === "RFP" ? "tl-group-rfp" : "tl-group-post";
               return (
-                <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-                  <div style={{ background: "#fff", border: "1.5px solid #e3ddd6", borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <div className="tl-col-label">Total Span</div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1714" }}>{calDays} calendar days</div>
-                  </div>
-                  <div style={{ background: "#fff", border: "1.5px solid #e3ddd6", borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <div className="tl-col-label">Serial Business Days</div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1714" }}>{serialDays} days</div>
-                  </div>
-                  {overUnder && (
-                    <div style={{ background: diff > 0 ? "#fff4f0" : "#f0faf4", border: `1.5px solid ${diff > 0 ? "#f0c4b4" : "#a0d8b4"}`, borderRadius: 8, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 2 }}>
-                      <div className="tl-col-label">vs. Available</div>
-                      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: diff > 0 ? "#b85030" : "#2a7a4a" }}>{overUnder}</div>
+                <div key={g} style={{ marginBottom: 16 }}>
+                  <div className="tl-group-header" onClick={() => toggleGroup(g)}>
+                    <div className={`tl-group-label ${colorClass}`} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: GROUP_COLORS[g] }} />
+                      {g} <span style={{ fontWeight: 400, color: "#b0a899", marginLeft: 4 }}>({gas.length})</span>
                     </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Activity list headers */}
-            {activities.length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 90px 100px 90px 32px", gap: 8, marginBottom: 6, alignItems: "center" }}>
-                <div />
-                <div className="tl-col-label">Activity</div>
-                <div className="tl-col-label">Duration (days)</div>
-                <div className="tl-col-label">Start Date</div>
-                <div className="tl-col-label">Parallel with</div>
-                <div />
-              </div>
-            )}
-
-            {activities.map((a, i) => {
-              const sched = schedule.find(s => s.id === a.id);
-              return (
-                <div key={a.id} style={{ display: "grid", gridTemplateColumns: "44px 1fr 90px 100px 90px 32px", gap: 8, marginBottom: 8, alignItems: "center", paddingLeft: a.parallelWith ? 12 : 0, borderLeft: a.parallelWith ? "3px solid #c9b99a" : "3px solid transparent", borderRadius: 2 }}>
-                  {/* Reorder buttons */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <button className="rq-btn-icon" style={{ padding: "3px 8px", fontSize: 10 }} disabled={i === 0} onClick={() => {
-                      const arr = [...activities];
-                      [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
-                      setActivities(arr);
-                    }}>▲</button>
-                    <button className="rq-btn-icon" style={{ padding: "3px 8px", fontSize: 10 }} disabled={i === activities.length - 1} onClick={() => {
-                      const arr = [...activities];
-                      [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
-                      setActivities(arr);
-                    }}>▼</button>
+                    {collapsed ? <ChevronDown size={14} style={{ color: "#b0a899" }} /> : <ChevronUp size={14} style={{ color: "#b0a899" }} />}
                   </div>
-                  {/* Name */}
-                  <input style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "8px 10px", fontFamily: "'Lora', serif", fontSize: 13, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%" }} value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} />
-                  {/* Duration */}
-                  <input type="number" min="1" style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "8px 10px", fontFamily: "'Lora', serif", fontSize: 13, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%", textAlign: "center" }} value={a.duration} onChange={e => updateActivity(a.id, "duration", e.target.value)} placeholder="days" />
-                  {/* Start date */}
-                  <input type="date" style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "7px 8px", fontFamily: "'Lora', serif", fontSize: 12, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%" }}
-                    value={sched ? sched.startDate.toISOString().split("T")[0] : ""}
-                    onChange={e => {
-                      if (!e.target.value) return;
-                      // Override start date by adjusting duration calculation upstream
-                      updateActivity(a.id, "overrideStart", e.target.value);
-                    }}
-                  />
-                  {/* Parallel toggle */}
-                  <select style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "7px 6px", fontFamily: "'Syne', sans-serif", fontSize: 11, color: "#1a1714", background: "#faf9f7", outline: "none", width: "100%" }}
-                    value={a.parallelWith || ""}
-                    onChange={e => updateActivity(a.id, "parallelWith", e.target.value || null)}
-                  >
-                    <option value="">Serial</option>
-                    {activities.filter(o => o.id !== a.id && !o.parallelWith).map(o => (
-                      <option key={o.id} value={o.id}>{o.name.length > 16 ? o.name.slice(0, 16) + "…" : o.name}</option>
-                    ))}
-                  </select>
-                  {/* Delete */}
-                  <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "5px 7px" }}><Trash2 size={12} /></button>
+
+                  {!collapsed && gas.map(a => {
+                    const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : "—";
+                    return (
+                      <div
+                        key={a.id}
+                        className={`tl-act-row${a.parentId ? " is-child" : " is-parent"}${dragId === a.id ? " dragging" : ""}${dragOverId === a.id ? " drag-over" : ""}`}
+                        style={{ gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", display: "grid", gap: 6 }}
+                        draggable
+                        onDragStart={() => onDragStart(a.id)}
+                        onDragOver={(e) => onDragOver(e, a.id)}
+                        onDrop={(e) => onDrop(e, a.id)}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#c9b99a" }}><GripVertical size={14} /></div>
+                        <input className="tl-cell-input" value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} style={{ fontStyle: a.parentId ? "italic" : "normal" }} />
+                        <input type="date" className="tl-cell-input" value={a.startDate || ""} onChange={e => updateActivity(a.id, "startDate", e.target.value)} />
+                        <input type="date" className="tl-cell-input" value={a.endDate || ""} onChange={e => updateActivity(a.id, "endDate", e.target.value)} />
+                        <input type="number" min="0" className="tl-cell-input" style={{ textAlign: "center" }} value={a.offsetDays ?? ""} onChange={e => updateActivity(a.id, "offsetDays", e.target.value)} />
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#8a7e72", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
+                        <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "4px 6px" }}><Trash2 size={11} /></button>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
 
-            <div className="rq-row" style={{ marginTop: 10 }}>
-              <input className="rq-input" placeholder="Add activity…" value={newActivity} onChange={e => setNewActivity(e.target.value)} onKeyDown={e => e.key === "Enter" && addActivity()} />
-              <button className="rq-btn-ghost" onClick={addActivity} disabled={!newActivity.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={13} /> Add</button>
-            </div>
-
-            {tlErr && <div className="rq-error">{tlErr}</div>}
-
-            <div className="rq-actions" style={{ marginTop: 16 }}>
-              <button className="rq-btn-primary" onClick={doGenerateTimeline} disabled={tlBusy || !rfpDate || !goLiveDate}>
-                {tlBusy ? <><Loader size={13} className="spin" /> Generating…</> : <><Calendar size={13} /> {tlGenerated ? "Regenerate Timeline" : "Generate Timeline"}</>}
-              </button>
+            {/* Add activity */}
+            <div className="rq-row" style={{ marginTop: 8, marginBottom: 24 }}>
+              <input className="rq-input" placeholder="New activity name…" value={newActName} onChange={e => setNewActName(e.target.value)} onKeyDown={e => e.key === "Enter" && addActivity()} style={{ flex: 1 }} />
+              <select style={{ border: "1.5px solid #e3ddd6", borderRadius: 6, padding: "10px 10px", fontFamily: "'Syne',sans-serif", fontSize: 11, color: "#1a1714", background: "#faf9f7", outline: "none" }} value={newActGroup} onChange={e => setNewActGroup(e.target.value)}>
+                {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+              <button className="rq-btn-ghost" onClick={addActivity} disabled={!newActName.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={13} /> Add</button>
             </div>
 
             {/* Gantt */}
-            {tlGenerated && schedule.length > 0 && (
-              <GanttChart schedule={schedule} rfpDate={rfpDate} goLiveDate={goLiveDate} />
-            )}
+            <GanttChart activities={activities} />
 
             <hr className="rq-divider" />
             {exportErr && <div className="rq-error">{exportErr}</div>}
