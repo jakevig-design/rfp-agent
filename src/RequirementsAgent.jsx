@@ -917,7 +917,7 @@ export default function RequirementsAgent() {
     finally { setExportBusy(false); }
   };
 
-const pct = (step / 3) * 100;
+  const pct = (step / (STEPS.length - 1)) * 100;
 
   // ── Sessions view ──
   if (view === "sessions") {
@@ -974,7 +974,6 @@ const pct = (step / 3) * 100;
 
   // ── Agent view ──
   const stepLabels = ["Scope", "Requirements", "Questions", "Review"];
- const STEPS = stepLabels;
   const answeredReqs = Object.keys(questions).length;
   const openQ = Object.values(questions).flat().filter(q => q.type === "open_ended").length;
   const mcQ = Object.values(questions).flat().filter(q => q.type === "multiple_choice").length;
@@ -1032,7 +1031,7 @@ const pct = (step / 3) * 100;
 
           <div className="rq-content">
             {/* Metric cards — shown from step 1 onwards */}
-            {step >= 1 && (
+            {!marketView && step >= 1 && (
               <div className="rq-metrics">
                 <div className="rq-metric">
                   <div className="rq-metric-label">Requirements</div>
@@ -1161,7 +1160,7 @@ const pct = (step / 3) * 100;
             )}
 
             {/* ── Step 0: Scope ── */}
-            {step === 0 && (
+            {!marketView && step === 0 && (
               <div className="rq-fade">
                 <div className="rq-section-label" style={{ marginBottom: 6 }}>Project title</div>
                 <input className="rq-input" style={{ marginBottom: 22 }} placeholder="e.g. Enterprise Tool Tracking System" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} />
@@ -1231,7 +1230,7 @@ const pct = (step / 3) * 100;
             )}
 
             {/* ── Step 1: Requirements ── */}
-            {step === 1 && (
+            {!marketView && step === 1 && (
               <div className="rq-fade">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
                   <p className="rq-hint" style={{ marginBottom: 0 }}>Edit, delete, or add your own below.</p>
@@ -1274,7 +1273,7 @@ const pct = (step / 3) * 100;
             )}
 
             {/* ── Step 2: Questions ── */}
-            {step === 2 && (
+            {!marketView && step === 2 && (
               <div className="rq-fade">
                 <p className="rq-hint">The agent will generate 2–3 follow-up questions per requirement — a mix of open-ended and multiple choice.</p>
                 {qErr && <div className="rq-error">{qErr}</div>}
@@ -1314,7 +1313,7 @@ const pct = (step / 3) * 100;
             )}
 
             {/* ── Step 3: Review ── */}
-            {step === 3 && (
+            {!marketView && step === 3 && (
               <div className="rq-fade">
                 <div className="rq-section-label">1. Scope</div>
                 <div className="rq-scope-box" style={{ marginBottom: 24 }}>{formalScope}</div>
