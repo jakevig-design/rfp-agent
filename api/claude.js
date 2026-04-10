@@ -1146,7 +1146,7 @@ export default function RequirementsAgent() {
                 {!formalScope || !scopeApproved ? (
                   <div style={{ textAlign: "center", padding: "48px 0" }}>
                     <div style={{ color: "#607a8a", fontSize: 14, fontStyle: "italic", marginBottom: 16 }}>Complete and approve the project scope first.</div>
-                    <button className="rq-btn-primary" onClick={() => { setStep(0); setView("agent"); }}>Go to Scope <ChevronRight size={13} /></button>
+                    <button className="rq-btn-primary" onClick={() => { setView("scope"); }}>Go to Scope <ChevronRight size={13} /></button>
                   </div>
                 ) : (
                   <>
@@ -1284,6 +1284,13 @@ export default function RequirementsAgent() {
                 </div>
                 {reqsBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />Generating requirements…</div>}
                 {reqsErr && <div className="rq-error">{reqsErr}</div>}
+                {!reqsBusy && requirements.length === 0 && !reqsErr && (
+                  <div className="rq-actions" style={{ marginBottom: 18 }}>
+                    <button className="rq-btn-primary" onClick={doGenerateReqs} disabled={!formalScope}>
+                      {!formalScope ? "Complete scope first" : <>Generate requirements <ChevronRight size={13} /></>}
+                    </button>
+                  </div>
+                )}
                 {!reqsBusy && requirements.map(req => (
                   <div className="rq-card rq-fade" key={req.id}>
                     <div className="rq-req-id">{req.id}</div>
@@ -1325,7 +1332,9 @@ export default function RequirementsAgent() {
                 {qBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />Generating questions for {requirements.length} requirement{requirements.length !== 1 ? "s" : ""}…</div>}
                 {!qBusy && Object.keys(questions).length === 0 && (
                   <div className="rq-actions">
-                    <button className="rq-btn-primary" onClick={doGenerateQuestions}>Generate questions <ChevronRight size={13} /></button>
+                    <button className="rq-btn-primary" onClick={doGenerateQuestions} disabled={requirements.length === 0}>
+                      {requirements.length === 0 ? "Add requirements first" : <>Generate questions <ChevronRight size={13} /></>}
+                    </button>
                   </div>
                 )}
                 {!qBusy && Object.keys(questions).length > 0 && (
