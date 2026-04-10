@@ -917,7 +917,7 @@ export default function RequirementsAgent() {
     finally { setExportBusy(false); }
   };
 
-const pct = (step / (stepLabels.length - 1)) * 100;
+const pct = (step / 3) * 100;
 
   // ── Sessions view ──
   if (view === "sessions") {
