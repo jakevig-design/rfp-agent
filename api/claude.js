@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     const buffers = [];
     for await (const chunk of req) buffers.push(chunk);
     const raw = Buffer.concat(buffers).toString();
-    const { system, user, useWebSearch } = JSON.parse(raw);
+    const { system, user, useWebSearch, model: modelOverride } = JSON.parse(raw);
 
     if (!user) {
       return res.status(400).json({ error: { message: 'Missing user message' } });
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     // ── Standard call (no web search) ──
     if (!useWebSearch) {
       const { data, status, ok } = await callAnthropic(baseHeaders, {
-        model: 'claude-sonnet-4-5',
+        model: modelOverride || 'claude-sonnet-4-5',
         max_tokens: 4000,
         system: system ?? '',
         messages: [{ role: 'user', content: user }],
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
     // ── Two-step market research ──
 
-    // Step 1: Web search — gather vendor intel as prose
+    // Step 1: Web search — use Haiku (higher rate limits, sufficient for research)
     const searchSystem = `You are a procurement analyst researching software vendors. 
 Use web search to find 6-8 relevant vendors for the described procurement need.
 For each vendor find: full name, software category, G2 rating and review count if available, 
@@ -76,8 +76,8 @@ Do not format as JSON yet. Just research and describe what you find.`;
     const { data: searchData, status: searchStatus, ok: searchOk } = await callAnthropic(
       { ...baseHeaders, 'anthropic-beta': 'web-search-2025-03-05' },
       {
-        model: 'claude-sonnet-4-5',
-        max_tokens: 6000,
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4000,
         system: searchSystem,
         messages: [{ role: 'user', content: user }],
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
@@ -108,7 +108,7 @@ Each object must have exactly these fields:
 For requirementsMatch and requirementsTotal, use the requirements list provided to estimate fit.
 matchConfidence is high, medium, or low.`;
 
-    const formatUser = `Here is my vendor research:\n\n${researchText}\n\n---\nOriginal procurement context:\n${user}`;
+    const formatUser = `Convert these vendor research notes to a JSON array. Use the requirements count from the research to estimate requirementsMatch.\n\n${researchText}`;
 
     const { data: formatData, status: formatStatus, ok: formatOk } = await callAnthropic(
       baseHeaders,
