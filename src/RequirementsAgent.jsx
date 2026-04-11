@@ -152,7 +152,7 @@ _style.textContent = `
   .tl-group-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#1f2e3a;border-radius:6px;margin-bottom:6px;cursor:pointer;user-select:none;border:1px solid rgba(255,255,255,0.07)}
   .tl-group-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
   .tl-group-pre{color:#5DCAA5}
-  .tl-group-rfp{color:#EF9F27}
+  .tl-group-rfx{color:#EF9F27}
   .tl-group-post{color:#a8c8d8}
   .tl-act-row{display:grid;gap:6px;align-items:center;margin-bottom:5px;padding:7px 10px;background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:6px;transition:border-color .15s}
   .tl-act-row:hover{border-color:rgba(93,202,165,0.3)}
@@ -256,7 +256,7 @@ function today() { return new Date().toISOString().split("T")[0]; }
 // ─── Default activities ───────────────────────────────────────────────────────
 // offsetDays: n+ days after startDate for endDate default
 // parentId: sub-activity of another
-// group: Pre-RFP | RFP | Post-RFP
+// group: Pre-RFx | RFx | Post-RFx
 function makeDefaultActivities(startDate) {
   const t = startDate || today();
 
@@ -291,34 +291,34 @@ function makeDefaultActivities(startDate) {
   const implEnd = d(implStart, 45);
 
   return [
-    // ── Pre-RFP ──
-    { id: "a1",  group: "Pre-RFP",  parentId: null, name: "Draft Scope & Requirements",           startDate: scopeStart,  endDate: scopeEnd,     offsetDays: 7,  startOffsetDays: 0 },
-    { id: "a2",  group: "Pre-RFP",  parentId: null, name: "Execute NDA",                           startDate: scopeStart,  endDate: issueStart,   offsetDays: calDaysBetween(scopeStart, issueStart), startOffsetDays: 0 },
-    { id: "a3",  group: "Pre-RFP",  parentId: null, name: "Market Analysis",                       startDate: scopeStart,  endDate: marketEnd,    offsetDays: 14, startOffsetDays: 0 },
-    { id: "a4",  group: "Pre-RFP",  parentId: null, name: "Vendor Identification",                 startDate: scopeStart,  endDate: vendorEnd,    offsetDays: calDaysBetween(scopeStart, vendorEnd), startOffsetDays: 0 },
-    { id: "a5",  group: "Pre-RFP",  parentId: null, name: "Draft RFP",                             startDate: vendorEnd,   endDate: issueStart,   offsetDays: calDaysBetween(vendorEnd, issueStart), startOffsetDays: calDaysBetween(t, vendorEnd) },
-    { id: "a5a", group: "Pre-RFP",  parentId: "a5", name: "Finalize Scope & Requirements",         startDate: vendorEnd,   endDate: finScopeEnd,  offsetDays: 7,  startOffsetDays: calDaysBetween(t, vendorEnd) },
-    { id: "a5b", group: "Pre-RFP",  parentId: "a5", name: "Establish Evaluation Team, Criteria & Weighting", startDate: vendorEnd, endDate: evalTeamEnd, offsetDays: 14, startOffsetDays: calDaysBetween(t, vendorEnd) },
-    // ── RFP ──
-    { id: "a6",  group: "RFP",      parentId: null, name: "Issue RFP",                             startDate: issueStart,  endDate: issueEnd,     offsetDays: 14, startOffsetDays: calDaysBetween(t, issueStart) },
-    { id: "a6a", group: "RFP",      parentId: "a6", name: "Vendors Submit Clarifying Questions",   startDate: d(issueStart, 4), endDate: vendorQEnd, offsetDays: 2, startOffsetDays: calDaysBetween(t, d(issueStart, 4)) },
-    { id: "a6b", group: "RFP",      parentId: "a6", name: "Respond to Vendor Questions",           startDate: vendorQEnd,  endDate: respondEnd,   offsetDays: 3,  startOffsetDays: calDaysBetween(t, vendorQEnd) },
-    { id: "a6c", group: "RFP",      parentId: "a6", name: "Submit RFP Response",                   startDate: submitStart, endDate: submitEnd,    offsetDays: 7,  startOffsetDays: calDaysBetween(t, submitStart) },
-    { id: "a7",  group: "RFP",      parentId: null, name: "Evaluate RFP",                          startDate: evalStart,   endDate: evalTechEnd,  offsetDays: calDaysBetween(evalStart, evalTechEnd), startOffsetDays: calDaysBetween(t, evalStart) },
-    { id: "a7a", group: "RFP",      parentId: "a7", name: "Evaluate Responses",                    startDate: evalStart,   endDate: evalRespEnd,  offsetDays: 8,  startOffsetDays: calDaysBetween(t, evalStart) },
-    { id: "a7b", group: "RFP",      parentId: "a7", name: "Shortlist (Recommendation to Leadership)", startDate: d(evalRespEnd, 1), endDate: shortlistEnd, offsetDays: 5, startOffsetDays: calDaysBetween(t, d(evalRespEnd, 1)) },
-    { id: "a7c", group: "RFP",      parentId: "a7", name: "Technical Evaluation (Demo / POC)",     startDate: techStart,   endDate: techEnd,      offsetDays: 28, startOffsetDays: calDaysBetween(t, techStart) },
-    { id: "a7d", group: "RFP",      parentId: "a7", name: "Evaluate Technical Evaluation",         startDate: techStart,   endDate: evalTechEnd,  offsetDays: 5,  startOffsetDays: calDaysBetween(t, techStart) },
-    // ── Post-RFP ──
-    { id: "a8",  group: "Post-RFP", parentId: null, name: "Internal Alignment & Confirm Budget",   startDate: alignStart,  endDate: alignEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
-    { id: "a9",  group: "Post-RFP", parentId: null, name: "Final Recommendation",                  startDate: finalStart,  endDate: finalEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
-    { id: "a10", group: "Post-RFP", parentId: null, name: "Negotiate Contract",                    startDate: negoStart,   endDate: negoEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, negoStart) },
-    { id: "a11", group: "Post-RFP", parentId: null, name: "Implementation",                        startDate: implStart,   endDate: implEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
+    // ── Pre-RFx ──
+    { id: "a1",  group: "Pre-RFx",  parentId: null, name: "Draft Scope & Requirements",           startDate: scopeStart,  endDate: scopeEnd,     offsetDays: 7,  startOffsetDays: 0 },
+    { id: "a2",  group: "Pre-RFx",  parentId: null, name: "Execute NDA",                           startDate: scopeStart,  endDate: issueStart,   offsetDays: calDaysBetween(scopeStart, issueStart), startOffsetDays: 0 },
+    { id: "a3",  group: "Pre-RFx",  parentId: null, name: "Market Analysis",                       startDate: scopeStart,  endDate: marketEnd,    offsetDays: 14, startOffsetDays: 0 },
+    { id: "a4",  group: "Pre-RFx",  parentId: null, name: "Vendor Identification",                 startDate: scopeStart,  endDate: vendorEnd,    offsetDays: calDaysBetween(scopeStart, vendorEnd), startOffsetDays: 0 },
+    { id: "a5",  group: "Pre-RFx",  parentId: null, name: "Draft RFx",                             startDate: vendorEnd,   endDate: issueStart,   offsetDays: calDaysBetween(vendorEnd, issueStart), startOffsetDays: calDaysBetween(t, vendorEnd) },
+    { id: "a5a", group: "Pre-RFx",  parentId: "a5", name: "Finalize Scope & Requirements",         startDate: vendorEnd,   endDate: finScopeEnd,  offsetDays: 7,  startOffsetDays: calDaysBetween(t, vendorEnd) },
+    { id: "a5b", group: "Pre-RFx",  parentId: "a5", name: "Establish Evaluation Team, Criteria & Weighting", startDate: vendorEnd, endDate: evalTeamEnd, offsetDays: 14, startOffsetDays: calDaysBetween(t, vendorEnd) },
+    // ── RFx ──
+    { id: "a6",  group: "RFx",      parentId: null, name: "Issue RFx",                             startDate: issueStart,  endDate: issueEnd,     offsetDays: 14, startOffsetDays: calDaysBetween(t, issueStart) },
+    { id: "a6a", group: "RFx",      parentId: "a6", name: "Vendors Submit Clarifying Questions",   startDate: d(issueStart, 4), endDate: vendorQEnd, offsetDays: 2, startOffsetDays: calDaysBetween(t, d(issueStart, 4)) },
+    { id: "a6b", group: "RFx",      parentId: "a6", name: "Respond to Vendor Questions",           startDate: vendorQEnd,  endDate: respondEnd,   offsetDays: 3,  startOffsetDays: calDaysBetween(t, vendorQEnd) },
+    { id: "a6c", group: "RFx",      parentId: "a6", name: "Submit RFx Response",                   startDate: submitStart, endDate: submitEnd,    offsetDays: 7,  startOffsetDays: calDaysBetween(t, submitStart) },
+    { id: "a7",  group: "RFx",      parentId: null, name: "Evaluate RFx",                          startDate: evalStart,   endDate: evalTechEnd,  offsetDays: calDaysBetween(evalStart, evalTechEnd), startOffsetDays: calDaysBetween(t, evalStart) },
+    { id: "a7a", group: "RFx",      parentId: "a7", name: "Evaluate Responses",                    startDate: evalStart,   endDate: evalRespEnd,  offsetDays: 8,  startOffsetDays: calDaysBetween(t, evalStart) },
+    { id: "a7b", group: "RFx",      parentId: "a7", name: "Shortlist (Recommendation to Leadership)", startDate: d(evalRespEnd, 1), endDate: shortlistEnd, offsetDays: 5, startOffsetDays: calDaysBetween(t, d(evalRespEnd, 1)) },
+    { id: "a7c", group: "RFx",      parentId: "a7", name: "Technical Evaluation (Demo / POC)",     startDate: techStart,   endDate: techEnd,      offsetDays: 28, startOffsetDays: calDaysBetween(t, techStart) },
+    { id: "a7d", group: "RFx",      parentId: "a7", name: "Evaluate Technical Evaluation",         startDate: techStart,   endDate: evalTechEnd,  offsetDays: 5,  startOffsetDays: calDaysBetween(t, techStart) },
+    // ── Post-RFx ──
+    { id: "a8",  group: "Post-RFx", parentId: null, name: "Internal Alignment & Confirm Budget",   startDate: alignStart,  endDate: alignEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
+    { id: "a9",  group: "Post-RFx", parentId: null, name: "Final Recommendation",                  startDate: finalStart,  endDate: finalEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
+    { id: "a10", group: "Post-RFx", parentId: null, name: "Negotiate Contract",                    startDate: negoStart,   endDate: negoEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, negoStart) },
+    { id: "a11", group: "Post-RFx", parentId: null, name: "Implementation",                        startDate: implStart,   endDate: implEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
   ];
 }
 
-const GROUPS = ["Pre-RFP", "RFP", "Post-RFP"];
-const GROUP_COLORS = { "Pre-RFP": "#2e5984", "RFP": "#3a6a52", "Post-RFP": "#a05828" };
+const GROUPS = ["Pre-RFx", "RFx", "Post-RFx"];
+const GROUP_COLORS = { "Pre-RFx": "#2e5984", "RFx": "#3a6a52", "Post-RFx": "#a05828" };
 
 // ─── Gantt ────────────────────────────────────────────────────────────────────
 function GanttChart({ activities }) {
@@ -573,7 +573,32 @@ RULES:
 Return ONLY valid JSON, no markdown:
 [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}]`;
 
-const P_MARKET = `You are a procurement analyst. Given a project scope and functional requirements, research relevant software vendors and return your findings as vendor descriptions. Focus on vendors that are realistic fits for the described need. For each vendor note their name, category, G2 rating if available, review count, a brief description, and G2 URL.`;
+const P_MARKET = `You are a senior procurement analyst with deep knowledge of enterprise software markets across all industries and categories — from mainstream SaaS (HR, ERP, CRM) to niche technical software (power system simulation, SCADA, CAD, compliance tools, industry-specific platforms).
+
+Given a project scope and functional requirements, identify 5-8 vendors that are realistic fits. Use your knowledge of the market to surface the right vendors for the specific category — do not default to generic enterprise software if the scope describes a specialized need.
+
+RULES:
+- Match vendors to the actual procurement category described in the scope
+- Include both well-known and niche vendors if they are genuinely relevant
+- For G2 ratings, use your best knowledge — if uncertain, use "N/A"
+- requirementsMatch is your estimate of how many requirements this vendor likely meets
+- matchConfidence is high, medium, or low based on how well you know this vendor's capabilities
+
+OUTPUT: Respond with ONLY a valid JSON array. Start with [ and end with ]. No text before or after. No markdown. No explanation.
+
+[
+  {
+    "name": "Vendor Name",
+    "category": "Software category",
+    "g2Rating": "4.2/5 or N/A",
+    "g2ReviewCount": "1,200 reviews or N/A",
+    "description": "One sentence on what this vendor does and why it fits this scope.",
+    "requirementsMatch": 4,
+    "requirementsTotal": 6,
+    "matchConfidence": "high",
+    "g2Url": "https://www.g2.com/products/vendor-name or null"
+  }
+]`;
 const FIVE_WS = [
   { key: "who", label: "Who", question: "Who will use this system, and who owns this initiative?", placeholder: "e.g. Shop floor technicians will use it daily. The VP of Operations is the project sponsor." },
   { key: "what", label: "What", question: "What problem are you solving, or what capability are you adding?", placeholder: "e.g. We lose track of tools constantly. We need real-time visibility into tool location and condition." },
@@ -688,7 +713,7 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
   });
 
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, `Requirements_${sessionId}.docx`);
+  saveAs(blob, `BuyRight_${sessionId}.docx`);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -733,11 +758,11 @@ export default function RequirementsAgent() {
   const [rfpStart, setRfpStart] = useState(today);
   const [goLive, setGoLive] = useState(() => addCalDays(today(), 180));
   const [activities, setActivities] = useState(() => makeDefaultActivities(today()));
-  const [collapsedGroups, setCollapsedGroups] = useState({ "Pre-RFP": false, "RFP": false, "Post-RFP": false });
+  const [collapsedGroups, setCollapsedGroups] = useState({ "Pre-RFx": false, "RFx": false, "Post-RFx": false });
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
   const [newActName, setNewActName] = useState("");
-  const [newActGroup, setNewActGroup] = useState("Pre-RFP");
+  const [newActGroup, setNewActGroup] = useState("Pre-RFx");
 
   // Export
   const [exportBusy, setExportBusy] = useState(false);
@@ -1027,9 +1052,11 @@ export default function RequirementsAgent() {
   const doMarketResearch = async () => {
     setMarketBusy(true); setMarketErr("");
     try {
-      const reqList = requirements.map(r => r.text).join("\n");
-      const userMsg = `Project scope:\n${formalScope}\n\nFunctional requirements (${requirements.length} total):\n${reqList}`;
-      const result = await callJSON(P_MARKET, userMsg, true);
+      const reqList = requirements.length > 0
+        ? `\n\nFunctional requirements (${requirements.length} total):\n${requirements.map(r => r.text).join("\n")}`
+        : "";
+      const userMsg = `Project scope:\n${formalScope}${reqList}`;
+      const result = await callJSON(P_MARKET, userMsg, false);
       setVendors(result);
       setVendorStatus({});
     } catch (e) {
@@ -1066,7 +1093,7 @@ export default function RequirementsAgent() {
     market: "Market Research", timeline: "Timeline", summary: "Summary",
   };
   const topbarSubs = {
-    splash: "RFxBOT", sessions: "All drafts",
+    splash: "BuyRight", sessions: "All drafts",
     scope: projectTitle || "Untitled project",
     requirements: projectTitle || "Untitled project",
     questions: projectTitle || "Untitled project",
@@ -1082,7 +1109,8 @@ export default function RequirementsAgent() {
         <div className="rq-shell">
           <div className="rq-sidebar">
             <div className="rq-sidebar-logo" style={{ cursor: "pointer" }} onClick={() => setView("splash")}>
-              <div className="rq-sidebar-brand">RFxBOT</div>
+              <div className="rq-sidebar-brand">BuyRight</div>
+              <div className="rq-sidebar-title">BuyRight</div>
             </div>
             <div className="rq-nav">
               <div className="rq-nav-item active"><div className="rq-nav-num" style={{ fontSize: 8 }}>⌂</div>Home</div>
@@ -1093,12 +1121,12 @@ export default function RequirementsAgent() {
             <div className="rq-topbar">
               <div className="rq-topbar-left">
                 <div className="rq-topbar-title">Home</div>
-                <div className="rq-topbar-sub">RFxBOT</div>
+                <div className="rq-topbar-sub">BuyRight</div>
               </div>
             </div>
             <div className="rq-content" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ textAlign: "center", maxWidth: 480 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 12 }}>RFxBOT</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 12 }}>BuyRight</div>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#d8eaf2", marginBottom: 4, lineHeight: 1.15 }}>Don't Be Sold On Value.</div>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#5DCAA5", marginBottom: 20, lineHeight: 1.15 }}>Buy Based On Needs.</div>
                 <div style={{ fontFamily: "'Lora',serif", fontSize: 15, color: "#607a8a", lineHeight: 1.7, marginBottom: 36 }}>Before you fill out their form, build your list. 15 minutes of prep buys you what you need, not what they want to sell.</div>
@@ -1120,8 +1148,8 @@ export default function RequirementsAgent() {
   const sidebarNav = (
     <div className="rq-sidebar">
       <div className="rq-sidebar-logo" style={{ cursor: "pointer" }} onClick={() => setView("splash")}>
-        <div className="rq-sidebar-brand">RFx</div>
-        <div className="rq-sidebar-title">BOTt</div>
+        <div className="rq-sidebar-brand">BuyRight</div>
+        <div className="rq-sidebar-title">BuyRight</div>
         <div className="rq-sidebar-session">{sessionId}</div>
       </div>
       <div className="rq-nav">
@@ -1213,7 +1241,7 @@ export default function RequirementsAgent() {
                 <p className="rq-hint">Set your start and go-live dates — all activity dates cascade automatically.</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 22 }}>
                   <div style={{ background: "#1b2530", border: "1px solid rgba(93,202,165,0.2)", borderRadius: 8, padding: "14px 16px" }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 6 }}>RFP Start Date</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 6 }}>RFx Start Date</div>
                     <input type="date" className="rq-input" value={rfpStart} onChange={e => handleRfpStartChange(e.target.value)} />
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#3a5060", marginTop: 5 }}>Drives all activity dates</div>
                   </div>
@@ -1229,7 +1257,7 @@ export default function RequirementsAgent() {
                 {GROUPS.map(g => {
                   const gas = activities.filter(a => a.group === g);
                   const collapsed = collapsedGroups[g];
-                  const colorClass = g === "Pre-RFP" ? "tl-group-pre" : g === "RFP" ? "tl-group-rfp" : "tl-group-post";
+                  const colorClass = g === "Pre-RFx" ? "tl-group-pre" : g === "RFx" ? "tl-group-rfx" : "tl-group-post";
                   return (
                     <div key={g} style={{ marginBottom: 14 }}>
                       <div className="tl-group-header" onClick={() => toggleGroup(g)}>
@@ -1280,7 +1308,7 @@ export default function RequirementsAgent() {
                   </div>
                 ) : (
                   <>
-                    <p className="rq-hint">AI will search G2, Gartner, and vendor websites to identify 5–8 relevant vendors and score them against your requirements.</p>
+                    <p className="rq-hint">AI will identify 5–8 relevant vendors based on your scope and requirements — works for mainstream and niche categories alike.</p>
                     {vendors.length > 0 && (
                       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
                         <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Vendors found</div><div className="rq-metric-val">{vendors.length}</div></div>
@@ -1294,7 +1322,7 @@ export default function RequirementsAgent() {
                       </button>
                     </div>
                     {marketErr && <div className="rq-error">{marketErr}</div>}
-                    {marketBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 10 }} /><br />Searching G2, Gartner, and vendor sites…</div>}
+                    {marketBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 10 }} /><br />Identifying vendors for this scope…</div>}
                     {!marketBusy && vendors.map(v => {
                       const status = vendorStatus[v.name];
                       const matchPct = v.requirementsTotal > 0 ? v.requirementsMatch / v.requirementsTotal : 0;
@@ -1575,7 +1603,7 @@ export default function RequirementsAgent() {
                   <div style={{ marginBottom: 24 }}>
                     <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
                       <div style={{ background: "#1b2530", border: "1px solid rgba(93,202,165,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 4 }}>RFP Start</div>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 4 }}>RFx Start</div>
                         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#d8eaf2" }}>{new Date(rfpStart + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
                       </div>
                       <div style={{ background: "#1b2530", border: "1px solid rgba(239,159,39,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
