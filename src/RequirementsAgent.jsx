@@ -1426,14 +1426,10 @@ Return ONLY valid JSON, no markdown, no explanation:
             {/* ── Market ── */}
             {view === "market" && (
               <div className="rq-fade">
-                {!formalScope || !scopeApproved ? (
+                {!formalScope ? (
                   <div style={{ textAlign: "center", padding: "48px 0" }}>
-                    <div style={{ color: "#6B7280", fontSize: 14, fontStyle: "italic", marginBottom: 16 }}>
-                      {!formalScope ? "Start by completing your project scope." : "Your scope isn't finished yet — complete the remaining steps on the Scope page."}
-                    </div>
-                    <button className="rq-btn-primary" onClick={() => setView("scope")}>
-                      {!formalScope ? <>Start scope <ChevronRight size={13} /></> : <>Complete scope <ChevronRight size={13} /></>}
-                    </button>
+                    <div style={{ color: "#6B7280", fontSize: 14, fontStyle: "italic", marginBottom: 16 }}>Start by completing your project scope.</div>
+                    <button className="rq-btn-primary" onClick={() => setView("scope")}>Start scope <ChevronRight size={13} /></button>
                   </div>
                 ) : (
                   <>
