@@ -177,6 +177,19 @@ _style.textContent = `
   .vendor-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#d8eaf2;margin-bottom:2px}
   .vendor-category{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#607a8a;margin-bottom:8px}
   .vendor-meta{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .vendor-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+  .vendor-badge{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:3px;white-space:nowrap}
+  .vb-saas{background:rgba(93,202,165,0.12);color:#5DCAA5;border:1px solid rgba(93,202,165,0.25)}
+  .vb-onprem{background:rgba(239,159,39,0.1);color:#EF9F27;border:1px solid rgba(239,159,39,0.25)}
+  .vb-hybrid{background:rgba(168,200,216,0.1);color:#a8c8d8;border:1px solid rgba(168,200,216,0.2)}
+  .vb-low{background:rgba(93,202,165,0.1);color:#5DCAA5;border:1px solid rgba(93,202,165,0.2)}
+  .vb-medium{background:rgba(239,159,39,0.1);color:#EF9F27;border:1px solid rgba(239,159,39,0.2)}
+  .vb-high{background:rgba(184,80,80,0.1);color:#e07070;border:1px solid rgba(184,80,80,0.2)}
+  .vb-startup{background:rgba(93,202,165,0.08);color:#5DCAA5;border:1px solid rgba(93,202,165,0.15)}
+  .vb-growth{background:rgba(93,202,165,0.12);color:#5DCAA5;border:1px solid rgba(93,202,165,0.25)}
+  .vb-established{background:rgba(168,200,216,0.1);color:#a8c8d8;border:1px solid rgba(168,200,216,0.2)}
+  .vb-legacy{background:rgba(96,122,138,0.15);color:#607a8a;border:1px solid rgba(96,122,138,0.25)}
+  .vb-neutral{background:rgba(255,255,255,0.06);color:#607a8a;border:1px solid rgba(255,255,255,0.1)}
   .vendor-rating{font-family:'JetBrains Mono',monospace;font-size:11px;color:#EF9F27;display:flex;align-items:center;gap:4px}
   .vendor-reviews{font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a5060}
   .vendor-desc{font-size:12px;color:#a8c8d8;line-height:1.5;margin-bottom:10px}
@@ -588,11 +601,16 @@ OUTPUT: Respond with ONLY a valid JSON array. Start with [ and end with ]. No te
 
 [
   {
-    "name": "Vendor Name",
+    "name": "Vendor Name — Product Name (e.g. 'Manitoba Hydro International — PSCAD' or 'Workday — HCM' or 'SAP — Ariba'). If vendor and product are the same, just use the product name.",
     "category": "Software category",
     "g2Rating": "4.2/5 or N/A",
     "g2ReviewCount": "1,200 reviews or N/A",
     "description": "One sentence on what this vendor does and why it fits this scope.",
+    "deployment": "SaaS" or "On-Prem" or "Hybrid",
+    "pricingModel": "Per Seat" or "Enterprise License" or "Usage-Based" or "Flat Annual" or "Module-Based",
+    "implementationComplexity": "Low" or "Medium" or "High",
+    "marketPresence": "Startup" or "Growth" or "Established" or "Legacy",
+    "vendorUrl": "https://vendor-official-website.com or null",
     "requirementsMatch": 4,
     "requirementsTotal": 6,
     "matchConfidence": "high",
@@ -839,6 +857,7 @@ export default function RequirementsAgent() {
     const row = await loadSession(id);
     if (!row?.data) return;
     const d = row.data;
+    setSessionId(id);
     if (d.step !== undefined) setStep(d.step);
     if (d.projectTitle) setProjectTitle(d.projectTitle);
     if (d.answers) setAnswers(d.answers);
@@ -1308,12 +1327,12 @@ export default function RequirementsAgent() {
                   </div>
                 ) : (
                   <>
-                    <p className="rq-hint">AI will identify 5–8 relevant vendors based on your scope and requirements — works for mainstream and niche categories alike.</p>
+                    <p className="rq-hint">The agent identifies relevant vendors based on your scope — mainstream and niche categories alike. Ratings and requirements fit are the agent's assessment based on its knowledge of each vendor. Verify shortlisted vendors on G2 before committing.</p>
                     {vendors.length > 0 && (
                       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
                         <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Vendors found</div><div className="rq-metric-val">{vendors.length}</div></div>
-                        <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Shortlisted</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "shortlisted").length}</div><div className="rq-metric-sub">for RFP</div></div>
-                        <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Eliminated</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "eliminated").length}</div><div className="rq-metric-sub amber">ruled out</div></div>
+                        <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Shortlisted</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "shortlisted").length}</div></div>
+                        <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Eliminated</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "eliminated").length}</div></div>
                       </div>
                     )}
                     <div className="rq-actions" style={{ marginBottom: 20, marginTop: 0 }}>
@@ -1330,14 +1349,58 @@ export default function RequirementsAgent() {
                         <div key={v.name} className={`vendor-card rq-fade${status === "shortlisted" ? " shortlisted" : status === "eliminated" ? " eliminated" : ""}`}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                             <div style={{ minWidth: 0 }}>
-                              <div className="vendor-name">{v.name}</div>
+                              {/* Vendor — Product name with link */}
+                              <div className="vendor-name">
+                                {(v.vendorUrl || v.g2Url) ? (
+                                  <a href={v.vendorUrl || v.g2Url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", borderBottom: "1px solid rgba(93,202,165,0.4)", cursor: "pointer" }}>
+                                    {v.name}
+                                  </a>
+                                ) : (
+                                  <a href={`https://www.google.com/search?q=${encodeURIComponent(v.name + " " + v.category)}`} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", borderBottom: "1px solid rgba(96,122,138,0.4)", cursor: "pointer" }}>
+                                    {v.name}
+                                  </a>
+                                )}
+                              </div>
                               <div className="vendor-category">{v.category}</div>
                             </div>
-                            {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#5DCAA5", background: "rgba(93,202,165,0.12)", padding: "3px 8px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>}
-                            {status === "eliminated" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#e07070", background: "rgba(184,80,80,0.1)", padding: "3px 8px", borderRadius: 3, flexShrink: 0 }}>Eliminated</span>}
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0 }}>
+                              {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#5DCAA5", background: "rgba(93,202,165,0.12)", padding: "3px 8px", borderRadius: 3 }}>Shortlisted</span>}
+                              {status === "eliminated" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#e07070", background: "rgba(184,80,80,0.1)", padding: "3px 8px", borderRadius: 3 }}>Eliminated</span>}
+                              <div style={{ display: "flex", gap: 5 }}>
+                                {v.g2Url && <a href={v.g2Url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}><button className="vendor-btn vendor-btn-g2">G2 ↗</button></a>}
+                              </div>
+                            </div>
                           </div>
+
+                          {/* Badge row */}
+                          <div className="vendor-badges">
+                            {v.deployment && (
+                              <span className={`vendor-badge ${v.deployment === "SaaS" ? "vb-saas" : v.deployment === "On-Prem" ? "vb-onprem" : "vb-hybrid"}`}>
+                                {v.deployment}
+                              </span>
+                            )}
+                            {v.pricingModel && (
+                              <span className="vendor-badge vb-neutral">{v.pricingModel}</span>
+                            )}
+                            {v.implementationComplexity && (
+                              <span className={`vendor-badge ${v.implementationComplexity === "Low" ? "vb-low" : v.implementationComplexity === "Medium" ? "vb-medium" : "vb-high"}`}>
+                                {v.implementationComplexity} impl.
+                              </span>
+                            )}
+                            {v.marketPresence && (
+                              <span className={`vendor-badge ${v.marketPresence === "Startup" ? "vb-startup" : v.marketPresence === "Growth" ? "vb-growth" : v.marketPresence === "Established" ? "vb-established" : "vb-legacy"}`}>
+                                {v.marketPresence}
+                              </span>
+                            )}
+                          </div>
+
                           <div className="vendor-meta">
-                            {v.g2Rating && v.g2Rating !== "N/A" && <div className="vendor-rating"><span style={{ color: "#EF9F27" }}>★</span> {v.g2Rating}</div>}
+                            {v.g2Rating && v.g2Rating !== "N/A" && (
+                              <div className="vendor-rating">
+                                <span style={{ color: "#EF9F27" }}>★</span> {v.g2Rating}
+                                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 8, color: "#3a5060", marginLeft: 5, letterSpacing: ".05em" }}>agent est.</span>
+                              </div>
+                            )}
                             {v.g2ReviewCount && v.g2ReviewCount !== "N/A" && <div className="vendor-reviews">{v.g2ReviewCount}</div>}
                           </div>
                           <div className="vendor-desc">{v.description}</div>
@@ -1346,12 +1409,11 @@ export default function RequirementsAgent() {
                             <div className="vendor-match-bar">
                               <div className={`vendor-match-fill ${v.matchConfidence === "medium" ? "medium" : v.matchConfidence === "low" ? "low" : ""}`} style={{ width: `${matchPct * 100}%` }} />
                             </div>
-                            <div className="vendor-match-text">{v.requirementsMatch} of {v.requirementsTotal} requirements likely met</div>
+                            <div className="vendor-match-text">Agent estimates {v.requirementsMatch} of {v.requirementsTotal} requirements met</div>
                           </div>
                           <div className="vendor-actions">
                             <button className={`vendor-btn vendor-btn-shortlist${status === "shortlisted" ? " active" : ""}`} onClick={() => toggleVendorStatus(v.name, "shortlisted")}>{status === "shortlisted" ? "✓ Shortlisted" : "Shortlist"}</button>
                             <button className={`vendor-btn vendor-btn-eliminate${status === "eliminated" ? " active" : ""}`} onClick={() => toggleVendorStatus(v.name, "eliminated")}>{status === "eliminated" ? "✗ Eliminated" : "Eliminate"}</button>
-                            {v.g2Url && <a href={v.g2Url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}><button className="vendor-btn vendor-btn-g2">G2 ↗</button></a>}
                           </div>
                         </div>
                       );
@@ -1655,7 +1717,7 @@ export default function RequirementsAgent() {
                             <div className="vendor-match-bar">
                               <div className={`vendor-match-fill ${v.matchConfidence === "medium" ? "medium" : v.matchConfidence === "low" ? "low" : ""}`} style={{ width: `${matchPct * 100}%` }} />
                             </div>
-                            <div className="vendor-match-text">{v.requirementsMatch} of {v.requirementsTotal} requirements</div>
+                            <div className="vendor-match-text">Agent estimates {v.requirementsMatch} of {v.requirementsTotal} requirements</div>
                             {v.g2Rating && v.g2Rating !== "N/A" && <div className="vendor-rating" style={{ marginLeft: "auto" }}><span style={{ color: "#EF9F27" }}>★</span> {v.g2Rating}</div>}
                           </div>
                         </div>
