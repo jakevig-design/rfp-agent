@@ -627,18 +627,19 @@ OUTPUT: Respond with ONLY a valid JSON array. Start with [ and end with ]. No te
 
 const P_NARRATIVE = `You are a senior business analyst writing an executive business case narrative.
 
-Given a project scope and company context, write a concise business case narrative of 2-3 paragraphs. This narrative will be used by a category manager to build a business case for software investment.
+Given a project scope, functional requirements, and vendor discovery questions, write a concise business case narrative. This will be used by a category manager to build a business case for software investment.
 
 Structure:
 1. Problem & context — what is broken, why it matters, who it affects, what it costs the business
 2. What success looks like — the capability being acquired, measurable outcomes, what is explicitly out of scope
-3. Investment rationale — why now, what risks exist if nothing changes, what the procurement process will determine
+3. Requirements summary — the key functional capabilities the solution must deliver (draw from the requirements list)
+4. Investment rationale — why now, what risks exist if nothing changes, what the procurement process will determine
 
 RULES:
 - Write in third person, professional but direct — not marketing language
 - Be specific about the business impact, not generic
 - Do not name specific vendors
-- 2-3 paragraphs, no headers, no bullets
+- No headers, no bullets — flowing prose only
 - This should read like the opening section of a business case document`;
 
 const FIVE_WS = [
@@ -1026,7 +1027,6 @@ Return ONLY valid JSON, no markdown, no explanation:
         return r.trim().length > 0 && r.trim().toLowerCase() !== "skip";
       });
       if (answered.length === 0) {
-        // All skipped — just approve
         setExpertQuestions([]);
         setScopeApproved(true);
         setScopeBusy(false);
@@ -1037,7 +1037,8 @@ Return ONLY valid JSON, no markdown, no explanation:
       setFormalScope(refined.trim());
       setExpertQuestions([]);
       setExpertResponses({});
-      setScopeApproved(true);
+      // Re-evaluate the refined scope — keep iterating until it passes
+      await doEvaluateScope(refined.trim());
     } catch { setScopeErr("Could not refine scope. Please try again."); }
     finally { setScopeBusy(false); }
   };
@@ -1169,10 +1170,16 @@ Return ONLY valid JSON, no markdown, no explanation:
     try {
       const p = answers.companyProfile;
       const companyCtx = p ? `Company: ${p.name}${p.vertical ? `, ${p.vertical}` : ""}${p.employeeCount ? `, ${p.employeeCount} employees` : ""}` : (answers.companyName || "");
-      const userMsg = `${companyCtx ? `${companyCtx}\n\n` : ""}Project scope:\n${formalScope}`;
+      const reqList = requirements.length > 0
+        ? `\n\nFunctional requirements:\n${requirements.map(r => `- ${r.text}`).join("\n")}`
+        : "";
+      const qList = Object.keys(questions).length > 0
+        ? `\n\nKey vendor discovery questions:\n${Object.values(questions).flat().slice(0, 8).map(q => `- ${q.text}`).join("\n")}`
+        : "";
+      const userMsg = `${companyCtx ? `${companyCtx}\n\n` : ""}Project scope:\n${formalScope}${reqList}${qList}`;
       const result = await callClaude(P_NARRATIVE, userMsg, false, "claude-haiku-4-5-20251001");
       setNarrative(result.trim());
-    } catch { /* silent fail — user can retry */ }
+    } catch { /* silent fail */ }
     finally { setNarrativeBusy(false); }
   };
 
