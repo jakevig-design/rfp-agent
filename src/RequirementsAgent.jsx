@@ -596,6 +596,8 @@ RULES:
 - For G2 ratings, use your best knowledge — if uncertain, use "N/A"
 - requirementsMatch is your estimate of how many requirements this vendor likely meets
 - matchConfidence is high, medium, or low based on how well you know this vendor's capabilities
+- For pricing: provide an order-of-magnitude Year 1 total cost range based on the company context in the scope. Format as "$X–$Yk/yr" or "$XM–$YM/yr". If pricing is highly opaque, use "Contact for pricing"
+- priceConfidence is high (well-documented public pricing), medium (known ballpark), or low (opaque / varies widely)
 
 OUTPUT: Respond with ONLY a valid JSON array. Start with [ and end with ]. No text before or after. No markdown. No explanation.
 
@@ -608,16 +610,35 @@ OUTPUT: Respond with ONLY a valid JSON array. Start with [ and end with ]. No te
     "description": "One sentence on what this vendor does and why it fits this scope.",
     "deployment": "SaaS" or "On-Prem" or "Hybrid",
     "pricingModel": "Per Seat" or "Enterprise License" or "Usage-Based" or "Flat Annual" or "Module-Based",
+    "estimatedPrice": "$50k–$150k/yr",
+    "priceConfidence": "high" or "medium" or "low",
     "implementationComplexity": "Low" or "Medium" or "High",
     "marketPresence": "Startup" or "Growth" or "Established" or "Legacy",
     "vendorUrl": "https://vendor-official-website.com or null",
     "requirementsMatch": 4,
     "requirementsTotal": 6,
     "matchConfidence": "high",
-    "reviewPlatforms": ["g2", "capterra", "sourceforge", "goodfirms", "reddit"] (include only platforms where this vendor actually has a listing or active discussion — omit platforms where a search would return nothing),
+    "reviewPlatforms": ["g2", "capterra", "sourceforge", "goodfirms", "reddit"],
     "g2Url": "https://www.g2.com/products/vendor-name or null"
   }
 ]`;
+
+const P_NARRATIVE = `You are a senior business analyst writing an executive business case narrative.
+
+Given a project scope and company context, write a concise business case narrative of 2-3 paragraphs. This narrative will be used by a category manager to build a business case for software investment.
+
+Structure:
+1. Problem & context — what is broken, why it matters, who it affects, what it costs the business
+2. What success looks like — the capability being acquired, measurable outcomes, what is explicitly out of scope
+3. Investment rationale — why now, what risks exist if nothing changes, what the procurement process will determine
+
+RULES:
+- Write in third person, professional but direct — not marketing language
+- Be specific about the business impact, not generic
+- Do not name specific vendors
+- 2-3 paragraphs, no headers, no bullets
+- This should read like the opening section of a business case document`;
+
 const FIVE_WS = [
   { key: "who", label: "Who", question: "Who will use this system, and who owns this initiative?", placeholder: "e.g. Shop floor technicians will use it daily. The VP of Operations is the project sponsor." },
   { key: "what", label: "What", question: "What problem are you solving, or what capability are you adding?", placeholder: "e.g. We lose track of tools constantly. We need real-time visibility into tool location and condition." },
@@ -751,6 +772,8 @@ export default function RequirementsAgent() {
   const [answers, setAnswers] = useState({ who: "", what: "", where: "", when: "", why: "", freeform: "", companyName: "", companyProfile: null });
   const [companyLookupBusy, setCompanyLookupBusy] = useState(false);
   const [companyLookupErr, setCompanyLookupErr] = useState("");
+  const [narrative, setNarrative] = useState("");
+  const [narrativeBusy, setNarrativeBusy] = useState(false);
   const [formalScope, setFormalScope] = useState("");
   const [scopeFlags, setScopeFlags] = useState([]);
   const [flagResponses, setFlagResponses] = useState({});
@@ -825,6 +848,8 @@ export default function RequirementsAgent() {
     setAnswers({ who: "", what: "", where: "", when: "", why: "", freeform: "", companyName: "", companyProfile: null });
     setCompanyLookupBusy(false);
     setCompanyLookupErr("");
+    setNarrative("");
+    setNarrativeBusy(false);
     setFormalScope("");
     setScopeFlags([]);
     setFlagResponses({});
@@ -849,7 +874,7 @@ export default function RequirementsAgent() {
     setView("scope");
   };
 
-  const getSessionData = () => ({ step, projectTitle, answers, formalScope, scopeApproved, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus });
+  const getSessionData = () => ({ step, projectTitle, answers, formalScope, scopeApproved, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus, narrative });
 
   const doSave = async (status = "draft") => {
     setSaveStatus("saving");
@@ -885,6 +910,7 @@ export default function RequirementsAgent() {
     }
     if (d.vendors) setVendors(d.vendors);
     if (d.vendorStatus) setVendorStatus(d.vendorStatus);
+    if (d.narrative) setNarrative(d.narrative);
     setView("scope");
     setLastSaved(new Date(row.updated_at));
   };
@@ -1133,6 +1159,18 @@ Return ONLY valid JSON, no markdown, no explanation:
     } finally {
       setMarketBusy(false);
     }
+  };
+
+  const doGenerateNarrative = async () => {
+    setNarrativeBusy(true);
+    try {
+      const p = answers.companyProfile;
+      const companyCtx = p ? `Company: ${p.name}${p.vertical ? `, ${p.vertical}` : ""}${p.employeeCount ? `, ${p.employeeCount} employees` : ""}` : (answers.companyName || "");
+      const userMsg = `${companyCtx ? `${companyCtx}\n\n` : ""}Project scope:\n${formalScope}`;
+      const result = await callClaude(P_NARRATIVE, userMsg, false, "claude-haiku-4-5-20251001");
+      setNarrative(result.trim());
+    } catch { /* silent fail — user can retry */ }
+    finally { setNarrativeBusy(false); }
   };
 
   const toggleVendorStatus = (name, status) => {
@@ -1753,11 +1791,18 @@ Return ONLY valid JSON, no markdown, no explanation:
                   </div>
                 </div>
 
-                {/* Scope */}
-                <div className="rq-section-label">Scope</div>
-                {formalScope
-                  ? <div className="rq-scope-box" style={{ marginBottom: 24 }}>{formalScope}</div>
-                  : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>No scope yet — go to Scope to get started.</div>
+                {/* Business narrative */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div className="rq-section-label" style={{ marginBottom: 0 }}>Business case narrative</div>
+                  <button className="rq-btn-ghost" onClick={doGenerateNarrative} disabled={narrativeBusy || !formalScope} style={{ fontSize: 9 }}>
+                    {narrativeBusy ? <><Loader size={10} className="spin" /> Generating…</> : narrative ? <><RefreshCw size={10} /> Regenerate</> : <>Generate</>}
+                  </button>
+                </div>
+                {narrative
+                  ? <div className="rq-scope-box" style={{ marginBottom: 24, whiteSpace: "pre-line" }}>{narrative}</div>
+                  : formalScope
+                    ? <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>Click Generate to create a business case narrative from your scope.</div>
+                    : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>Complete your scope first, then generate a narrative here.</div>
                 }
                 <hr className="rq-divider" />
 
@@ -1813,7 +1858,18 @@ Return ONLY valid JSON, no markdown, no explanation:
                             </div>
                             {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#C2410C", background: "#FFF7ED", padding: "3px 8px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>}
                           </div>
-                          <div className="vendor-desc" style={{ marginTop: 6, marginBottom: 6 }}>{v.description}</div>
+                          <div className="vendor-desc" style={{ marginTop: 6, marginBottom: 8 }}>{v.description}</div>
+                          {/* Pricing row */}
+                          {v.estimatedPrice && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "7px 10px", background: "#F9F8F8", borderRadius: 6, border: "1px solid rgba(0,0,0,0.06)" }}>
+                              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 500, color: "#111827" }}>{v.estimatedPrice}</div>
+                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF" }}>{v.pricingModel}</div>
+                              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+                                <div style={{ width: 6, height: 6, borderRadius: "50%", background: v.priceConfidence === "high" ? "#C2410C" : v.priceConfidence === "medium" ? "#D97706" : "#D1D5DB" }} />
+                                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF" }}>{v.priceConfidence} confidence · agent est.</span>
+                              </div>
+                            </div>
+                          )}
                           <div className="vendor-match">
                             <div className={`confidence-dot confidence-${v.matchConfidence || "low"}`} />
                             <div className="vendor-match-bar">
