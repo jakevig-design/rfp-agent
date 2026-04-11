@@ -19,198 +19,198 @@ document.head.appendChild(_link);
 // Amber accent:   #EF9F27 (secondary: export, mc pills, q progress)
 // Body text:      #d8eaf2
 // Muted text:     #607a8a
-// Border:         rgba(255,255,255,0.07)
+// Border:         rgba(0,0,0,0.07)
 
 const _style = document.createElement("style");
 _style.textContent = `
   *{box-sizing:border-box}
-  .rq-root{font-family:'Lora',Georgia,serif;background:#141d26;min-height:100vh;color:#d8eaf2;display:flex;flex-direction:column}
+  .rq-root{font-family:'Lora',Georgia,serif;background:#F9F8F8;min-height:100vh;color:#111827;display:flex;flex-direction:column}
 
   /* ── Dashboard layout ── */
   .rq-shell{display:flex;flex:1;min-height:0}
-  .rq-sidebar{width:200px;flex-shrink:0;background:#1b2530;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;padding:0}
-  .rq-sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.07)}
-  .rq-sidebar-brand{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#5DCAA5;margin-bottom:2px}
-  .rq-sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#d8eaf2}
-  .rq-sidebar-session{font-family:'JetBrains Mono',monospace;font-size:9px;color:#3a5060;margin-top:4px}
+  .rq-sidebar{width:200px;flex-shrink:0;background:#FFFFFF;border-right:1px solid rgba(0,0,0,0.07);display:flex;flex-direction:column;padding:0}
+  .rq-sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(0,0,0,0.07)}
+  .rq-sidebar-brand{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#C2410C;margin-bottom:2px}
+  .rq-sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111827}
+  .rq-sidebar-session{font-family:'JetBrains Mono',monospace;font-size:9px;color:#9CA3AF;margin-top:4px}
   .rq-nav{padding:12px 0;flex:1}
-  .rq-nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#607a8a;border-left:2px solid transparent;cursor:pointer;transition:all .15s}
-  .rq-nav-item:hover{color:#a8c8d8;background:rgba(255,255,255,0.03)}
-  .rq-nav-item.active{color:#5DCAA5;border-left-color:#5DCAA5;background:rgba(93,202,165,0.08)}
-  .rq-nav-item.done{color:#3d7a5a}
-  .rq-nav-item.done .rq-nav-num{background:#0f2a20;border-color:#1d4a36;color:#5DCAA5}
+  .rq-nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9CA3AF;border-left:2px solid transparent;cursor:pointer;transition:all .15s}
+  .rq-nav-item:hover{color:#374151;background:rgba(0,0,0,0.03)}
+  .rq-nav-item.active{color:#C2410C;border-left-color:#C2410C;background:#FFF7ED}
+  .rq-nav-item.done{color:#6B7280}
+  .rq-nav-item.done .rq-nav-num{background:#FFF7ED;border-color:#FDBA74;color:#C2410C}
   .rq-nav-num{width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
-  .rq-sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.07)}
+  .rq-sidebar-footer{padding:16px 20px;border-top:1px solid rgba(0,0,0,0.07)}
 
   /* ── Main content area ── */
   .rq-main{flex:1;display:flex;flex-direction:column;min-width:0}
-  .rq-topbar{background:#1f2e3a;border-bottom:1px solid rgba(255,255,255,0.07);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
-  .rq-topbar-left .rq-topbar-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#d8eaf2}
-  .rq-topbar-left .rq-topbar-sub{font-size:11px;color:#607a8a;margin-top:2px}
+  .rq-topbar{background:#FFFFFF;border-bottom:1px solid rgba(0,0,0,0.07);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .rq-topbar-left .rq-topbar-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#111827}
+  .rq-topbar-left .rq-topbar-sub{font-size:11px;color:#6B7280;margin-top:2px}
   .rq-topbar-right{display:flex;align-items:center;gap:10px}
-  .rq-save-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:#5DCAA5;background:rgba(93,202,165,0.1);padding:4px 10px;border-radius:3px;display:flex;align-items:center;gap:5px}
-  .rq-export-btn{display:flex;align-items:center;gap:7px;background:#EF9F27;color:#1a0e00;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;transition:background .15s;white-space:nowrap}
-  .rq-export-btn:hover{background:#FAC775}
+  .rq-save-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:#C2410C;background:#FFF7ED;padding:4px 10px;border-radius:3px;display:flex;align-items:center;gap:5px}
+  .rq-export-btn{display:flex;align-items:center;gap:7px;background:#C2410C;color:#FFFFFF;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;transition:background .15s;white-space:nowrap}
+  .rq-export-btn:hover{background:#9A3412}
   .rq-export-btn:disabled{opacity:.4;cursor:not-allowed}
   .rq-content{flex:1;padding:28px 32px;overflow-y:auto}
 
   /* ── Metric cards ── */
   .rq-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
-  .rq-metric{background:#1b2530;border-radius:6px;padding:12px 14px;border:1px solid rgba(255,255,255,0.07);text-align:center}
-  .rq-metric-label{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#607a8a;margin-bottom:4px}
-  .rq-metric-val{font-size:22px;font-weight:500;color:#d8eaf2}
-  .rq-metric-sub{font-size:10px;color:#5DCAA5;margin-top:2px}
-  .rq-metric-sub.amber{color:#EF9F27}
+  .rq-metric{background:#FFFFFF;border-radius:6px;padding:12px 14px;border:1px solid rgba(0,0,0,0.07);text-align:center}
+  .rq-metric-label{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#9CA3AF;margin-bottom:4px}
+  .rq-metric-val{font-size:22px;font-weight:500;color:#111827}
+  .rq-metric-sub{font-size:10px;color:#C2410C;margin-top:2px}
+  .rq-metric-sub.amber{color:#D97706}
 
   /* ── Section label ── */
-  .rq-section-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#607a8a;margin-bottom:10px}
+  .rq-section-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#9CA3AF;margin-bottom:10px}
 
   /* ── Cards / panels ── */
-  .rq-card{background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:18px 20px;margin-bottom:10px}
-  .rq-card:hover{border-color:rgba(93,202,165,0.25)}
+  .rq-card{background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:18px 20px;margin-bottom:10px}
+  .rq-card:hover{border-color:rgba(194,65,12,0.3)}
 
   /* ── Form elements ── */
-  .rq-textarea{width:100%;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:12px 14px;font-family:'Lora',serif;font-size:14px;color:#d8eaf2;background:#141d26;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;line-height:1.65}
-  .rq-textarea:focus{border-color:#5DCAA5}
-  .rq-input{width:100%;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:9px 12px;font-family:'Lora',serif;font-size:13px;color:#d8eaf2;background:#141d26;outline:none;transition:border-color .15s}
-  .rq-input:focus{border-color:#5DCAA5}
+  .rq-textarea{width:100%;border:1px solid rgba(0,0,0,0.12);border-radius:6px;padding:12px 14px;font-family:'Lora',serif;font-size:14px;color:#111827;background:#FFFFFF;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;line-height:1.65}
+  .rq-textarea:focus{border-color:#C2410C}
+  .rq-input{width:100%;border:1px solid rgba(0,0,0,0.12);border-radius:6px;padding:9px 12px;font-family:'Lora',serif;font-size:13px;color:#111827;background:#FFFFFF;outline:none;transition:border-color .15s}
+  .rq-input:focus{border-color:#C2410C}
 
   /* ── Buttons ── */
-  .rq-btn-primary{display:inline-flex;align-items:center;gap:7px;background:#5DCAA5;color:#04342C;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;transition:background .15s}
-  .rq-btn-primary:hover{background:#9FE1CB}
+  .rq-btn-primary{display:inline-flex;align-items:center;gap:7px;background:#C2410C;color:#FFFFFF;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;transition:background .15s}
+  .rq-btn-primary:hover{background:#9A3412}
   .rq-btn-primary:disabled{opacity:.4;cursor:not-allowed}
-  .rq-btn-ghost{display:inline-flex;align-items:center;gap:6px;background:transparent;color:#607a8a;font-family:'Syne',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;cursor:pointer;transition:all .15s}
-  .rq-btn-ghost:hover{border-color:#5DCAA5;color:#5DCAA5}
+  .rq-btn-ghost{display:inline-flex;align-items:center;gap:6px;background:transparent;color:#6B7280;font-family:'Syne',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border:1px solid rgba(0,0,0,0.12);border-radius:4px;cursor:pointer;transition:all .15s}
+  .rq-btn-ghost:hover{border-color:#C2410C;color:#C2410C}
   .rq-btn-ghost:disabled{opacity:.4;cursor:not-allowed}
-  .rq-btn-icon{display:inline-flex;align-items:center;justify-content:center;background:transparent;padding:5px 7px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;cursor:pointer;transition:all .15s;color:#607a8a}
-  .rq-btn-icon:hover{border-color:#5DCAA5;color:#5DCAA5}
+  .rq-btn-icon{display:inline-flex;align-items:center;justify-content:center;background:transparent;padding:5px 7px;border:1px solid rgba(0,0,0,0.1);border-radius:4px;cursor:pointer;transition:all .15s;color:#6B7280}
+  .rq-btn-icon:hover{border-color:#C2410C;color:#C2410C}
   .rq-btn-icon:disabled{opacity:.35;cursor:not-allowed}
-  .rq-btn-del{color:#b85050;border-color:rgba(184,80,80,0.3)}
-  .rq-btn-del:hover{background:rgba(184,80,80,0.1);color:#e07070}
+  .rq-btn-del{color:#DC2626;border-color:rgba(220,38,38,0.3)}
+  .rq-btn-del:hover{background:rgba(220,38,38,0.06);color:#DC2626}
 
   /* ── Req cards ── */
-  .rq-req-id{font-family:'JetBrains Mono',monospace;font-size:10px;color:#5DCAA5;font-weight:500;margin-bottom:4px;background:#0f2a20;display:inline-block;padding:1px 6px;border-radius:2px;border:1px solid #1d4a36}
-  .rq-req-text{font-size:13px;line-height:1.55;color:#a8c8d8;margin-top:4px}
+  .rq-req-id{font-family:'JetBrains Mono',monospace;font-size:10px;color:#C2410C;font-weight:500;margin-bottom:4px;background:#FFF7ED;display:inline-block;padding:1px 6px;border-radius:2px;border:1px solid #FDBA74}
+  .rq-req-text{font-size:13px;line-height:1.55;color:#374151;margin-top:4px}
 
   /* ── Q cards ── */
-  .rq-q-card{border:1px solid rgba(255,255,255,0.07);border-radius:6px;padding:14px 16px;margin-bottom:8px;background:#141d26}
+  .rq-q-card{border:1px solid rgba(0,0,0,0.07);border-radius:6px;padding:14px 16px;margin-bottom:8px;background:#FFFFFF}
   .rq-badge{display:inline-block;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;margin-bottom:6px}
-  .rq-badge-open{background:#0f2a20;color:#5DCAA5;border:1px solid #1d4a36}
-  .rq-badge-mc{background:#2a1a08;color:#EF9F27;border:1px solid #4a3010}
-  .rq-q-text{font-size:13px;color:#a8c8d8;line-height:1.5}
+  .rq-badge-open{background:#FFF7ED;color:#C2410C;border:1px solid #FDBA74}
+  .rq-badge-mc{background:#FFFBEB;color:#D97706;border:1px solid #FCD34D}
+  .rq-q-text{font-size:13px;color:#374151;line-height:1.5}
   .rq-mc-opts{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
-  .rq-mc-opt{font-family:'JetBrains Mono',monospace;font-size:11px;background:#1b2530;border:1px solid rgba(239,159,39,0.3);border-radius:3px;padding:3px 9px;color:#EF9F27}
+  .rq-mc-opt{font-family:'JetBrains Mono',monospace;font-size:11px;background:#FFFBEB;border:1px solid rgba(217,119,6,0.3);border-radius:3px;padding:3px 9px;color:#D97706}
 
   /* ── Scope ── */
-  .rq-scope-box{font-size:14px;line-height:1.75;color:#a8c8d8;background:#141d26;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 20px;white-space:pre-wrap;font-family:'Lora',serif}
-  .rq-scope-approved{background:rgba(93,202,165,0.08);border:1px solid rgba(93,202,165,0.3);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5DCAA5}
-  .rq-flag-card{background:rgba(239,159,39,0.05);border:1px solid rgba(239,159,39,0.3);border-radius:8px;padding:14px 18px;margin-bottom:12px}
-  .rq-flag-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#EF9F27;margin-bottom:6px;display:flex;align-items:center;gap:6px}
-  .rq-flag-text{font-size:13px;color:#c8a870;line-height:1.6;margin-bottom:10px}
+  .rq-scope-box{font-size:14px;line-height:1.75;color:#374151;background:#F9F8F8;border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:16px 20px;white-space:pre-wrap;font-family:'Lora',serif}
+  .rq-scope-approved{background:#FFF7ED;border:1px solid rgba(194,65,12,0.3);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C2410C}
+  .rq-flag-card{background:#FFFBEB;border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:14px 18px;margin-bottom:12px}
+  .rq-flag-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#D97706;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .rq-flag-text{font-size:13px;color:#92400E;line-height:1.6;margin-bottom:10px}
 
   /* ── 5Ws ── */
-  .rq-5w-card{background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:18px 20px;margin-bottom:12px}
-  .rq-5w-label{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#5DCAA5;margin-bottom:4px}
-  .rq-5w-question{font-size:13px;font-weight:500;color:#d8eaf2;margin-bottom:10px;font-family:'Syne',sans-serif}
+  .rq-5w-card{background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:18px 20px;margin-bottom:12px}
+  .rq-5w-label{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#C2410C;margin-bottom:4px}
+  .rq-5w-question{font-size:13px;font-weight:500;color:#111827;margin-bottom:10px;font-family:'Syne',sans-serif}
 
   /* ── Save bar ── */
-  .sv-bar{display:flex;align-items:center;justify-content:space-between;background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:6px;padding:8px 14px;margin-bottom:20px;gap:12px}
-  .sv-status{font-family:'JetBrains Mono',monospace;font-size:10px;color:#607a8a;display:flex;align-items:center;gap:6px}
-  .sv-status.saved{color:#5DCAA5}
-  .sv-status.saving{color:#EF9F27}
-  .sv-status.error{color:#e07070}
+  .sv-bar{display:flex;align-items:center;justify-content:space-between;background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:6px;padding:8px 14px;margin-bottom:20px;gap:12px}
+  .sv-status{font-family:'JetBrains Mono',monospace;font-size:10px;color:#9CA3AF;display:flex;align-items:center;gap:6px}
+  .sv-status.saved{color:#C2410C}
+  .sv-status.saving{color:#D97706}
+  .sv-status.error{color:#DC2626}
 
   /* ── Progress ── */
   .rq-progress{display:flex;align-items:center;gap:10px;margin-bottom:28px}
-  .rq-pb-wrap{flex:1;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
-  .rq-pb{height:100%;background:#5DCAA5;border-radius:2px;transition:width .5s ease}
-  .rq-pb-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a5060;white-space:nowrap}
+  .rq-pb-wrap{flex:1;height:3px;background:rgba(0,0,0,0.06);border-radius:2px;overflow:hidden}
+  .rq-pb{height:100%;background:#C2410C;border-radius:2px;transition:width .5s ease}
+  .rq-pb-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:#9CA3AF;white-space:nowrap}
 
   /* ── Misc ── */
-  .rq-hint{font-size:13px;color:#607a8a;line-height:1.6;font-style:italic;margin:0 0 16px}
-  .rq-error{background:rgba(184,80,80,0.1);border:1px solid rgba(184,80,80,0.3);border-radius:6px;padding:10px 14px;font-size:13px;color:#e07070;margin-top:10px}
-  .rq-divider{border:none;border-top:1px solid rgba(255,255,255,0.07);margin:24px 0}
+  .rq-hint{font-size:13px;color:#9CA3AF;line-height:1.6;font-style:italic;margin:0 0 16px}
+  .rq-error{background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.25);border-radius:6px;padding:10px 14px;font-size:13px;color:#DC2626;margin-top:10px}
+  .rq-divider{border:none;border-top:1px solid rgba(0,0,0,0.07);margin:24px 0}
   .rq-row{display:flex;gap:8px;align-items:center}
   .rq-actions{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
-  .rq-req-group-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#a8c8d8;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.07)}
-  .rq-loading-center{padding:36px 0;text-align:center;color:#607a8a;font-style:italic;font-family:'Lora',serif}
+  .rq-req-group-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#374151;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,0.07)}
+  .rq-loading-center{padding:36px 0;text-align:center;color:#9CA3AF;font-style:italic;font-family:'Lora',serif}
 
   /* ── Drafts ── */
-  .sessions-panel{background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden;margin-bottom:24px}
-  .sessions-header{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.07);background:#1f2e3a}
-  .sessions-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#607a8a}
-  .session-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background .15s;gap:12px}
+  .sessions-panel{background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;overflow:hidden;margin-bottom:24px}
+  .sessions-header{padding:12px 18px;border-bottom:1px solid rgba(0,0,0,0.07);background:#F9F8F8}
+  .sessions-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#9CA3AF}
+  .session-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(0,0,0,0.05);cursor:pointer;transition:background .15s;gap:12px}
   .session-row:last-child{border-bottom:none}
-  .session-row:hover{background:rgba(255,255,255,0.03)}
-  .session-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#d8eaf2;margin-bottom:2px}
-  .session-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a5060}
+  .session-row:hover{background:#F9F8F8}
+  .session-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#111827;margin-bottom:2px}
+  .session-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:#9CA3AF}
   .session-status{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px}
-  .session-status.draft{background:rgba(239,159,39,0.12);color:#EF9F27}
-  .session-status.complete{background:rgba(93,202,165,0.12);color:#5DCAA5}
+  .session-status.draft{background:#FFFBEB;color:#D97706}
+  .session-status.complete{background:#FFF7ED;color:#C2410C}
 
   /* ── Timeline ── */
-  .tl-group-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#1f2e3a;border-radius:6px;margin-bottom:6px;cursor:pointer;user-select:none;border:1px solid rgba(255,255,255,0.07)}
+  .tl-group-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#F9F8F8;border-radius:6px;margin-bottom:6px;cursor:pointer;user-select:none;border:1px solid rgba(0,0,0,0.07)}
   .tl-group-label{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
-  .tl-group-pre{color:#5DCAA5}
-  .tl-group-rfx{color:#EF9F27}
-  .tl-group-post{color:#a8c8d8}
-  .tl-act-row{display:grid;gap:6px;align-items:center;margin-bottom:5px;padding:7px 10px;background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:6px;transition:border-color .15s}
-  .tl-act-row:hover{border-color:rgba(93,202,165,0.3)}
-  .tl-act-row.is-child{margin-left:22px;background:#141d26;border-left:2px solid rgba(239,159,39,0.4)}
-  .tl-act-row.is-parent{border-left:2px solid rgba(93,202,165,0.4)}
+  .tl-group-pre{color:#C2410C}
+  .tl-group-rfx{color:#D97706}
+  .tl-group-post{color:#6B7280}
+  .tl-act-row{display:grid;gap:6px;align-items:center;margin-bottom:5px;padding:7px 10px;background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:6px;transition:border-color .15s}
+  .tl-act-row:hover{border-color:rgba(194,65,12,0.3)}
+  .tl-act-row.is-child{margin-left:22px;background:#F9F8F8;border-left:2px solid rgba(217,119,6,0.4)}
+  .tl-act-row.is-parent{border-left:2px solid rgba(194,65,12,0.4)}
   .tl-act-row.dragging{opacity:.5}
-  .tl-act-row.drag-over{border-color:#5DCAA5;border-style:dashed}
-  .tl-cell-input{border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:5px 7px;font-family:'Lora',serif;font-size:12px;color:#d8eaf2;background:#141d26;outline:none;width:100%}
-  .tl-cell-input:focus{border-color:#5DCAA5}
-  .tl-col-hdr{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#3a5060}
+  .tl-act-row.drag-over{border-color:#C2410C;border-style:dashed}
+  .tl-cell-input{border:1px solid rgba(0,0,0,0.1);border-radius:4px;padding:5px 7px;font-family:'Lora',serif;font-size:12px;color:#111827;background:#FFFFFF;outline:none;width:100%}
+  .tl-cell-input:focus{border-color:#C2410C}
+  .tl-col-hdr{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9CA3AF}
 
   /* ── Gantt ── */
   .gantt-wrap{overflow-x:auto;margin-top:20px}
-  .gantt-container{min-width:640px;background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:18px}
-  .gantt-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#3a5060;margin-bottom:14px}
+  .gantt-container{min-width:640px;background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:18px}
+  .gantt-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#9CA3AF;margin-bottom:14px}
 
   /* ── Market research ── */
-  .vendor-card{background:#1b2530;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 18px;margin-bottom:10px;transition:border-color .15s}
-  .vendor-card:hover{border-color:rgba(93,202,165,0.25)}
-  .vendor-card.shortlisted{border-color:rgba(93,202,165,0.5);background:rgba(93,202,165,0.05)}
-  .vendor-card.eliminated{opacity:.45;border-color:rgba(184,80,80,0.3)}
-  .vendor-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#d8eaf2;margin-bottom:2px}
-  .vendor-category{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#607a8a;margin-bottom:8px}
+  .vendor-card{background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:16px 18px;margin-bottom:10px;transition:border-color .15s}
+  .vendor-card:hover{border-color:rgba(194,65,12,0.25)}
+  .vendor-card.shortlisted{border-color:rgba(194,65,12,0.4);background:#FFF7ED}
+  .vendor-card.eliminated{opacity:.45;border-color:rgba(220,38,38,0.2)}
+  .vendor-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#111827;margin-bottom:2px}
+  .vendor-category{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9CA3AF;margin-bottom:8px}
   .vendor-meta{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
   .vendor-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
   .vendor-badge{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:3px;white-space:nowrap}
-  .vb-saas{background:rgba(93,202,165,0.12);color:#5DCAA5;border:1px solid rgba(93,202,165,0.25)}
-  .vb-onprem{background:rgba(239,159,39,0.1);color:#EF9F27;border:1px solid rgba(239,159,39,0.25)}
-  .vb-hybrid{background:rgba(168,200,216,0.1);color:#a8c8d8;border:1px solid rgba(168,200,216,0.2)}
-  .vb-low{background:rgba(93,202,165,0.1);color:#5DCAA5;border:1px solid rgba(93,202,165,0.2)}
-  .vb-medium{background:rgba(239,159,39,0.1);color:#EF9F27;border:1px solid rgba(239,159,39,0.2)}
-  .vb-high{background:rgba(184,80,80,0.1);color:#e07070;border:1px solid rgba(184,80,80,0.2)}
-  .vb-startup{background:rgba(93,202,165,0.08);color:#5DCAA5;border:1px solid rgba(93,202,165,0.15)}
-  .vb-growth{background:rgba(93,202,165,0.12);color:#5DCAA5;border:1px solid rgba(93,202,165,0.25)}
-  .vb-established{background:rgba(168,200,216,0.1);color:#a8c8d8;border:1px solid rgba(168,200,216,0.2)}
-  .vb-legacy{background:rgba(96,122,138,0.15);color:#607a8a;border:1px solid rgba(96,122,138,0.25)}
-  .vb-neutral{background:rgba(255,255,255,0.06);color:#607a8a;border:1px solid rgba(255,255,255,0.1)}
-  .vendor-rating{font-family:'JetBrains Mono',monospace;font-size:11px;color:#EF9F27;display:flex;align-items:center;gap:4px}
-  .vendor-reviews{font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a5060}
-  .vendor-desc{font-size:12px;color:#a8c8d8;line-height:1.5;margin-bottom:10px}
+  .vb-saas{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
+  .vb-onprem{background:#FFFBEB;color:#D97706;border:1px solid #FCD34D}
+  .vb-hybrid{background:#EFF6FF;color:#1E40AF;border:1px solid #BFDBFE}
+  .vb-low{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
+  .vb-medium{background:#FFFBEB;color:#D97706;border:1px solid #FCD34D}
+  .vb-high{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+  .vb-startup{background:#F0FDF4;color:#166534;border:1px solid #BBF7D0}
+  .vb-growth{background:#FFF7ED;color:#C2410C;border:1px solid #FDBA74}
+  .vb-established{background:#F3F4F6;color:#374151;border:1px solid #D1D5DB}
+  .vb-legacy{background:#F9FAFB;color:#6B7280;border:1px solid #E5E7EB}
+  .vb-neutral{background:#F3F4F6;color:#6B7280;border:1px solid #E5E7EB}
+  .vendor-rating{font-family:'JetBrains Mono',monospace;font-size:11px;color:#D97706;display:flex;align-items:center;gap:4px}
+  .vendor-reviews{font-family:'JetBrains Mono',monospace;font-size:10px;color:#9CA3AF}
+  .vendor-desc{font-size:12px;color:#6B7280;line-height:1.5;margin-bottom:10px}
   .vendor-match{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-  .vendor-match-bar{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;max-width:120px}
-  .vendor-match-fill{height:100%;border-radius:2px;background:#5DCAA5}
-  .vendor-match-fill.medium{background:#EF9F27}
-  .vendor-match-fill.low{background:#607a8a}
-  .vendor-match-text{font-family:'JetBrains Mono',monospace;font-size:10px;color:#607a8a}
+  .vendor-match-bar{flex:1;height:4px;background:rgba(0,0,0,0.06);border-radius:2px;overflow:hidden;max-width:120px}
+  .vendor-match-fill{height:100%;border-radius:2px;background:#C2410C}
+  .vendor-match-fill.medium{background:#D97706}
+  .vendor-match-fill.low{background:#D1D5DB}
+  .vendor-match-text{font-family:'JetBrains Mono',monospace;font-size:10px;color:#9CA3AF}
   .vendor-actions{display:flex;gap:6px}
   .vendor-btn{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:3px;cursor:pointer;border:1px solid;transition:all .15s}
-  .vendor-btn-shortlist{color:#5DCAA5;border-color:rgba(93,202,165,0.3);background:transparent}
-  .vendor-btn-shortlist:hover,.vendor-btn-shortlist.active{background:rgba(93,202,165,0.15);border-color:#5DCAA5}
-  .vendor-btn-eliminate{color:#e07070;border-color:rgba(184,80,80,0.3);background:transparent}
-  .vendor-btn-eliminate:hover,.vendor-btn-eliminate.active{background:rgba(184,80,80,0.1);border-color:#e07070}
-  .vendor-btn-g2{color:#607a8a;border-color:rgba(255,255,255,0.1);background:transparent}
-  .vendor-btn-g2:hover{color:#a8c8d8;border-color:rgba(255,255,255,0.2)}
+  .vendor-btn-shortlist{color:#C2410C;border-color:rgba(194,65,12,0.3);background:transparent}
+  .vendor-btn-shortlist:hover,.vendor-btn-shortlist.active{background:#FFF7ED;border-color:#C2410C}
+  .vendor-btn-eliminate{color:#DC2626;border-color:rgba(220,38,38,0.3);background:transparent}
+  .vendor-btn-eliminate:hover,.vendor-btn-eliminate.active{background:#FEF2F2;border-color:#DC2626}
+  .vendor-btn-g2{color:#9CA3AF;border-color:rgba(0,0,0,0.1);background:transparent}
+  .vendor-btn-g2:hover{color:#374151;border-color:rgba(0,0,0,0.2)}
   .confidence-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
-  .confidence-high{background:#5DCAA5}
-  .confidence-medium{background:#EF9F27}
-  .confidence-low{background:#607a8a}
+  .confidence-high{background:#C2410C}
+  .confidence-medium{background:#D97706}
+  .confidence-low{background:#D1D5DB}
 
   @keyframes spin{to{transform:rotate(360deg)}}
   .spin{animation:spin .8s linear infinite;display:inline-block}
@@ -337,7 +337,7 @@ const GROUP_COLORS = { "Pre-RFx": "#2e5984", "RFx": "#3a6a52", "Post-RFx": "#a05
 function GanttChart({ activities }) {
   const allDates = activities.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
   if (!allDates.length) return (
-    <div style={{ color: "#3a5060", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>No dates set — configure your timeline first.</div>
+    <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>No dates set — configure your timeline first.</div>
   );
   const minDate = allDates[0];
   const maxDate = allDates[allDates.length - 1];
@@ -369,16 +369,16 @@ function GanttChart({ activities }) {
 
   return (
     <div style={{ overflowX: "auto", marginBottom: 24 }}>
-      <div style={{ minWidth: 700, background: "#141d26", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px" }}>
+      <div style={{ minWidth: 700, background: "#F9F8F8", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "20px 24px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#5DCAA5" }}>Procurement Timeline</div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#607a8a" }}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#C2410C" }}>Procurement Timeline</div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#6B7280" }}>
             {new Date(minDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            <span style={{ margin: "0 8px", color: "#3a5060" }}>→</span>
+            <span style={{ margin: "0 8px", color: "#9CA3AF" }}>→</span>
             {new Date(maxDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            <span style={{ marginLeft: 12, color: "#EF9F27" }}>{totalWeeks} weeks</span>
+            <span style={{ marginLeft: 12, color: "#D97706" }}>{totalWeeks} weeks</span>
           </div>
         </div>
 
@@ -402,7 +402,7 @@ function GanttChart({ activities }) {
                         fontSize: a.parentId ? 11 : 12,
                         fontWeight: a.parentId ? 400 : 600,
                         fontStyle: a.parentId ? "italic" : "normal",
-                        color: a.parentId ? "#607a8a" : "#a8c8d8",
+                        color: a.parentId ? "#6B7280" : "#374151",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         lineHeight: 1.3,
                       }}>{a.name}</span>
@@ -414,12 +414,12 @@ function GanttChart({ activities }) {
           </div>
 
           {/* Chart area */}
-          <div style={{ flex: 1, minWidth: 0, position: "relative", borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ flex: 1, minWidth: 0, position: "relative", borderLeft: "1px solid rgba(0,0,0,0.07)" }}>
             {/* Month header */}
-            <div style={{ height: 32, position: "relative", marginBottom: 2, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ height: 32, position: "relative", marginBottom: 2, borderBottom: "1px solid rgba(0,0,0,0.1)" }}>
               {markers.map(m => (
                 <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, height: "100%", display: "flex", alignItems: "center", paddingLeft: 6 }}>
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#607a8a", whiteSpace: "nowrap" }}>{m.label}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#6B7280", whiteSpace: "nowrap" }}>{m.label}</span>
                   <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 1, background: "rgba(255,255,255,0.06)" }} />
                 </div>
               ))}
@@ -479,12 +479,12 @@ function GanttChart({ activities }) {
           {GROUPS.map(g => (
             <div key={g} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 16, height: 10, background: GROUP_COLORS[g], borderRadius: 3, opacity: 0.9 }} />
-              <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#607a8a" }}>{g}</span>
+              <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#6B7280" }}>{g}</span>
             </div>
           ))}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 16, height: 10, border: "2px solid #607a8a", borderRadius: 3 }} />
-            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#607a8a" }}>Sub-activity</span>
+            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#6B7280" }}>Sub-activity</span>
           </div>
         </div>
       </div>
@@ -748,7 +748,9 @@ export default function RequirementsAgent() {
   const isDirty = useRef(false);
 
   // Scope
-  const [answers, setAnswers] = useState({ who: "", what: "", where: "", when: "", why: "" });
+  const [answers, setAnswers] = useState({ who: "", what: "", where: "", when: "", why: "", freeform: "", companyName: "", companyProfile: null });
+  const [companyLookupBusy, setCompanyLookupBusy] = useState(false);
+  const [companyLookupErr, setCompanyLookupErr] = useState("");
   const [formalScope, setFormalScope] = useState("");
   const [scopeFlags, setScopeFlags] = useState([]);
   const [flagResponses, setFlagResponses] = useState({});
@@ -820,7 +822,9 @@ export default function RequirementsAgent() {
   const resetSession = () => {
     setSessionId(genId());
     setProjectTitle("");
-    setAnswers({ who: "", what: "", where: "", when: "", why: "", freeform: "" });
+    setAnswers({ who: "", what: "", where: "", when: "", why: "", freeform: "", companyName: "", companyProfile: null });
+    setCompanyLookupBusy(false);
+    setCompanyLookupErr("");
     setFormalScope("");
     setScopeFlags([]);
     setFlagResponses({});
@@ -908,12 +912,52 @@ export default function RequirementsAgent() {
   const doGenerateScope = async () => {
     setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
     try {
-      const userMsg = answers.freeform || FIVE_WS.map(w => answers[w.key]).filter(Boolean).join("\n");
+      const p = answers.companyProfile;
+      const companyCtx = p ? [
+        p.name && `Company: ${p.name}`,
+        p.vertical && `Industry: ${p.vertical}${p.subVertical ? ` — ${p.subVertical}` : ""}`,
+        p.employeeCount && `Employees: ${p.employeeCount}`,
+        p.hq && `HQ: ${p.hq}`,
+        p.publicPrivate && `Type: ${p.publicPrivate}${p.ticker ? ` (${p.ticker})` : ""}`,
+        p.knownTechStack?.length && `Known tech: ${p.knownTechStack.join(", ")}`,
+        p.regulatoryContext && `Regulatory context: ${p.regulatoryContext}`,
+      ].filter(Boolean).join("\n") : (answers.companyName ? `Company: ${answers.companyName}` : "");
+      const problemCtx = answers.freeform || FIVE_WS.map(w => answers[w.key]).filter(Boolean).join("\n");
+      const userMsg = companyCtx ? `${companyCtx}\n\n${problemCtx}` : problemCtx;
       const scope = await callClaude(P_SCOPE_GENERATE, userMsg);
       setFormalScope(scope.trim());
       await doEvaluateScope(scope.trim());
     } catch { setScopeErr("Could not generate scope. Please try again."); }
     finally { setScopeBusy(false); }
+  };
+
+  const doCompanyLookup = async (name) => {
+    if (!name.trim()) return;
+    setCompanyLookupBusy(true); setCompanyLookupErr("");
+    setAnswers(p => ({ ...p, companyProfile: null }));
+    const P_COMPANY = `You are a business intelligence analyst. Given a company name, return a structured JSON profile using your knowledge. Be concise and factual. If you are uncertain about a specific field, use null.
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "name": "Official company name",
+  "vertical": "Primary industry/vertical (e.g. Food & Beverage, Financial Services, Healthcare)",
+  "subVertical": "More specific category (e.g. Consumer Packaged Goods, Investment Banking)",
+  "employeeCount": "Approximate headcount (e.g. ~32,000, 500-1000, or null)",
+  "hq": "City, Country",
+  "publicPrivate": "Public" or "Private",
+  "ticker": "Stock ticker if public, else null",
+  "description": "One sentence describing what the company does",
+  "knownTechStack": ["up to 3 known enterprise systems e.g. SAP, Salesforce"],
+  "regulatoryContext": "Any notable compliance context (e.g. HIPAA, SOX, GDPR) or null"
+}`;
+    try {
+      const profile = await callJSON(P_COMPANY, `Company name: ${name}`, false, "claude-haiku-4-5-20251001");
+      setAnswers(p => ({ ...p, companyProfile: profile }));
+    } catch {
+      setCompanyLookupErr("Could not find company info — you can still proceed.");
+    } finally {
+      setCompanyLookupBusy(false);
+    }
   };
 
   const doEvaluateScope = async (scopeText) => {
@@ -1151,10 +1195,10 @@ export default function RequirementsAgent() {
             </div>
             <div className="rq-content" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ textAlign: "center", maxWidth: 480 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 12 }}>BuyRight</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#d8eaf2", marginBottom: 4, lineHeight: 1.15 }}>Don't Be Sold On Value.</div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#5DCAA5", marginBottom: 20, lineHeight: 1.15 }}>Buy Based On Needs.</div>
-                <div style={{ fontFamily: "'Lora',serif", fontSize: 15, color: "#607a8a", lineHeight: 1.7, marginBottom: 36 }}>Before you fill out their form, build your list. 15 minutes of prep buys you what you need, not what they want to sell.</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 12 }}>BuyRight</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#111827", marginBottom: 4, lineHeight: 1.15 }}>Don't Be Sold On Value.</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 36, fontWeight: 800, color: "#C2410C", marginBottom: 20, lineHeight: 1.15 }}>Buy Based On Needs.</div>
+                <div style={{ fontFamily: "'Lora',serif", fontSize: 15, color: "#6B7280", lineHeight: 1.7, marginBottom: 36 }}>Before you fill out their form, build your list. 15 minutes of prep buys you what you need, not what they want to sell.</div>
                 <button className="rq-btn-primary" style={{ padding: "14px 32px", fontSize: 13 }} onClick={resetSession}>
                   <Plus size={15} /> Start new session
                 </button>
@@ -1192,7 +1236,7 @@ export default function RequirementsAgent() {
         })}
         {formalScope && (
           <>
-            <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "10px 0" }} />
+            <div style={{ height: 1, background: "rgba(0,0,0,0.07)", margin: "10px 0" }} />
             <div className={`rq-nav-item ${view === "sessions" ? "active" : ""}`} onClick={() => setView("sessions")}>
               <div className="rq-nav-num" style={{ fontSize: 8 }}>S</div>Drafts
             </div>
@@ -1218,7 +1262,7 @@ export default function RequirementsAgent() {
           {saveStatus === "saving" && <><Loader size={11} className="spin" /> Saving…</>}
           {saveStatus === "saved" && <span className="rq-save-chip"><CheckCircle size={11} /> Saved</span>}
           {saveStatus === "error" && <span style={{ color: "#e07070" }}>Save failed</span>}
-          {saveStatus === "idle" && lastSaved && <span style={{ color: "#3a5060" }}><Clock size={11} style={{ display: "inline", marginRight: 4 }} />{lastSaved.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>}
+          {saveStatus === "idle" && lastSaved && <span style={{ color: "#9CA3AF" }}><Clock size={11} style={{ display: "inline", marginRight: 4 }} />{lastSaved.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>}
         </div>
         <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}><Save size={11} /> Save</button>
         <button className="rq-export-btn" onClick={doExport} disabled={!formalScope || exportBusy}>
@@ -1245,7 +1289,7 @@ export default function RequirementsAgent() {
                 </div>
                 {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
                 {!sessionsLoading && sessionsList.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "48px 0", color: "#3a5060", fontSize: 14, fontStyle: "italic" }}>No drafts yet.</div>
+                  <div style={{ textAlign: "center", padding: "48px 0", color: "#9CA3AF", fontSize: 14, fontStyle: "italic" }}>No drafts yet.</div>
                 )}
                 {!sessionsLoading && sessionsList.length > 0 && (
                   <div className="sessions-panel">
@@ -1272,15 +1316,15 @@ export default function RequirementsAgent() {
               <div className="rq-fade">
                 <p className="rq-hint">Set your start and go-live dates — all activity dates cascade automatically.</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 22 }}>
-                  <div style={{ background: "#1b2530", border: "1px solid rgba(93,202,165,0.2)", borderRadius: 8, padding: "14px 16px" }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 6 }}>RFx Start Date</div>
+                  <div style={{ background: "#FFFFFF", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "14px 16px" }}>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#C2410C", marginBottom: 6 }}>RFx Start Date</div>
                     <input type="date" className="rq-input" value={rfpStart} onChange={e => handleRfpStartChange(e.target.value)} />
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#3a5060", marginTop: 5 }}>Drives all activity dates</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#9CA3AF", marginTop: 5 }}>Drives all activity dates</div>
                   </div>
-                  <div style={{ background: "#1b2530", border: "1px solid rgba(239,159,39,0.2)", borderRadius: 8, padding: "14px 16px" }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#EF9F27", marginBottom: 6 }}>Go-Live Date</div>
+                  <div style={{ background: "#FFFFFF", border: "1px solid rgba(239,159,39,0.2)", borderRadius: 8, padding: "14px 16px" }}>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#D97706", marginBottom: 6 }}>Go-Live Date</div>
                     <input type="date" className="rq-input" value={goLive} onChange={e => handleGoLiveChange(e.target.value)} />
-                    {rfpStart && goLive && <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#607a8a", marginTop: 5 }}>{calDaysBetween(rfpStart, goLive)} calendar days total</div>}
+                    {rfpStart && goLive && <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#6B7280", marginTop: 5 }}>{calDaysBetween(rfpStart, goLive)} calendar days total</div>}
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", gap: 6, marginBottom: 6, paddingLeft: 10, paddingRight: 4 }}>
@@ -1295,9 +1339,9 @@ export default function RequirementsAgent() {
                       <div className="tl-group-header" onClick={() => toggleGroup(g)}>
                         <div className={`tl-group-label ${colorClass}`}>
                           <div style={{ width: 7, height: 7, borderRadius: "50%", background: GROUP_COLORS[g] }} />
-                          {g} <span style={{ fontWeight: 400, color: "#3a5060", marginLeft: 4 }}>({gas.length})</span>
+                          {g} <span style={{ fontWeight: 400, color: "#9CA3AF", marginLeft: 4 }}>({gas.length})</span>
                         </div>
-                        {collapsed ? <ChevronDown size={13} style={{ color: "#3a5060" }} /> : <ChevronUp size={13} style={{ color: "#3a5060" }} />}
+                        {collapsed ? <ChevronDown size={13} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={13} style={{ color: "#9CA3AF" }} />}
                       </div>
                       {!collapsed && gas.map(a => {
                         const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : "—";
@@ -1307,12 +1351,12 @@ export default function RequirementsAgent() {
                             style={{ gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", display: "grid", gap: 6 }}
                             draggable onDragStart={() => onDragStart(a.id)} onDragOver={(e) => onDragOver(e, a.id)} onDrop={(e) => onDrop(e, a.id)}
                           >
-                            <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#3a5060" }}><GripVertical size={13} /></div>
+                            <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#9CA3AF" }}><GripVertical size={13} /></div>
                             <input className="tl-cell-input" value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} style={{ fontStyle: a.parentId ? "italic" : "normal" }} />
                             <input type="date" className="tl-cell-input" value={a.startDate || ""} onChange={e => updateActivity(a.id, "startDate", e.target.value)} />
                             <input type="date" className="tl-cell-input" value={a.endDate || ""} onChange={e => updateActivity(a.id, "endDate", e.target.value)} />
                             <input type="number" min="0" className="tl-cell-input" style={{ textAlign: "center" }} value={a.offsetDays ?? ""} onChange={e => updateActivity(a.id, "offsetDays", e.target.value)} />
-                            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#3a5060", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
+                            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
                             <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "4px 6px" }}><Trash2 size={11} /></button>
                           </div>
                         );
@@ -1322,7 +1366,7 @@ export default function RequirementsAgent() {
                 })}
                 <div className="rq-row" style={{ marginTop: 8, marginBottom: 22 }}>
                   <input className="rq-input" placeholder="New activity name…" value={newActName} onChange={e => setNewActName(e.target.value)} onKeyDown={e => e.key === "Enter" && addActivity()} style={{ flex: 1 }} />
-                  <select style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "9px 10px", fontFamily: "'Syne',sans-serif", fontSize: 11, color: "#d8eaf2", background: "#141d26", outline: "none" }} value={newActGroup} onChange={e => setNewActGroup(e.target.value)}>
+                  <select style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, padding: "9px 10px", fontFamily: "'Syne',sans-serif", fontSize: 11, color: "#111827", background: "#F9F8F8", outline: "none" }} value={newActGroup} onChange={e => setNewActGroup(e.target.value)}>
                     {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                   <button className="rq-btn-ghost" onClick={addActivity} disabled={!newActName.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={12} /> Add</button>
@@ -1335,7 +1379,7 @@ export default function RequirementsAgent() {
               <div className="rq-fade">
                 {!formalScope || !scopeApproved ? (
                   <div style={{ textAlign: "center", padding: "48px 0" }}>
-                    <div style={{ color: "#607a8a", fontSize: 14, fontStyle: "italic", marginBottom: 16 }}>Complete and approve the project scope first.</div>
+                    <div style={{ color: "#6B7280", fontSize: 14, fontStyle: "italic", marginBottom: 16 }}>Complete and approve the project scope first.</div>
                     <button className="rq-btn-primary" onClick={() => { setView("scope"); }}>Go to Scope <ChevronRight size={13} /></button>
                   </div>
                 ) : (
@@ -1367,7 +1411,7 @@ export default function RequirementsAgent() {
                                 {v.name}
                               </a>
                             </div>
-                            {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#5DCAA5", background: "rgba(93,202,165,0.12)", padding: "2px 7px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>}
+                            {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#C2410C", background: "#FFF7ED", padding: "2px 7px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>}
                             {status === "eliminated" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#e07070", background: "rgba(184,80,80,0.1)", padding: "2px 7px", borderRadius: 3, flexShrink: 0 }}>Eliminated</span>}
                             {/* Search links — consistent across all cards */}
                             {(() => {
@@ -1407,8 +1451,8 @@ export default function RequirementsAgent() {
                           <div className="vendor-meta">
                             {v.g2Rating && v.g2Rating !== "N/A" && (
                               <div className="vendor-rating">
-                                <span style={{ color: "#EF9F27" }}>★</span> {v.g2Rating}
-                                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 8, color: "#3a5060", marginLeft: 5, letterSpacing: ".05em" }}>agent est.</span>
+                                <span style={{ color: "#D97706" }}>★</span> {v.g2Rating}
+                                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 8, color: "#9CA3AF", marginLeft: 5, letterSpacing: ".05em" }}>agent est.</span>
                               </div>
                             )}
                             {v.g2ReviewCount && v.g2ReviewCount !== "N/A" && <div className="vendor-reviews">{v.g2ReviewCount}</div>}
@@ -1438,7 +1482,53 @@ export default function RequirementsAgent() {
               <div className="rq-fade">
                 <div className="rq-section-label" style={{ marginBottom: 6 }}>Project title</div>
                 <input className="rq-input" style={{ marginBottom: 22 }} placeholder="e.g. Enterprise HR Management System" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} />
-                <div className="rq-section-label" style={{ marginBottom: 8 }}>What business problem are you trying to solve?</div>
+
+                {/* Company context */}
+                <div className="rq-section-label" style={{ marginBottom: 8 }}>Company</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "flex-start" }}>
+                  <input
+                    className="rq-input"
+                    style={{ flex: 1 }}
+                    placeholder="e.g. Kraft Heinz, Manitoba Hydro, Acme Corp"
+                    value={answers.companyName || ""}
+                    onChange={e => {
+                      setAnswers(p => ({ ...p, companyName: e.target.value, companyProfile: null }));
+                      setCompanyLookupErr("");
+                    }}
+                    onKeyDown={e => e.key === "Enter" && doCompanyLookup(answers.companyName)}
+                  />
+                  <button
+                    className="rq-btn-ghost"
+                    onClick={() => doCompanyLookup(answers.companyName)}
+                    disabled={companyLookupBusy || !answers.companyName?.trim()}
+                    style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                  >
+                    {companyLookupBusy ? <><Loader size={11} className="spin" /> Looking up…</> : <>Look up</>}
+                  </button>
+                </div>
+                {companyLookupErr && <div style={{ fontSize: 12, color: "#D97706", marginBottom: 8, fontStyle: "italic" }}>{companyLookupErr}</div>}
+                {answers.companyProfile && (() => {
+                  const p = answers.companyProfile;
+                  return (
+                    <div style={{ background: "#FFF7ED", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 12 }} className="rq-fade">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, color: "#C2410C" }}>{p.name}</div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "#9CA3AF" }}>agent est. · verify before use</div>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
+                        {p.vertical && <span style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 3, padding: "2px 8px", fontSize: 10, color: "#374151" }}>{p.vertical}</span>}
+                        {p.employeeCount && <span style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 3, padding: "2px 8px", fontSize: 10, color: "#374151" }}>{p.employeeCount} employees</span>}
+                        {p.hq && <span style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 3, padding: "2px 8px", fontSize: 10, color: "#374151" }}>{p.hq}</span>}
+                        {p.publicPrivate && <span style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 3, padding: "2px 8px", fontSize: 10, color: "#374151" }}>{p.publicPrivate}{p.ticker ? ` · ${p.ticker}` : ""}</span>}
+                        {p.regulatoryContext && <span style={{ background: "#FFFBEB", border: "1px solid rgba(217,119,6,0.25)", borderRadius: 3, padding: "2px 8px", fontSize: 10, color: "#D97706" }}>{p.regulatoryContext}</span>}
+                      </div>
+                      {p.description && <div style={{ color: "#6B7280", lineHeight: 1.5, marginBottom: p.knownTechStack?.length ? 6 : 0 }}>{p.description}</div>}
+                      {p.knownTechStack?.length > 0 && <div style={{ color: "#9CA3AF", fontSize: 11 }}>Known tech: {p.knownTechStack.join(", ")}</div>}
+                    </div>
+                  );
+                })()}
+
+                <div className="rq-section-label" style={{ marginBottom: 8, marginTop: 14 }}>What business problem are you trying to solve?</div>
                 <p className="rq-hint" style={{ marginBottom: 12 }}>Describe what you need in your own words — the system, the problem, who will use it, any deadlines or constraints, and what's out of scope. The more context you provide, the better the scope.</p>
                 <textarea
                   className="rq-textarea"
@@ -1474,7 +1564,7 @@ export default function RequirementsAgent() {
                           const skipped = isSkipped(val);
                           return (
                             <div className="rq-flag-card" key={idx} style={{ opacity: skipped ? 0.5 : 1 }}>
-                              <div className="rq-flag-title"><AlertTriangle size={13} /> {flag.criterion}{skipped && <span style={{ marginLeft: 8, fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#EF9F27", background: "rgba(239,159,39,0.15)", padding: "2px 7px", borderRadius: 3 }}>SKIPPED</span>}</div>
+                              <div className="rq-flag-title"><AlertTriangle size={13} /> {flag.criterion}{skipped && <span style={{ marginLeft: 8, fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#D97706", background: "rgba(239,159,39,0.15)", padding: "2px 7px", borderRadius: 3 }}>SKIPPED</span>}</div>
                               {!skipped && <div className="rq-flag-text">{flag.prompt}</div>}
                               <textarea className="rq-textarea" placeholder={`Your response… (type "skip" to dismiss)`} value={val} onChange={e => setFlagResponses(p => ({ ...p, [idx]: e.target.value }))} rows={skipped ? 1 : 2} style={{ opacity: skipped ? 0.6 : 1 }} />
                             </div>
@@ -1503,9 +1593,9 @@ export default function RequirementsAgent() {
                           const val = expertResponses[q.question] || "";
                           const skipped = val.trim().toLowerCase() === "skip";
                           return (
-                            <div key={q.question} className="rq-flag-card" style={{ opacity: skipped ? 0.5 : 1, background: "rgba(93,202,165,0.04)", borderColor: "rgba(93,202,165,0.2)" }}>
-                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#a8c8d8", marginBottom: 4 }}>{q.question}</div>
-                              <div style={{ fontFamily: "'Lora',serif", fontSize: 11, color: "#607a8a", fontStyle: "italic", marginBottom: 8 }}>{q.why}</div>
+                            <div key={q.question} className="rq-flag-card" style={{ opacity: skipped ? 0.5 : 1, background: "rgba(93,202,165,0.04)", borderColor: "rgba(194,65,12,0.2)" }}>
+                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#374151", marginBottom: 4 }}>{q.question}</div>
+                              <div style={{ fontFamily: "'Lora',serif", fontSize: 11, color: "#6B7280", fontStyle: "italic", marginBottom: 8 }}>{q.why}</div>
                               <textarea
                                 className="rq-textarea"
                                 placeholder={`Your answer… (type "skip" to dismiss)`}
@@ -1649,14 +1739,14 @@ export default function RequirementsAgent() {
                   </div>
                   <div className="rq-metric">
                     <div className="rq-metric-label">Vendors shortlisted</div>
-                    <div className="rq-metric-val" style={{ color: vendors.length === 0 ? "#3a5060" : "#EF9F27" }}>
+                    <div className="rq-metric-val" style={{ color: vendors.length === 0 ? "#9CA3AF" : "#D97706" }}>
                       {vendors.length === 0 ? "—" : vendors.filter(v => vendorStatus[v.name] === "shortlisted").length}
                     </div>
                     <div className="rq-metric-sub amber">{vendors.length === 0 ? "run market first" : `of ${vendors.length} found`}</div>
                   </div>
                   <div className="rq-metric">
                     <div className="rq-metric-label">Timeline</div>
-                    <div className="rq-metric-val" style={{ color: "#5DCAA5" }}>
+                    <div className="rq-metric-val" style={{ color: "#C2410C" }}>
                       {rfpStart && goLive ? Math.round(calDaysBetween(rfpStart, goLive) / 7) : "—"}
                     </div>
                     <div className="rq-metric-sub">{rfpStart && goLive ? "weeks start to go-live" : "set dates in timeline"}</div>
@@ -1667,7 +1757,7 @@ export default function RequirementsAgent() {
                 <div className="rq-section-label">Scope</div>
                 {formalScope
                   ? <div className="rq-scope-box" style={{ marginBottom: 24 }}>{formalScope}</div>
-                  : <div style={{ color: "#3a5060", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>No scope yet — go to Scope to get started.</div>
+                  : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>No scope yet — go to Scope to get started.</div>
                 }
                 <hr className="rq-divider" />
 
@@ -1676,23 +1766,23 @@ export default function RequirementsAgent() {
                 {rfpStart && goLive ? (
                   <div style={{ marginBottom: 24 }}>
                     <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-                      <div style={{ background: "#1b2530", border: "1px solid rgba(93,202,165,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#5DCAA5", marginBottom: 4 }}>RFx Start</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#d8eaf2" }}>{new Date(rfpStart + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                      <div style={{ background: "#FFFFFF", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#C2410C", marginBottom: 4 }}>RFx Start</div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#111827" }}>{new Date(rfpStart + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
                       </div>
-                      <div style={{ background: "#1b2530", border: "1px solid rgba(239,159,39,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#EF9F27", marginBottom: 4 }}>Go-Live</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#d8eaf2" }}>{new Date(goLive + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                      <div style={{ background: "#FFFFFF", border: "1px solid rgba(239,159,39,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#D97706", marginBottom: 4 }}>Go-Live</div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#111827" }}>{new Date(goLive + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
                       </div>
-                      <div style={{ background: "#1b2530", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#607a8a", marginBottom: 4 }}>Total Duration</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#d8eaf2" }}>{Math.round(calDaysBetween(rfpStart, goLive) / 7)} weeks</div>
+                      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#6B7280", marginBottom: 4 }}>Total Duration</div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#111827" }}>{Math.round(calDaysBetween(rfpStart, goLive) / 7)} weeks</div>
                       </div>
                     </div>
                     <GanttChart activities={activities} />
                   </div>
                 ) : (
-                  <div style={{ color: "#3a5060", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>
+                  <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>
                     No dates set — go to Timeline to configure your schedule.
                   </div>
                 )}
@@ -1701,11 +1791,11 @@ export default function RequirementsAgent() {
                 {/* Vendor shortlist */}
                 <div className="rq-section-label">Vendor shortlist</div>
                 {vendors.length === 0 ? (
-                  <div style={{ background: "#1b2530", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "20px 22px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, color: "#3a5060" }}>—</div>
+                  <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, padding: "20px 22px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, color: "#9CA3AF" }}>—</div>
                     <div>
-                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 600, color: "#607a8a", marginBottom: 3 }}>No market research yet</div>
-                      <div style={{ fontSize: 12, color: "#3a5060" }}>Go to Market to search for vendors and score them against your requirements.</div>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 3 }}>No market research yet</div>
+                      <div style={{ fontSize: 12, color: "#9CA3AF" }}>Go to Market to search for vendors and score them against your requirements.</div>
                     </div>
                     <button className="rq-btn-ghost" style={{ marginLeft: "auto", flexShrink: 0 }} onClick={() => setView("market")}>Go to Market <ChevronRight size={12} /></button>
                   </div>
@@ -1721,7 +1811,7 @@ export default function RequirementsAgent() {
                               <div className="vendor-name">{v.name}</div>
                               <div className="vendor-category">{v.category}</div>
                             </div>
-                            {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#5DCAA5", background: "rgba(93,202,165,0.12)", padding: "3px 8px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>}
+                            {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#C2410C", background: "#FFF7ED", padding: "3px 8px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>}
                           </div>
                           <div className="vendor-desc" style={{ marginTop: 6, marginBottom: 6 }}>{v.description}</div>
                           <div className="vendor-match">
@@ -1730,7 +1820,7 @@ export default function RequirementsAgent() {
                               <div className={`vendor-match-fill ${v.matchConfidence === "medium" ? "medium" : v.matchConfidence === "low" ? "low" : ""}`} style={{ width: `${matchPct * 100}%` }} />
                             </div>
                             <div className="vendor-match-text">Agent estimates {v.requirementsMatch} of {v.requirementsTotal} requirements</div>
-                            {v.g2Rating && v.g2Rating !== "N/A" && <div className="vendor-rating" style={{ marginLeft: "auto" }}><span style={{ color: "#EF9F27" }}>★</span> {v.g2Rating}</div>}
+                            {v.g2Rating && v.g2Rating !== "N/A" && <div className="vendor-rating" style={{ marginLeft: "auto" }}><span style={{ color: "#D97706" }}>★</span> {v.g2Rating}</div>}
                           </div>
                         </div>
                       );
