@@ -501,17 +501,19 @@ SCOPE QUALITY RULES — the scope MUST:
 1. Be specific — include concrete details about deadlines, milestones, or deliverables where the user provided them
 2. Include exclusions — explicitly state what is out of scope to prevent scope creep
 3. Use plain language — no jargon, no acronyms without explanation
-4. Be 3-6 sentences of clear prose — no bullets, no headers
 
 Return ONLY the scope text. No preamble, no explanation.`;
 
 const P_SCOPE_EVALUATE = `You are a senior business analyst reviewing a project scope narrative for quality.
 
 Evaluate the scope against these criteria:
-1. SPECIFICITY — Are deadlines, milestones, or deliverables clearly defined?
+1. SPECIFICITY — Does the scope clearly explain why this project is being done? What is the business driver or problem being solved?
 2. EXCLUSIONS — Does it explicitly state what is out of scope?
-3. PLAIN LANGUAGE — Is it free of unexplained jargon?
-4. COMPLETENESS — Does it address who, what, where, when, and why?
+3. PLAIN LANGUAGE — Is it free of unexplained jargon or acronyms?
+4. COMPLETENESS — Does it address all three of the following:
+   - What will be done
+   - When and how it will be done, and potentially by whom
+   - What constitutes an acceptable result
 
 Respond ONLY with valid JSON, no markdown:
 {
