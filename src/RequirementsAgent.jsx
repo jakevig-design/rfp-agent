@@ -1394,6 +1394,18 @@ export default function RequirementsAgent() {
                         </div>
                       </div>
                     )}
+                    {!scopeApproved && !editingScope && formalScope && scopeFlags.length === 0 && expertQuestions.length === 0 && !scopeBusy && (
+                      <div style={{ marginTop: 14 }} className="rq-fade">
+                        <div className="rq-actions">
+                          <button className="rq-btn-ghost" onClick={() => doEvaluateScope(formalScope)} disabled={scopeBusy}>
+                            <RefreshCw size={12} /> Re-evaluate scope
+                          </button>
+                          <button className="rq-btn-primary" onClick={() => setScopeApproved(true)}>
+                            <CheckCircle size={13} /> Approve scope
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {expertQuestions.length > 0 && !scopeApproved && !editingScope && (
                       <div style={{ marginTop: 18 }} className="rq-fade">
                         <div className="rq-section-label" style={{ marginBottom: 4 }}>Expert questions</div>
