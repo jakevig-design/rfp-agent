@@ -323,19 +323,22 @@ const GROUP_COLORS = { "Pre-RFP": "#2e5984", "RFP": "#3a6a52", "Post-RFP": "#a05
 // ─── Gantt ────────────────────────────────────────────────────────────────────
 function GanttChart({ activities }) {
   const allDates = activities.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
-  if (!allDates.length) return null;
+  if (!allDates.length) return (
+    <div style={{ color: "#3a5060", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>No dates set — configure your timeline first.</div>
+  );
   const minDate = allDates[0];
   const maxDate = allDates[allDates.length - 1];
   const totalDays = Math.max(calDaysBetween(minDate, maxDate), 1);
-  const BAR_H = 22;
+  const BAR_H = 28;
+  const GROUP_ROW_H = 26;
 
   const xPct = (dateStr) => {
     if (!dateStr) return 0;
     return Math.min(Math.max((calDaysBetween(minDate, dateStr) / totalDays) * 100, 0), 100);
   };
   const wPct = (s, e) => {
-    if (!s || !e) return 1;
-    return Math.max(Math.min((calDaysBetween(s, e) / totalDays) * 100, 100), 0.5);
+    if (!s || !e) return 0.5;
+    return Math.max(Math.min((calDaysBetween(s, e) / totalDays) * 100, 100), 0.8);
   };
 
   // Month markers
@@ -345,31 +348,51 @@ function GanttChart({ activities }) {
   let md = new Date(mStart.getFullYear(), mStart.getMonth(), 1);
   while (md <= mEnd) {
     const ds = md.toISOString().split("T")[0];
-    markers.push({ ds, pct: xPct(ds), label: md.toLocaleDateString("en-US", { month: "short", year: "2-digit" }) });
+    markers.push({ ds, pct: xPct(ds), label: md.toLocaleDateString("en-US", { month: "short", year: "numeric" }) });
     md = new Date(md.getFullYear(), md.getMonth() + 1, 1);
   }
 
+  const totalWeeks = Math.round(totalDays / 7);
+
   return (
-    <div className="gantt-wrap">
-      <div className="gantt-container">
-        <div className="gantt-title">Procurement Timeline — {fmtDate(minDate)} to {fmtDate(maxDate)}</div>
-        <div style={{ display: "flex" }}>
-          {/* Labels */}
-          <div style={{ width: 210, flexShrink: 0 }}>
-            <div style={{ height: 28, marginBottom: 4 }} />
+    <div style={{ overflowX: "auto", marginBottom: 24 }}>
+      <div style={{ minWidth: 700, background: "#141d26", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px" }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#5DCAA5" }}>Procurement Timeline</div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#607a8a" }}>
+            {new Date(minDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            <span style={{ margin: "0 8px", color: "#3a5060" }}>→</span>
+            {new Date(maxDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            <span style={{ marginLeft: 12, color: "#EF9F27" }}>{totalWeeks} weeks</span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 0 }}>
+          {/* Label column */}
+          <div style={{ width: 240, flexShrink: 0, paddingRight: 16 }}>
+            <div style={{ height: 32, marginBottom: 2 }} /> {/* spacer for month header */}
             {GROUPS.map(g => {
               const gas = activities.filter(a => a.group === g);
               if (!gas.length) return null;
               return (
                 <div key={g}>
-                  <div style={{ height: 20, marginBottom: 4, display: "flex", alignItems: "center" }}>
-                    <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: GROUP_COLORS[g] }}>{g}</span>
+                  <div style={{ height: GROUP_ROW_H, display: "flex", alignItems: "center" }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: GROUP_COLORS[g], marginRight: 7, flexShrink: 0 }} />
+                    <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: GROUP_COLORS[g] }}>{g}</span>
                   </div>
                   {gas.map(a => (
-                    <div key={a.id} style={{ height: BAR_H, marginBottom: 4, display: "flex", alignItems: "center", paddingLeft: a.parentId ? 14 : 0 }}>
-                      <span style={{ fontFamily: "'Lora',serif", fontSize: a.parentId ? 10 : 11, color: a.parentId ? "#607a8a" : "#a8c8d8", lineHeight: 1.2, paddingRight: 8, fontStyle: a.parentId ? "italic" : "normal", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {a.parentId ? "↳ " : ""}{a.name}
-                      </span>
+                    <div key={a.id} style={{ height: BAR_H + 6, display: "flex", alignItems: "center", paddingLeft: a.parentId ? 18 : 2 }}>
+                      <span style={{
+                        fontFamily: a.parentId ? "'Lora',serif" : "'Syne',sans-serif",
+                        fontSize: a.parentId ? 11 : 12,
+                        fontWeight: a.parentId ? 400 : 600,
+                        fontStyle: a.parentId ? "italic" : "normal",
+                        color: a.parentId ? "#607a8a" : "#a8c8d8",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        lineHeight: 1.3,
+                      }}>{a.name}</span>
                     </div>
                   ))}
                 </div>
@@ -378,12 +401,13 @@ function GanttChart({ activities }) {
           </div>
 
           {/* Chart area */}
-          <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
-            {/* Month markers */}
-            <div style={{ height: 28, position: "relative", marginBottom: 4, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ flex: 1, minWidth: 0, position: "relative", borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
+            {/* Month header */}
+            <div style={{ height: 32, position: "relative", marginBottom: 2, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
               {markers.map(m => (
-                <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, height: "100%", borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "#3a5060", paddingLeft: 3, whiteSpace: "nowrap" }}>{m.label}</span>
+                <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, height: "100%", display: "flex", alignItems: "center", paddingLeft: 6 }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#607a8a", whiteSpace: "nowrap" }}>{m.label}</span>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 1, background: "rgba(255,255,255,0.06)" }} />
                 </div>
               ))}
             </div>
@@ -394,36 +418,40 @@ function GanttChart({ activities }) {
               const color = GROUP_COLORS[g];
               return (
                 <div key={g}>
-                  {/* Group span bar */}
-                  <div style={{ height: 20, marginBottom: 4, position: "relative" }}>
+                  {/* Group span */}
+                  <div style={{ height: GROUP_ROW_H, position: "relative", display: "flex", alignItems: "center" }}>
                     {(() => {
                       const gDates = gas.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
                       if (gDates.length < 2) return null;
-                      return (
-                        <div style={{ position: "absolute", left: `${xPct(gDates[0])}%`, width: `${wPct(gDates[0], gDates[gDates.length - 1])}%`, height: 6, top: 7, background: color, opacity: 0.25, borderRadius: 3 }} />
-                      );
+                      return <div style={{ position: "absolute", left: `${xPct(gDates[0])}%`, width: `${wPct(gDates[0], gDates[gDates.length - 1])}%`, height: 4, background: color, opacity: 0.2, borderRadius: 2 }} />;
                     })()}
                   </div>
                   {gas.map(a => {
                     const isChild = !!a.parentId;
+                    const hasBar = a.startDate && a.endDate;
                     return (
-                      <div key={a.id} style={{ height: BAR_H, marginBottom: 4, position: "relative" }}>
-                        <div style={{
-                          position: "absolute",
-                          left: `${xPct(a.startDate)}%`,
-                          width: `${wPct(a.startDate, a.endDate)}%`,
-                          height: isChild ? "70%" : "100%",
-                          top: isChild ? "15%" : 0,
-                          background: isChild ? "transparent" : color,
-                          border: isChild ? `1.5px solid ${color}` : "none",
-                          opacity: isChild ? 0.8 : 1,
-                          borderRadius: 3,
-                          display: "flex", alignItems: "center", paddingLeft: 5, minWidth: 3,
-                        }}>
-                          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: isChild ? color : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {a.endDate && a.startDate ? calDaysBetween(a.startDate, a.endDate) + "d" : ""}
-                          </span>
-                        </div>
+                      <div key={a.id} style={{ height: BAR_H + 6, position: "relative", display: "flex", alignItems: "center" }}>
+                        {/* Grid lines */}
+                        {markers.map(m => (
+                          <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, bottom: 0, width: 1, background: "rgba(255,255,255,0.03)" }} />
+                        ))}
+                        {hasBar && (
+                          <div style={{
+                            position: "absolute",
+                            left: `${xPct(a.startDate)}%`,
+                            width: `${wPct(a.startDate, a.endDate)}%`,
+                            height: isChild ? BAR_H * 0.6 : BAR_H,
+                            background: isChild ? "transparent" : color,
+                            border: isChild ? `2px solid ${color}` : "none",
+                            opacity: isChild ? 0.75 : 0.9,
+                            borderRadius: 4,
+                            display: "flex", alignItems: "center", paddingLeft: 7, overflow: "hidden",
+                          }}>
+                            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: isChild ? color : "rgba(0,0,0,0.75)", fontWeight: 600, whiteSpace: "nowrap" }}>
+                              {calDaysBetween(a.startDate, a.endDate)}d
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -432,15 +460,17 @@ function GanttChart({ activities }) {
             })}
           </div>
         </div>
-        <div style={{ marginTop: 12, display: "flex", gap: 16, flexWrap: "wrap" }}>
+
+        {/* Legend */}
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 20, flexWrap: "wrap" }}>
           {GROUPS.map(g => (
-            <div key={g} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 14, height: 8, background: GROUP_COLORS[g], borderRadius: 2 }} />
+            <div key={g} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 16, height: 10, background: GROUP_COLORS[g], borderRadius: 3, opacity: 0.9 }} />
               <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#607a8a" }}>{g}</span>
             </div>
           ))}
-          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 14, height: 8, border: "1.5px solid #2e5984", borderRadius: 2 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 16, height: 10, border: "2px solid #607a8a", borderRadius: 3 }} />
             <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#607a8a" }}>Sub-activity</span>
           </div>
         </div>
@@ -1555,33 +1585,6 @@ export default function RequirementsAgent() {
                         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#d8eaf2" }}>{Math.round(calDaysBetween(rfpStart, goLive) / 7)} weeks</div>
                       </div>
                     </div>
-                    {GROUPS.map(g => {
-                      const gas = activities.filter(a => a.group === g);
-                      if (!gas.length) return null;
-                      const groupColor = GROUP_COLORS[g];
-                      return (
-                        <div key={g} style={{ marginBottom: 16 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: groupColor, flexShrink: 0 }} />
-                            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: groupColor }}>{g}</div>
-                            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#3a5060" }}>— {gas.length} activities</div>
-                          </div>
-                          {gas.map(a => (
-                            <div key={a.id} style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                              <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#d8eaf2", flex: 1, paddingLeft: a.parentId ? 20 : 0, fontStyle: a.parentId ? "italic" : "normal" }}>{a.name}</div>
-                              {a.startDate && a.endDate ? (
-                                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#607a8a", flexShrink: 0 }}>
-                                  {new Date(a.startDate + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {new Date(a.endDate + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                                  <span style={{ color: "#3a5060", marginLeft: 8 }}>{calDaysBetween(a.startDate, a.endDate)}d</span>
-                                </div>
-                              ) : (
-                                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#3a5060" }}>no dates set</div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })}
                     <GanttChart activities={activities} />
                   </div>
                 ) : (
