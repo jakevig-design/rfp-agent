@@ -212,17 +212,22 @@ const uid = () => "a" + Date.now() + Math.random().toString(36).substring(2, 5);
 
 async function callClaude(system, user, useWebSearch = false) {
   const res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ system, user, useWebSearch }) });
-  if (!res.ok) throw new Error(`API ${res.status}`);
   const d = await res.json();
-  if (d.error) throw new Error(d.error.message);
-  // Extract text from content blocks (web search returns multiple block types)
+  if (!res.ok || d.error) throw new Error(`API ${res.status}: ${d.error?.type || ""} — ${d.error?.message || JSON.stringify(d)}`);
   return d.content?.filter(b => b.type === "text").map(b => b.text).join("") ?? "";
 }
 
 async function callJSON(system, user, useWebSearch = false) {
   const t = await callClaude(system, user, useWebSearch);
+  // Try extracting from ```json ... ``` fence first
+  const fenceMatch = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenceMatch ? fenceMatch[1].trim() : t;
+  // Then find first complete JSON array or object
+  const arrMatch = candidate.match(/\[[\s\S]*\]/);
+  const objMatch = candidate.match(/\{[\s\S]*\}/);
+  const jsonStr = (arrMatch ? arrMatch[0] : objMatch ? objMatch[0] : candidate).trim();
   try {
-    return JSON.parse(t.replace(/```json\s*/g, "").replace(/```/g, "").trim());
+    return JSON.parse(jsonStr);
   } catch {
     throw new Error(`JSON parse failed. Raw response: ${t.slice(0, 300)}`);
   }
@@ -547,7 +552,8 @@ CRITICAL OUTPUT RULES:
 - Start with [ and end with ]
 - No text before or after the array
 - No markdown, no code fences, no explanation
-- If you have notes or caveats, put them inside the "description" field of the relevant vendor object — do not output them outside the JSON
+- Keep descriptions to one short sentence — do not pad responses
+- If you have notes or caveats, put them inside the "description" field — never outside the JSON
 
 Each vendor object must have exactly these fields:
 {
@@ -555,7 +561,7 @@ Each vendor object must have exactly these fields:
   "category": "Software category (e.g. ITAM, ERP, HRIS)",
   "g2Rating": "4.5/5 or N/A",
   "g2ReviewCount": "1,200 reviews or N/A",
-  "description": "One sentence on what this vendor does and why it is relevant to this scope.",
+  "description": "One short sentence on what this vendor does.",
   "requirementsMatch": 4,
   "requirementsTotal": 6,
   "matchConfidence": "high",
