@@ -8,18 +8,20 @@ import { saveSession, loadSessions, loadSession, deleteSession } from "./supabas
 const _link = document.createElement("link");
 _link.rel = "stylesheet";
 _link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap";
+_link.media = "print";
+_link.onload = function(){ this.media = "all"; };
+const _preconn = document.createElement("link");
+_preconn.rel = "preconnect";
+_preconn.href = "https://fonts.googleapis.com";
+document.head.insertBefore(_preconn, document.head.firstChild);
 document.head.appendChild(_link);
 
 // ─── Palette tokens ───────────────────────────────────────────────────────────
-// Sidebar/chrome: #1b2530 (navy-slate dark)
-// Surface:        #141d26 (darker bg)
-// Panel:          #1b2530 (card bg)
-// Topbar:         #1f2e3a
-// Teal accent:    #5DCAA5 (primary: active, success, req IDs)
-// Amber accent:   #EF9F27 (secondary: export, mc pills, q progress)
-// Body text:      #d8eaf2
-// Muted text:     #607a8a
-// Border:         rgba(0,0,0,0.07)
+// A3 Light Professional theme
+// Background:  #F9F8F8   Sidebar/card: #FFFFFF
+// Accent:      #C2410C   Amber:        #D97706
+// Body text:   #111827   Muted:        #6B7280
+// Border:      rgba(0,0,0,0.07)
 
 const _style = document.createElement("style");
 _style.textContent = `
@@ -28,12 +30,12 @@ _style.textContent = `
 
   /* ── Dashboard layout ── */
   .rq-shell{display:flex;flex:1;min-height:0}
-  .rq-sidebar{width:200px;flex-shrink:0;background:#FFFFFF;border-right:1px solid rgba(0,0,0,0.07);display:flex;flex-direction:column;padding:0}
-  .rq-sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(0,0,0,0.07)}
+  .rq-sidebar{width:200px;flex-shrink:0;background:#FFFFFF;border-right:1px solid rgba(0,0,0,0.07);display:flex;flex-direction:column;padding:0;transition:transform .2s}
+  .rq-sidebar-logo{padding:16px 20px;border-bottom:1px solid rgba(0,0,0,0.07)}
   .rq-sidebar-brand{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#C2410C;margin-bottom:2px}
   .rq-sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#111827}
   .rq-sidebar-session{font-family:'JetBrains Mono',monospace;font-size:9px;color:#9CA3AF;margin-top:4px}
-  .rq-nav{padding:12px 0;flex:1}
+  .rq-nav{padding:12px 0;flex:1;overflow-y:auto}
   .rq-nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9CA3AF;border-left:2px solid transparent;cursor:pointer;transition:all .15s}
   .rq-nav-item:hover{color:#374151;background:rgba(0,0,0,0.03)}
   .rq-nav-item.active{color:#C2410C;border-left-color:#C2410C;background:#FFF7ED}
@@ -44,12 +46,12 @@ _style.textContent = `
 
   /* ── Main content area ── */
   .rq-main{flex:1;display:flex;flex-direction:column;min-width:0}
-  .rq-topbar{background:#FFFFFF;border-bottom:1px solid rgba(0,0,0,0.07);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .rq-topbar{background:#FFFFFF;border-bottom:1px solid rgba(0,0,0,0.07);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:10px}
   .rq-topbar-left .rq-topbar-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#111827}
   .rq-topbar-left .rq-topbar-sub{font-size:11px;color:#6B7280;margin-top:2px}
-  .rq-topbar-right{display:flex;align-items:center;gap:10px}
+  .rq-topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
   .rq-save-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:#C2410C;background:#FFF7ED;padding:4px 10px;border-radius:3px;display:flex;align-items:center;gap:5px}
-  .rq-export-btn{display:flex;align-items:center;gap:7px;background:#C2410C;color:#FFFFFF;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;transition:background .15s;white-space:nowrap}
+  .rq-export-btn{display:flex;align-items:center;gap:7px;background:#C2410C;color:#FFFFFF;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border:none;border-radius:4px;cursor:pointer;transition:background .15s;white-space:nowrap}
   .rq-export-btn:hover{background:#9A3412}
   .rq-export-btn:disabled{opacity:.4;cursor:not-allowed}
   .rq-content{flex:1;padding:28px 32px;overflow-y:auto}
@@ -135,7 +137,7 @@ _style.textContent = `
   .rq-req-group-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#374151;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,0.07)}
   .rq-loading-center{padding:36px 0;text-align:center;color:#9CA3AF;font-style:italic;font-family:'Lora',serif}
 
-  /* ── Drafts ── */
+  /* ── Projects ── */
   .sessions-panel{background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;overflow:hidden;margin-bottom:24px}
   .sessions-header{padding:12px 18px;border-bottom:1px solid rgba(0,0,0,0.07);background:#F9F8F8}
   .sessions-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#9CA3AF}
@@ -216,6 +218,32 @@ _style.textContent = `
   .spin{animation:spin .8s linear infinite;display:inline-block}
   .rq-fade{animation:fadeUp .3s ease both}
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── Mobile hamburger ── */
+  .rq-hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:#374151}
+  .rq-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:40}
+
+  /* ── Mobile breakpoint ── */
+  @media(max-width:768px){
+    .rq-hamburger{display:flex;align-items:center;justify-content:center}
+    .rq-shell{position:relative}
+    .rq-sidebar{position:fixed;top:0;left:0;height:100vh;z-index:50;transform:translateX(-100%)}
+    .rq-sidebar.open{transform:translateX(0)}
+    .rq-sidebar-overlay.open{display:block}
+    .rq-topbar{padding:10px 16px}
+    .rq-content{padding:18px 16px}
+    .rq-metrics{grid-template-columns:1fr 1fr}
+    .rq-topbar-sub{display:none}
+    .rq-export-btn span{display:none}
+    .rq-export-btn{padding:8px 10px}
+    .tl-col-hdr:nth-child(4),.tl-act-row>*:nth-child(4){display:none}
+    .gantt-wrap{margin-left:-16px;margin-right:-16px}
+  }
+  @media(max-width:480px){
+    .rq-metrics{grid-template-columns:1fr 1fr}
+    .rq-actions{flex-wrap:wrap}
+    .rq-btn-primary,.rq-btn-ghost{font-size:10px;padding:8px 12px}
+  }
 `;
 document.head.appendChild(_style);
 
@@ -420,7 +448,7 @@ function GanttChart({ activities }) {
               {markers.map(m => (
                 <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, height: "100%", display: "flex", alignItems: "center", paddingLeft: 6 }}>
                   <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#6B7280", whiteSpace: "nowrap" }}>{m.label}</span>
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 1, background: "rgba(255,255,255,0.06)" }} />
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 1, background: "rgba(0,0,0,0.06)" }} />
                 </div>
               ))}
             </div>
@@ -446,7 +474,7 @@ function GanttChart({ activities }) {
                       <div key={a.id} style={{ height: BAR_H + 6, position: "relative", display: "flex", alignItems: "center" }}>
                         {/* Grid lines */}
                         {markers.map(m => (
-                          <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, bottom: 0, width: 1, background: "rgba(255,255,255,0.03)" }} />
+                          <div key={m.ds} style={{ position: "absolute", left: `${m.pct}%`, top: 0, bottom: 0, width: 1, background: "rgba(0,0,0,0.04)" }} />
                         ))}
                         {hasBar && (
                           <div style={{
@@ -475,7 +503,7 @@ function GanttChart({ activities }) {
         </div>
 
         {/* Legend */}
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(0,0,0,0.06)", display: "flex", gap: 20, flexWrap: "wrap" }}>
           {GROUPS.map(g => (
             <div key={g} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 16, height: 10, background: GROUP_COLORS[g], borderRadius: 3, opacity: 0.9 }} />
@@ -483,7 +511,7 @@ function GanttChart({ activities }) {
             </div>
           ))}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 16, height: 10, border: "2px solid #607a8a", borderRadius: 3 }} />
+            <div style={{ width: 16, height: 10, border: "2px solid #9CA3AF", borderRadius: 3 }} />
             <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#6B7280" }}>Sub-activity</span>
           </div>
         </div>
@@ -756,7 +784,7 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
   });
 
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, `BuyRight_${sessionId}.docx`);
+  saveAs(blob, `${projectTitle ? projectTitle.replace(/[^a-zA-Z0-9_-]/g, "_") : "BuyRight"}.docx`);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -769,6 +797,7 @@ export default function RequirementsAgent() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle");
   const [lastSaved, setLastSaved] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const isDirty = useRef(false);
 
   // Scope
@@ -1076,14 +1105,46 @@ Return ONLY valid JSON, no markdown, no explanation:
   const doGenerateQuestions = async () => {
     setQBusy(true); setQErr("");
     try {
-      const out = {};
-      for (const req of requirements) out[req.id] = await callJSON(P_QS, `Requirement: ${req.text}`);
+      const P_QS_BATCH = `You are a business analyst writing a vendor discovery questionnaire.
+
+For each requirement provided, generate 2-3 follow-up questions that unpack the implementation detail behind it.
+
+RULES:
+- Ask about specifics intentionally left out of the requirement (fields, methods, integrations, sub-features)
+- Use multiple choice when the answer space is finite and predictable
+- Use open-ended when the answer requires explanation or varies by vendor
+- Do not re-ask the requirement itself — assume the vendor said yes
+
+Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
+{
+  "R-F1": [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}],
+  "R-F2": [...]
+}`;
+      const reqPayload = requirements.map(r => `${r.id}: ${r.text}`).join("\n");
+      const out = await callJSON(P_QS_BATCH, `Requirements:\n${reqPayload}`);
       setQuestions(out);
     } catch { setQErr("Could not generate questions. Please try again."); }
     finally { setQBusy(false); }
   };
 
-  // ── Timeline ──
+  const [reqDragId, setReqDragId] = useState(null);
+  const [reqDragOverId, setReqDragOverId] = useState(null);
+
+  const onReqDragStart = (id) => setReqDragId(id);
+  const onReqDragOver = (e, id) => { e.preventDefault(); setReqDragOverId(id); };
+  const onReqDrop = (e, targetId) => {
+    e.preventDefault();
+    if (!reqDragId || reqDragId === targetId) { setReqDragId(null); setReqDragOverId(null); return; }
+    setRequirements(prev => {
+      const arr = [...prev];
+      const from = arr.findIndex(r => r.id === reqDragId);
+      const to = arr.findIndex(r => r.id === targetId);
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item);
+      return arr;
+    });
+    setReqDragId(null); setReqDragOverId(null);
+  };
   const updateActivity = (id, field, val) => {
     setActivities(prev => prev.map(a => {
       if (a.id !== id) return a;
@@ -1205,12 +1266,12 @@ Return ONLY valid JSON, no markdown, no explanation:
   const mcQ = Object.values(questions).flat().filter(q => q.type === "multiple_choice").length;
 
   const topbarTitles = {
-    splash: "Home", sessions: "Drafts",
+    splash: "Home", sessions: "Projects",
     scope: "Scope", requirements: "Requirements", questions: "Questions",
     market: "Market Research", timeline: "Timeline", summary: "Summary",
   };
   const topbarSubs = {
-    splash: "BuyRight", sessions: "All drafts",
+    splash: "BuyRight", sessions: "All projects",
     scope: projectTitle || "Untitled project",
     requirements: projectTitle || "Untitled project",
     questions: projectTitle || "Untitled project",
@@ -1231,7 +1292,7 @@ Return ONLY valid JSON, no markdown, no explanation:
             </div>
             <div className="rq-nav">
               <div className="rq-nav-item active"><div className="rq-nav-num" style={{ fontSize: 8 }}>⌂</div>Home</div>
-              <div className="rq-nav-item" onClick={() => setView("sessions")}><div className="rq-nav-num" style={{ fontSize: 8 }}>S</div>Drafts</div>
+              <div className="rq-nav-item" onClick={() => setView("sessions")}><div className="rq-nav-num" style={{ fontSize: 8 }}>S</div>Projects</div>
             </div>
           </div>
           <div className="rq-main">
@@ -1251,7 +1312,7 @@ Return ONLY valid JSON, no markdown, no explanation:
                   <Plus size={15} /> Start new session
                 </button>
                 <div style={{ marginTop: 16 }}>
-                  <button className="rq-btn-ghost" onClick={() => setView("sessions")}>View drafts</button>
+                  <button className="rq-btn-ghost" onClick={() => setView("sessions")}>View projects</button>
                 </div>
               </div>
             </div>
@@ -1263,8 +1324,10 @@ Return ONLY valid JSON, no markdown, no explanation:
 
   // ── Shared sidebar ──
   const sidebarNav = (
-    <div className="rq-sidebar">
-      <div className="rq-sidebar-logo" style={{ cursor: "pointer" }} onClick={() => setView("splash")}>
+    <>
+      <div className={`rq-sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
+      <div className={`rq-sidebar ${sidebarOpen ? "open" : ""}`}>
+      <div className="rq-sidebar-logo" style={{ cursor: "pointer", padding: "16px 20px" }} onClick={() => setView("splash")}>
         <div className="rq-sidebar-brand">BuyRight</div>
       </div>
       <div className="rq-nav">
@@ -1275,7 +1338,7 @@ Return ONLY valid JSON, no markdown, no explanation:
           return (
             <div key={v}
               className={`rq-nav-item ${view === v ? "active" : ""}`}
-              onClick={() => setView(v)}
+              onClick={() => { setView(v); setSidebarOpen(false); }}
             >
               <div className="rq-nav-num">{i + 1}</div>
               {NAV_LABELS[i]}
@@ -1286,26 +1349,32 @@ Return ONLY valid JSON, no markdown, no explanation:
           <>
             <div style={{ height: 1, background: "rgba(0,0,0,0.07)", margin: "10px 0" }} />
             <div className={`rq-nav-item ${view === "sessions" ? "active" : ""}`} onClick={() => setView("sessions")}>
-              <div className="rq-nav-num" style={{ fontSize: 8 }}>S</div>Drafts
+              <div className="rq-nav-num" style={{ fontSize: 8 }}>S</div>Projects
             </div>
-            <div className="rq-nav-item" onClick={() => { resetSession(); }}>
+            <div className="rq-nav-item" onClick={() => { resetSession(); setSidebarOpen(false); }}>
               <div className="rq-nav-num"><Plus size={9} /></div>New session
             </div>
           </>
         )}
         <div style={{ height: 1, background: "rgba(0,0,0,0.07)", margin: "10px 0" }} />
-        <div className="rq-nav-item" onClick={() => setView("splash")}>
+        <div className="rq-nav-item" onClick={() => { setView("splash"); setSidebarOpen(false); }}>
           <div className="rq-nav-num"><ArrowLeft size={9} /></div>Home
         </div>
       </div>
     </div>
+    </>
   );
 
   const topbar = (
     <div className="rq-topbar">
-      <div className="rq-topbar-left">
-        <div className="rq-topbar-title">{topbarTitles[view] || stepLabels[step]}</div>
-        <div className="rq-topbar-sub">{topbarSubs[view] || ""}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button className="rq-hamburger" onClick={() => setSidebarOpen(o => !o)} aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect y="3" width="18" height="2" rx="1" fill="currentColor"/><rect y="8" width="18" height="2" rx="1" fill="currentColor"/><rect y="13" width="18" height="2" rx="1" fill="currentColor"/></svg>
+        </button>
+        <div className="rq-topbar-left">
+          <div className="rq-topbar-title">{topbarTitles[view] || stepLabels[step]}</div>
+          <div className="rq-topbar-sub">{topbarSubs[view] || ""}</div>
+        </div>
       </div>
       <div className="rq-topbar-right">
         <div className={`sv-status ${saveStatus === "idle" ? "" : saveStatus}`} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, display: "flex", alignItems: "center", gap: 6 }}>
@@ -1316,7 +1385,7 @@ Return ONLY valid JSON, no markdown, no explanation:
         </div>
         <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}><Save size={11} /> Save</button>
         <button className="rq-export-btn" onClick={doExport} disabled={!formalScope || exportBusy}>
-          {exportBusy ? <Loader size={14} className="spin" /> : <FileText size={14} />} Export .docx
+          {exportBusy ? <Loader size={14} className="spin" /> : <FileText size={14} />} <span>Export .docx</span>
         </button>
       </div>
     </div>
@@ -1330,24 +1399,24 @@ Return ONLY valid JSON, no markdown, no explanation:
           {topbar}
           <div className="rq-content">
 
-            {/* ── Drafts ── */}
+            {/* ── Projects ── */}
             {view === "sessions" && (
               <div className="rq-fade">
                 <div style={{ marginBottom: 20 }}>
-                  <div className="rq-section-label" style={{ marginBottom: 0 }}>{sessionsList.length} session{sessionsList.length !== 1 ? "s" : ""}</div>
+                  <div className="rq-section-label" style={{ marginBottom: 0 }}>{sessionsList.length} project{sessionsList.length !== 1 ? "s" : ""}</div>
                 </div>
                 {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
                 {!sessionsLoading && sessionsList.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "48px 0", color: "#9CA3AF", fontSize: 14, fontStyle: "italic" }}>No drafts yet.</div>
+                  <div style={{ textAlign: "center", padding: "48px 0", color: "#9CA3AF", fontSize: 14, fontStyle: "italic" }}>No projects yet.</div>
                 )}
                 {!sessionsLoading && sessionsList.length > 0 && (
                   <div className="sessions-panel">
-                    <div className="sessions-header"><div className="sessions-title">All drafts</div></div>
+                    <div className="sessions-header"><div className="sessions-title">All projects</div></div>
                     {sessionsList.map(s => (
                       <div className="session-row" key={s.id} onClick={() => doLoadSession(s.id)}>
                         <div style={{ minWidth: 0 }}>
                           <div className="session-name">{s.project_title || "Untitled"}</div>
-                          <div className="session-meta">{s.id} · {new Date(s.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                          <div className="session-meta">Updated {new Date(s.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {new Date(s.updated_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                           <span className={`session-status ${s.status}`}>{s.status}</span>
@@ -1445,6 +1514,7 @@ Return ONLY valid JSON, no markdown, no explanation:
                       <button className="rq-btn-primary" onClick={doMarketResearch} disabled={marketBusy}>
                         {marketBusy ? <><Loader size={13} className="spin" /> Researching vendors…</> : vendors.length > 0 ? <><RefreshCw size={13} /> Re-run research</> : <>Search vendors</>}
                       </button>
+                      {vendors.length > 0 && <div style={{ fontSize: 11, color: "#9CA3AF", fontStyle: "italic", marginTop: 6 }}>Re-running will replace current results and vendor statuses.</div>}
                     </div>
                     {marketErr && <div className="rq-error">{marketErr}</div>}
                     {marketBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 10 }} /><br />Identifying vendors for this scope…</div>}
@@ -1633,7 +1703,7 @@ Return ONLY valid JSON, no markdown, no explanation:
                       <div style={{ marginTop: 14 }} className="rq-fade">
                         <div className="rq-scope-approved"><CheckCircle size={15} /> Scope approved — all criteria met</div>
                         <div className="rq-actions">
-                          <button className="rq-btn-primary" onClick={() => { setView("requirements"); doGenerateReqs(); }}>Generate requirements <ChevronRight size={13} /></button>
+                          <button className="rq-btn-primary" onClick={() => { doGenerateReqs(); setView("requirements"); }}>Go to Requirements <ChevronRight size={13} /></button>
                         </div>
                       </div>
                     )}
@@ -1685,35 +1755,57 @@ Return ONLY valid JSON, no markdown, no explanation:
             {view === "requirements" && (
               <div className="rq-fade">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
-                  <p className="rq-hint" style={{ marginBottom: 0 }}>Edit, delete, or add your own below.</p>
+                  <p className="rq-hint" style={{ marginBottom: 0 }}>Drag to reorder. Edit, delete, or add your own.</p>
                   <button className="rq-btn-ghost" onClick={doGenerateReqs} disabled={reqsBusy}>{reqsBusy ? <Loader size={11} className="spin" /> : <RefreshCw size={11} />} Regenerate</button>
                 </div>
-                {reqsBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />Generating requirements…</div>}
+                {reqsBusy && (
+                  <div className="rq-loading-center">
+                    <Loader size={28} className="spin" style={{ marginBottom: 12, color: "#C2410C" }} />
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Generating requirements…</div>
+                    <div style={{ fontSize: 12, color: "#9CA3AF" }}>Translating your scope into binary requirements</div>
+                  </div>
+                )}
                 {reqsErr && <div className="rq-error">{reqsErr}</div>}
                 {!reqsBusy && requirements.length === 0 && !reqsErr && (
-                  <div className="rq-actions" style={{ marginBottom: 18 }}>
+                  <div style={{ textAlign: "center", padding: "48px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, marginBottom: 18 }}>
+                    <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 6 }}>No requirements yet</div>
+                    <div style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Generate requirements from your approved scope, or add your own below.</div>
                     <button className="rq-btn-primary" onClick={doGenerateReqs} disabled={!formalScope}>
                       {!formalScope ? "Complete scope first" : <>Generate requirements <ChevronRight size={13} /></>}
                     </button>
                   </div>
                 )}
                 {!reqsBusy && requirements.map(req => (
-                  <div className="rq-card rq-fade" key={req.id}>
-                    <div className="rq-req-id">{req.id}</div>
-                    {editId === req.id ? (
-                      <>
-                        <input className="rq-input" value={editText} onChange={e => setEditText(e.target.value)} style={{ marginTop: 8, marginBottom: 10 }} />
-                        <div className="rq-row"><button className="rq-btn-ghost" onClick={() => saveEdit(req.id)}><Check size={11} /> Save</button><button className="rq-btn-ghost" onClick={() => setEditId(null)}><X size={11} /> Cancel</button></div>
-                      </>
-                    ) : (
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                        <div className="rq-req-text">{req.text}</div>
-                        <div className="rq-row" style={{ flexShrink: 0 }}>
-                          <button className="rq-btn-icon" onClick={() => { setEditId(req.id); setEditText(req.text); }}><Pencil size={12} /></button>
-                          <button className="rq-btn-icon rq-btn-del" onClick={() => deleteReq(req.id)}><Trash2 size={12} /></button>
-                        </div>
+                  <div
+                    className="rq-card rq-fade"
+                    key={req.id}
+                    draggable
+                    onDragStart={() => onReqDragStart(req.id)}
+                    onDragOver={(e) => onReqDragOver(e, req.id)}
+                    onDrop={(e) => onReqDrop(e, req.id)}
+                    style={{ cursor: "grab", borderColor: reqDragOverId === req.id ? "#C2410C" : undefined, borderStyle: reqDragOverId === req.id ? "dashed" : undefined, opacity: reqDragId === req.id ? 0.5 : 1 }}
+                  >
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <div style={{ color: "#D1D5DB", paddingTop: 2, flexShrink: 0 }}><GripVertical size={13} /></div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="rq-req-id">{req.id}</div>
+                        {editId === req.id ? (
+                          <>
+                            <input className="rq-input" value={editText} onChange={e => setEditText(e.target.value)} style={{ marginTop: 8, marginBottom: 10 }} />
+                            <div className="rq-row"><button className="rq-btn-ghost" onClick={() => saveEdit(req.id)}><Check size={11} /> Save</button><button className="rq-btn-ghost" onClick={() => setEditId(null)}><X size={11} /> Cancel</button></div>
+                          </>
+                        ) : (
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                            <div className="rq-req-text">{req.text}</div>
+                            <div className="rq-row" style={{ flexShrink: 0 }}>
+                              <button className="rq-btn-icon" onClick={() => { setEditId(req.id); setEditText(req.text); }}><Pencil size={12} /></button>
+                              <button className="rq-btn-icon rq-btn-del" onClick={() => deleteReq(req.id)}><Trash2 size={12} /></button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 ))}
                 {!reqsBusy && (
