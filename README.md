@@ -1,177 +1,82 @@
-PROCUREMENT AGENT
-=================
+# BuyRight
 
-An AI-powered procurement requirements tool built with Vite + React,
-deployed on Vercel, with session persistence via Supabase.
+**Build the business case. Own the conversation.**
 
+BuyRight is a business case development tool for software buying. It gives any business leader — with or without a procurement function — the structured thinking required to evaluate software on their own terms, not the vendor's.
 
-WHAT IT DOES
-------------
+---
 
-The agent guides a procurement manager through four steps to produce
-a structured requirements document:
+## The problem it solves
 
-1. SCOPE
-   Structured 5Ws intake (Who, What, Where, When, Why). AI formalizes
-   the rough input into a polished scope narrative, then evaluates it
-   against quality criteria (specificity, exclusions, plain language,
-   completeness) and prompts for refinement if anything is missing.
-   Type "skip" to dismiss any flag.
+Every software purchase starts the same way. A vendor fills the gap in your thinking before you've had a chance to define it yourself. By the time you're in demos, you're evaluating on their terms. You're answering their questions, not asking your own.
 
-2. REQUIREMENTS
-   AI generates 5-8 binary functional requirements from the scope
-   ("The solution shall..."), each answerable Yes/No by a vendor.
-   User can edit, delete, and add their own.
+The result: you buy what they want to sell you, not what you actually need.
 
-3. QUESTIONS
-   AI generates 2-3 follow-up discovery questions per requirement,
-   automatically typed as open-ended or multiple choice.
+BuyRight flips that. It forces the rigor required to source software correctly — scoped requirements, a defensible business case, a cursory market survey — before you ever talk to a vendor. When procurement gets involved, you're already ready. When it doesn't, you don't need it.
 
-4. REVIEW & EXPORT
-   Full review of all content plus an interactive procurement timeline.
-   Export everything to a formatted .docx file.
+---
 
+## What it does
 
-PROCUREMENT TIMELINE
---------------------
+| Step | What happens |
+|---|---|
+| **Scope** | Describe the business problem in plain language. The agent drafts a formal scope, evaluates it for quality (specificity, exclusions, plain language, integration compatibility), and iterates until it meets the bar. |
+| **Requirements** | Generates binary success criteria — "The solution shall..." statements vendors must answer yes or no. No narratives, no wiggle room. User can edit, reorder, and add their own. |
+| **Due Diligence** | Discovery questions per requirement that unpack how vendors actually implement each capability — where the real differences live. |
+| **Market Survey** | Agent-identified vendor shortlist for your specific category, including pricing signals, requirements fit, and deployment model. Works for mainstream SaaS and niche technical software alike. |
+| **Buying Timeline** | Procurement timeline with Gantt chart, calibrated to your buying channel (competitive bid, sole source, open source, build vs. buy). |
+| **Business Case** | Executive narrative, vendor comparison with pricing estimates, and requirements summary — formatted for a deck, memo, or internal alignment meeting. |
 
-The timeline includes 20 pre-built activities across three collapsible groups:
+Export everything to `.docx` at any stage.
 
-  Pre-RFP
-    - Draft Scope & Requirements
-    - Execute NDA
-    - Market Analysis
-    - Vendor Identification
-    - Draft RFP
-        > Finalize Scope & Requirements
-        > Establish Evaluation Team, Criteria & Weighting
+---
 
-  RFP
-    - Issue RFP
-        > Vendors Submit Clarifying Questions
-        > Respond to Vendor Questions
-        > Submit RFP Response
-    - Evaluate RFP
-        > Evaluate Responses
-        > Shortlist (Recommendation to Leadership)
-        > Technical Evaluation (Demo / POC)
-        > Evaluate Technical Evaluation
+## Who it's for
 
-  Post-RFP
-    - Internal Alignment & Confirm Budget
-    - Final Recommendation
-    - Negotiate Contract
-    - Implementation
+- A VP of Engineering scoping a DevOps platform
+- A CFO building the case for a new ERP
+- A Head of HR evaluating HRIS vendors
+- An IT Director defining requirements before a security tool RFP
+- An Operations Manager replacing a legacy system
 
-Set an RFP Start Date and Go-Live Date. All activity dates cascade
-automatically from the start date. Each activity has an editable offset
-(n+ days) that drives its end date. Activities can be reordered by drag
-and drop, renamed, deleted, or added. A Gantt chart renders live from
-the activity state.
+You don't need a procurement team to use it. You don't need to know what an RFx is. You need to know what problem you're trying to solve — BuyRight handles the rest.
 
+---
 
-TECH STACK
-----------
+## The methodology
 
-  Frontend      Vite + React
-  AI            Anthropic Claude (via Vercel Edge Function proxy)
-  Persistence   Supabase (PostgreSQL)
-  Hosting       Vercel
-  Domain        Custom domain via GoDaddy DNS
-  Export        docx + file-saver
+BuyRight encodes 20 years of procurement practice from [Acuity Sourcing](https://acuitysourcing.com).
 
+The core principle: **buy based on needs, not what vendors want to sell you.**
 
-PROJECT STRUCTURE
------------------
+- Requirements are binary so vendors can't qualify their answers
+- Scope is evaluated against procurement-grade quality criteria before moving forward
+- Market research surfaces the right vendors for the specific category — not just the ones with the biggest marketing budgets
+- Pricing estimates give you an order-of-magnitude anchor before any vendor conversation
 
-  rfp-agent/
-  |-- api/
-  |   |-- claude.js               Vercel Edge Function, proxies Anthropic API
-  |-- src/
-  |   |-- App.jsx                 Root component
-  |   |-- main.jsx                React entry point
-  |   |-- RequirementsAgent.jsx   Main application component
-  |   |-- supabase.js             Supabase client and session helpers
-  |-- index.html
-  |-- package.json
-  |-- vite.config.js
+When the stakes are high enough to want a practitioner in the room, that's what Acuity is for. BuyRight is the methodology made self-serve.
 
+---
 
-ENVIRONMENT VARIABLES
----------------------
+## Tech stack
 
-Set these in Vercel under Settings > Environment Variables:
+- **Frontend:** Vite + React, deployed on Vercel
+- **Backend:** Vercel serverless functions (API proxy)
+- **Database:** Supabase (Postgres)
+- **AI:** Anthropic API — Claude Sonnet 4.5 (scope, requirements, questions, narrative), Claude Haiku 4.5 (market research, company lookup, pricing)
+- **Export:** docx (Word document generation in-browser)
 
-  ANTHROPIC_API_KEY       Your Anthropic API key
-                          Get it at console.anthropic.com
+---
 
-  VITE_SUPABASE_URL       Your Supabase project URL
-                          e.g. https://xxxx.supabase.co
+## Part of the Acuity ecosystem
 
-  VITE_SUPABASE_ANON_KEY  Your Supabase publishable key
-                          Found under Settings > API Keys in Supabase
+BuyRight is the pre-vendor layer of the **Procurement OS** — a full operating system for software sourcing built by Acuity Sourcing.
 
+- **BuyRight** — define what you need before vendors show up
+- **Procurement OS** — manage vendors, contracts, and spend after you've bought
 
-SUPABASE SETUP
---------------
+Both are built on the same methodology. Both are sold and supported by Acuity Sourcing.
 
-Run this in the Supabase SQL Editor:
+---
 
-  create table procurement_sessions (
-    id text primary key,
-    status text not null default 'draft',
-    project_title text,
-    data jsonb,
-    created_at timestamptz default now(),
-    updated_at timestamptz default now()
-  );
-
-  create policy "allow all" on procurement_sessions
-    for all
-    using (true)
-    with check (true);
-
-
-LOCAL DEVELOPMENT
------------------
-
-  npm install
-  npm run dev
-
-App runs at http://localhost:5173. AI features require the Anthropic API
-key. For local dev, test against the deployed Vercel URL or set up a
-local proxy.
-
-
-DEPLOYMENT
-----------
-
-Vercel auto-deploys on every push to main.
-
-  git add .
-  git commit -m "your change"
-  git push
-
-
-CUSTOMIZING AI PROMPTS
-----------------------
-
-All prompts are defined as constants near the top of
-src/RequirementsAgent.jsx. Edit any of these directly in GitHub
-and Vercel will redeploy automatically.
-
-  P_SCOPE_GENERATE    How the scope narrative is written from 5Ws answers
-  P_SCOPE_EVALUATE    Criteria used to evaluate and flag the scope
-  P_SCOPE_REFINE      How flagged gaps are incorporated into the scope
-  P_REQS              How binary functional requirements are generated
-  P_QS                How discovery questions are generated per requirement
-
-
-SESSION PERSISTENCE
--------------------
-
-Sessions save to Supabase automatically every 30 seconds once a scope
-has been generated, and on every manual Save Draft click. Sessions are
-marked "complete" when the .docx is exported. All sessions are accessible
-from the Sessions landing screen. Click any row to resume, or delete
-with the trash icon.
+*© Acuity Sourcing. Built with the conviction that better buying starts before the first demo.*
