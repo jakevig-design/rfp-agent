@@ -680,13 +680,13 @@ const FIVE_WS = [
 ];
 
 // ─── DocX Export ──────────────────────────────────────────────────────────────
-async function buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus }) {
+async function buildDocx({ sessionId, projectTitle, formalScope, narrative, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus }) {
   const b = { style: BorderStyle.SINGLE, size: 1, color: "D4CCC4" };
   const borders = { top: b, bottom: b, left: b, right: b };
   const cm = { top: 90, bottom: 90, left: 130, right: 130 };
 
   const hCell = (text, w) => new TableCell({ borders, margins: cm, width: { size: w, type: WidthType.DXA }, shading: { fill: "2E2925", type: ShadingType.CLEAR }, children: [new Paragraph({ children: [new TextRun({ text, bold: true, color: "F7F5F2", font: "Arial", size: 20 })] })] });
-  const bCell = (text, w, shade) => new TableCell({ borders, margins: cm, width: { size: w, type: WidthType.DXA }, shading: { fill: shade ? "FAF9F7" : "FFFFFF", type: ShadingType.CLEAR }, children: [new Paragraph({ children: [new TextRun({ text: String(text), font: "Arial", size: 20 })] })] });
+  const bCell = (text, w, shade) => new TableCell({ borders, margins: cm, width: { size: w, type: WidthType.DXA }, shading: { fill: shade ? "FAF9F7" : "FFFFFF", type: ShadingType.CLEAR }, children: [new Paragraph({ children: [new TextRun({ text: String(text || "—"), font: "Arial", size: 20 })] })] });
 
   const numberingConfig = [{ reference: "nums", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 440, hanging: 360 } } } }] }];
   let alphaCounter = 0;
@@ -722,6 +722,12 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
     });
   }
 
+  // Narrative paragraphs — split on newlines for proper paragraph breaks
+  const narrativeText = narrative || formalScope || "";
+  const narrativeParas = narrativeText.split(/\n+/).filter(Boolean).map(para =>
+    new Paragraph({ children: [new TextRun({ text: para, font: "Arial", size: 24 })], spacing: { line: 360, after: 160 } })
+  );
+
   const doc = new Document({
     numbering: { config: numberingConfig },
     styles: {
@@ -735,11 +741,10 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
       properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
       children: [
         new Paragraph({ children: [new TextRun({ text: projectTitle || "Requirements Document", bold: true, size: 56, font: "Arial", color: "1A1714" })] }),
-        new Paragraph({ children: [new TextRun({ text: `Session ID: ${sessionId}`, font: "Arial", size: 18, color: "9A8E82" })] }),
         new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString()}`, font: "Arial", size: 18, color: "9A8E82" })] }),
         new Paragraph({ children: [new TextRun("")] }),
-        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "1. Project Scope", font: "Arial" })] }),
-        new Paragraph({ children: [new TextRun({ text: formalScope, font: "Arial", size: 24 })], spacing: { line: 360 } }),
+        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "1. Business Case", font: "Arial" })] }),
+        ...narrativeParas,
         new Paragraph({ children: [new TextRun("")] }),
         new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "2. Functional Requirements", font: "Arial" })] }),
         new Table({
@@ -763,19 +768,22 @@ async function buildDocx({ sessionId, projectTitle, formalScope, requirements, q
         new Paragraph({ children: [new TextRun("")] }),
         ...(vendors && vendors.length > 0 ? [
           new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "5. Vendor Shortlist", font: "Arial" })] }),
+          new Paragraph({ children: [new TextRun({ text: "Pricing estimates are agent-generated. Verify with vendors before use in budget planning.", font: "Arial", size: 18, italics: true, color: "9A8E82" })] }),
+          new Paragraph({ children: [new TextRun("")] }),
           new Table({
             width: { size: 9360, type: WidthType.DXA },
-            columnWidths: [2200, 1600, 1200, 1200, 3160],
+            columnWidths: [1800, 1200, 1400, 900, 1060, 3000],
             rows: [
-              new TableRow({ children: [hCell("Vendor", 2200), hCell("Category", 1600), hCell("G2 Rating", 1200), hCell("Req. Match", 1200), hCell("Description", 3160)] }),
+              new TableRow({ children: [hCell("Vendor", 1800), hCell("Category", 1200), hCell("Est. Price (Yr 1)", 1400), hCell("Confidence", 900), hCell("Req. Match", 1060), hCell("Description", 3000)] }),
               ...vendors
                 .filter(v => !vendorStatus || vendorStatus[v.name] !== "eliminated")
                 .map((v, i) => new TableRow({ children: [
-                  bCell(v.name + (vendorStatus && vendorStatus[v.name] === "shortlisted" ? " ✓" : ""), 2200, i % 2),
-                  bCell(v.category || "—", 1600, i % 2),
-                  bCell(v.g2Rating || "N/A", 1200, i % 2),
-                  bCell(`${v.requirementsMatch}/${v.requirementsTotal}`, 1200, i % 2),
-                  bCell(v.description || "—", 3160, i % 2),
+                  bCell(v.name + (vendorStatus && vendorStatus[v.name] === "shortlisted" ? " ✓" : ""), 1800, i % 2),
+                  bCell(v.category, 1200, i % 2),
+                  bCell(v.estimatedPrice || "Contact vendor", 1400, i % 2),
+                  bCell(v.priceConfidence ? `${v.priceConfidence} conf.` : "—", 900, i % 2),
+                  bCell(`${v.requirementsMatch}/${v.requirementsTotal}`, 1060, i % 2),
+                  bCell(v.description, 3000, i % 2),
                 ]}))
             ]
           })
@@ -1253,7 +1261,7 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
   const doExport = async () => {
     setExportBusy(true); setExportErr("");
     try {
-      await buildDocx({ sessionId, projectTitle, formalScope, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus });
+      await buildDocx({ sessionId, projectTitle, formalScope, narrative, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus });
       await doSave("complete");
     } catch { setExportErr("Export failed. Please try again."); }
     finally { setExportBusy(false); }
