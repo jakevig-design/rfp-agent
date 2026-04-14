@@ -529,7 +529,8 @@ SCOPE QUALITY RULES — the scope MUST:
 1. Be specific — include concrete details about deadlines, milestones, or deliverables where the user provided them
 2. Include exclusions — explicitly state what is out of scope to prevent scope creep
 3. Use plain language — correct any typos or grammatical errors from the user's input, and define any technical terms, product names, acronyms, or internal system names on first use (e.g. "the existing HRIS platform (Workday)")
-4. Be clean and professional — the output will be used directly in a business case or procurement document
+4. Address integration compatibility — when the scope references integration with existing tools or systems, name those tools specifically and note whether open or proprietary file formats and standards are required (e.g. "must support open formats such as STEP and IGES, not vendor-proprietary formats")
+5. Be clean and professional — the output will be used directly in a business case or procurement document
 
 Return ONLY the scope text. No preamble, no explanation.`;
 
@@ -543,6 +544,7 @@ Evaluate the scope against these criteria:
    - What will be done
    - When and how it will be done, and potentially by whom
    - What constitutes an acceptable result
+5. INTEGRATION COMPATIBILITY — If the scope mentions integration with existing tools, systems, or platforms, does it specify the integration method, file formats, or compatibility standards? Flag if it references integrations without addressing whether open or proprietary formats are required — this has significant vendor selection implications.
 
 Respond ONLY with valid JSON, no markdown:
 {
@@ -999,30 +1001,30 @@ export default function RequirementsAgent() {
     finally { setScopeBusy(false); }
   };
 
-  const doCompanyLookup = async (name) => {
-    if (!name.trim()) return;
+  const doCompanyLookup = async (url) => {
+    if (!url?.trim()) return;
     setCompanyLookupBusy(true); setCompanyLookupErr("");
     setAnswers(p => ({ ...p, companyProfile: null }));
-    const P_COMPANY = `You are a business intelligence analyst. Given a company name, return a structured JSON profile using your knowledge. Be concise and factual. If you are uncertain about a specific field, use null.
-
-Return ONLY valid JSON, no markdown, no explanation:
-{
-  "name": "Official company name",
-  "vertical": "Primary industry/vertical (e.g. Food & Beverage, Financial Services, Healthcare)",
-  "subVertical": "More specific category (e.g. Consumer Packaged Goods, Investment Banking)",
-  "employeeCount": "Approximate headcount (e.g. ~32,000, 500-1000, or null)",
-  "hq": "City, Country",
-  "publicPrivate": "Public" or "Private",
-  "ticker": "Stock ticker if public, else null",
-  "description": "One sentence describing what the company does",
-  "knownTechStack": ["up to 3 known enterprise systems e.g. SAP, Salesforce"],
-  "regulatoryContext": "Any notable compliance context (e.g. HIPAA, SOX, GDPR) or null"
-}`;
     try {
-      const profile = await callJSON(P_COMPANY, `Company name: ${name}`, false, "claude-haiku-4-5-20251001");
+      const res = await fetch("/api/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setCompanyLookupErr(data.error?.message || "Could not read that URL — try the homepage or about page.");
+        return;
+      }
+      // Parse the profile JSON from the response
+      const text = data.profile || "";
+      const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const candidate = fenceMatch ? fenceMatch[1].trim() : text;
+      const objMatch = candidate.match(/\{[\s\S]*\}/);
+      const profile = JSON.parse(objMatch ? objMatch[0] : candidate);
       setAnswers(p => ({ ...p, companyProfile: profile }));
     } catch {
-      setCompanyLookupErr("Could not find company info — you can still proceed.");
+      setCompanyLookupErr("Could not read that URL — try the homepage or about page.");
     } finally {
       setCompanyLookupBusy(false);
     }
@@ -1611,13 +1613,13 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 <div className="rq-section-label" style={{ marginBottom: 6 }}>Project title</div>
                 <input className="rq-input" style={{ marginBottom: 22 }} placeholder="e.g. Enterprise HR Management System" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} />
 
-                {/* Company context */}
-                <div className="rq-section-label" style={{ marginBottom: 8 }}>Company</div>
-                <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "flex-start" }}>
+                {/* Company website context */}
+                <div className="rq-section-label" style={{ marginBottom: 8 }}>Company website <span style={{ fontFamily: "'Lora',serif", fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 11, color: "#9CA3AF" }}>(optional — adds context to your scope)</span></div>
+                <div style={{ display: "flex", gap: 8, marginBottom: answers.companyProfile ? 10 : 22, alignItems: "flex-start" }}>
                   <input
                     className="rq-input"
                     style={{ flex: 1 }}
-                    placeholder="e.g. Kraft Heinz, Manitoba Hydro, Acme Corp"
+                    placeholder="e.g. kraftheinz.com or https://www.acme.com/about"
                     value={answers.companyName || ""}
                     onChange={e => {
                       setAnswers(p => ({ ...p, companyName: e.target.value, companyProfile: null }));
@@ -1631,17 +1633,17 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                     disabled={companyLookupBusy || !answers.companyName?.trim()}
                     style={{ whiteSpace: "nowrap", flexShrink: 0 }}
                   >
-                    {companyLookupBusy ? <><Loader size={11} className="spin" /> Looking up…</> : <>Look up</>}
+                    {companyLookupBusy ? <><Loader size={11} className="spin" /> Scanning…</> : <>Scan site</>}
                   </button>
                 </div>
-                {companyLookupErr && <div style={{ fontSize: 12, color: "#D97706", marginBottom: 8, fontStyle: "italic" }}>{companyLookupErr}</div>}
+                {companyLookupErr && <div style={{ fontSize: 12, color: "#D97706", marginBottom: 10, fontStyle: "italic" }}>{companyLookupErr}</div>}
                 {answers.companyProfile && (() => {
                   const p = answers.companyProfile;
                   return (
-                    <div style={{ background: "#FFF7ED", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 12 }} className="rq-fade">
+                    <div style={{ background: "#FFF7ED", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "12px 16px", marginBottom: 22, fontSize: 12 }} className="rq-fade">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, color: "#C2410C" }}>{p.name}</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "#9CA3AF" }}>agent est. - verify before use</div>
+                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "#9CA3AF" }}>from website · verify before use</div>
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
                         {p.vertical && <span style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 3, padding: "2px 8px", fontSize: 10, color: "#374151" }}>{p.vertical}</span>}
@@ -1656,7 +1658,7 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                   );
                 })()}
 
-                <div className="rq-section-label" style={{ marginBottom: 8, marginTop: 14 }}>What business problem are you trying to solve?</div>
+                <div className="rq-section-label" style={{ marginBottom: 8 }}>What business problem are you trying to solve?</div>
                 <p className="rq-hint" style={{ marginBottom: 12 }}>Describe what you need in your own words — the system, the problem, who will use it, any deadlines or constraints, and what's out of scope. The more context you provide, the better the scope.</p>
                 <textarea
                   className="rq-textarea"
