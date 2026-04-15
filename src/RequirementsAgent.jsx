@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle, Calendar, Save, Clock, ArrowLeft, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { saveAs } from "file-saver";
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel, LevelFormat } from "docx";
-import { saveSession, loadSessions, loadSession, deleteSession, signIn, signUp, signOut, getSession, onAuthStateChange, loadUserProfile } from "./supabase";
+import { saveSession, loadSessions, loadSession, deleteSession, signIn, signUp, signOut, getSession, onAuthStateChange, loadUserProfile, saveUserProfile } from "./supabase";
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
 const _link = document.createElement("link");
@@ -380,14 +380,15 @@ function makeSoleSourceActivities(startDate) {
   const implStart  = d(negoEnd, 7);
   const implEnd    = d(implStart, 45);
 
+  // All activities in a single flat group — no Pre-RFx/RFx/Post-RFx headings
   return [
-    { id: "s1",  group: "Pre-RFx",  parentId: null, name: "Draft Scope & Requirements",         startDate: t,          endDate: scopeEnd,   offsetDays: 7,  startOffsetDays: 0 },
-    { id: "s2",  group: "Pre-RFx",  parentId: null, name: "Draft Sole Source Justification",    startDate: memoStart,  endDate: memoEnd,    offsetDays: 7,  startOffsetDays: calDaysBetween(t, memoStart) },
-    { id: "s3",  group: "RFx",      parentId: null, name: "Technical Evaluation (Demo / POC)",  startDate: demoStart,  endDate: demoEnd,    offsetDays: 14, startOffsetDays: calDaysBetween(t, demoStart) },
-    { id: "s4",  group: "Post-RFx", parentId: null, name: "Internal Alignment & Confirm Budget",startDate: alignStart, endDate: alignEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
-    { id: "s5",  group: "Post-RFx", parentId: null, name: "Final Recommendation",               startDate: finalStart, endDate: finalEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
-    { id: "s6",  group: "Post-RFx", parentId: null, name: "Negotiate Contract",                 startDate: negoStart,  endDate: negoEnd,    offsetDays: 30, startOffsetDays: calDaysBetween(t, negoStart) },
-    { id: "s7",  group: "Post-RFx", parentId: null, name: "Implementation",                     startDate: implStart,  endDate: implEnd,    offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
+    { id: "s1", group: "Activities", parentId: null, name: "Draft Scope & Requirements",          startDate: t,          endDate: scopeEnd,   offsetDays: 7,  startOffsetDays: 0 },
+    { id: "s2", group: "Activities", parentId: null, name: "Draft Sole Source Justification",     startDate: memoStart,  endDate: memoEnd,    offsetDays: 7,  startOffsetDays: calDaysBetween(t, memoStart) },
+    { id: "s3", group: "Activities", parentId: null, name: "Technical Evaluation (Demo / POC)",   startDate: demoStart,  endDate: demoEnd,    offsetDays: 14, startOffsetDays: calDaysBetween(t, demoStart) },
+    { id: "s4", group: "Activities", parentId: null, name: "Internal Alignment & Confirm Budget", startDate: alignStart, endDate: alignEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
+    { id: "s5", group: "Activities", parentId: null, name: "Final Recommendation",                startDate: finalStart, endDate: finalEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
+    { id: "s6", group: "Activities", parentId: null, name: "Negotiate Contract",                  startDate: negoStart,  endDate: negoEnd,    offsetDays: 30, startOffsetDays: calDaysBetween(t, negoStart) },
+    { id: "s7", group: "Activities", parentId: null, name: "Implementation",                      startDate: implStart,  endDate: implEnd,    offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
   ];
 }
 
@@ -414,6 +415,12 @@ function GanttChart({ activities }) {
   const totalDays = Math.max(calDaysBetween(minDate, maxDate), 1);
   const BAR_H = 28;
   const GROUP_ROW_H = 26;
+
+  // Derive groups dynamically from activities — supports both competitive bid and sole source
+  const isSoleSource = activities.every(a => a.group === "Activities");
+  const groups = isSoleSource ? ["Activities"] : GROUPS;
+  const groupColors = { ...GROUP_COLORS, "Activities": "#5DCAA5" };
+  const showGroupHeaders = !isSoleSource;
 
   const xPct = (dateStr) => {
     if (!dateStr) return 0;
@@ -443,7 +450,7 @@ function GanttChart({ activities }) {
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#C2410C" }}>Procurement Timeline</div>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#C2410C" }}>Buying Timeline</div>
           <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#6B7280" }}>
             {new Date(minDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
             <span style={{ margin: "0 8px", color: "#9CA3AF" }}>→</span>
@@ -455,16 +462,18 @@ function GanttChart({ activities }) {
         <div style={{ display: "flex", gap: 0 }}>
           {/* Label column */}
           <div style={{ width: 240, flexShrink: 0, paddingRight: 16 }}>
-            <div style={{ height: 32, marginBottom: 2 }} /> {/* spacer for month header */}
-            {GROUPS.map(g => {
+            <div style={{ height: 32, marginBottom: 2 }} />
+            {groups.map(g => {
               const gas = activities.filter(a => a.group === g);
               if (!gas.length) return null;
               return (
                 <div key={g}>
-                  <div style={{ height: GROUP_ROW_H, display: "flex", alignItems: "center" }}>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: GROUP_COLORS[g], marginRight: 7, flexShrink: 0 }} />
-                    <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: GROUP_COLORS[g] }}>{g}</span>
-                  </div>
+                  {showGroupHeaders && (
+                    <div style={{ height: GROUP_ROW_H, display: "flex", alignItems: "center" }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: groupColors[g], marginRight: 7, flexShrink: 0 }} />
+                      <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: groupColors[g] }}>{g}</span>
+                    </div>
+                  )}
                   {gas.map(a => (
                     <div key={a.id} style={{ height: BAR_H + 6, display: "flex", alignItems: "center", paddingLeft: a.parentId ? 18 : 2 }}>
                       <span style={{
@@ -495,20 +504,22 @@ function GanttChart({ activities }) {
               ))}
             </div>
 
-            {GROUPS.map(g => {
+            {groups.map(g => {
               const gas = activities.filter(a => a.group === g);
               if (!gas.length) return null;
-              const color = GROUP_COLORS[g];
+              const color = groupColors[g];
               return (
                 <div key={g}>
-                  {/* Group span */}
-                  <div style={{ height: GROUP_ROW_H, position: "relative", display: "flex", alignItems: "center" }}>
-                    {(() => {
-                      const gDates = gas.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
-                      if (gDates.length < 2) return null;
-                      return <div style={{ position: "absolute", left: `${xPct(gDates[0])}%`, width: `${wPct(gDates[0], gDates[gDates.length - 1])}%`, height: 4, background: color, opacity: 0.2, borderRadius: 2 }} />;
-                    })()}
-                  </div>
+                  {/* Group span bar — only shown for competitive bid */}
+                  {showGroupHeaders && (
+                    <div style={{ height: GROUP_ROW_H, position: "relative", display: "flex", alignItems: "center" }}>
+                      {(() => {
+                        const gDates = gas.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
+                        if (gDates.length < 2) return null;
+                        return <div style={{ position: "absolute", left: `${xPct(gDates[0])}%`, width: `${wPct(gDates[0], gDates[gDates.length - 1])}%`, height: 4, background: color, opacity: 0.2, borderRadius: 2 }} />;
+                      })()}
+                    </div>
+                  )}
                   {gas.map(a => {
                     const isChild = !!a.parentId;
                     const hasBar = a.startDate && a.endDate;
@@ -546,16 +557,18 @@ function GanttChart({ activities }) {
 
         {/* Legend */}
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(0,0,0,0.06)", display: "flex", gap: 20, flexWrap: "wrap" }}>
-          {GROUPS.map(g => (
+          {showGroupHeaders && groups.map(g => (
             <div key={g} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 16, height: 10, background: GROUP_COLORS[g], borderRadius: 3, opacity: 0.9 }} />
+              <div style={{ width: 16, height: 10, background: groupColors[g], borderRadius: 3, opacity: 0.9 }} />
               <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#6B7280" }}>{g}</span>
             </div>
           ))}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 16, height: 10, border: "2px solid #9CA3AF", borderRadius: 3 }} />
-            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#6B7280" }}>Sub-activity</span>
-          </div>
+          {showGroupHeaders && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 16, height: 10, border: "2px solid #9CA3AF", borderRadius: 3 }} />
+              <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#6B7280" }}>Sub-activity</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -635,7 +648,7 @@ The user has provided additional information to address a gap in the scope. Inco
 
 const P_SCOPE_EXPERT = `You are a senior procurement consultant with deep domain expertise across enterprise software categories.
 
-Given a project scope, identify the software category being procured and generate 2-4 expert-level clarifying questions that a seasoned procurement professional would ask. These questions should surface information that materially affects vendor selection, contract terms, or implementation complexity — things the user likely knows but didn't think to include.
+Given a project scope, identify the software category being procured and generate 2-4 expert-level clarifying questions that a seasoned business analyst would ask. These questions should surface information that materially affects vendor selection, contract terms, or implementation complexity — things the user likely knows but didn't think to include.
 
 Examples of good expert questions:
 - For HR systems: "How many employees will this system support, and across how many countries or legal entities?"
@@ -692,7 +705,7 @@ const P_MARKET = `You are a senior procurement analyst with deep knowledge of en
 Given a project scope and functional requirements, identify 5-8 vendors that are realistic fits. Use your knowledge of the market to surface the right vendors for the specific category — do not default to generic enterprise software if the scope describes a specialized need.
 
 RULES:
-- Match vendors to the actual procurement category described in the scope
+- Match vendors to the actual software category described in the scope
 - Include both well-known and niche vendors if they are genuinely relevant
 - For G2 ratings, use your best knowledge — if uncertain, use "N/A"
 - requirementsMatch is your estimate of how many requirements this vendor likely meets
@@ -830,7 +843,7 @@ async function buildDocx({ sessionId, projectTitle, formalScope, narrative, requ
         new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "3. Questions", font: "Arial" })] }),
         ...qChildren,
         new Paragraph({ children: [new TextRun("")] }),
-        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "4. Procurement Timeline", font: "Arial" })] }),
+        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "4. Buying Timeline", font: "Arial" })] }),
         new Paragraph({ children: [new TextRun({ text: `Start: ${fmtDate(rfpStart)}   |   Go-Live: ${fmtDate(goLive)}${rfpStart && goLive ? `   |   ${calDaysBetween(rfpStart, goLive)} calendar days` : ""}`, font: "Arial", size: 20, color: "6A6058" })] }),
         new Paragraph({ children: [new TextRun("")] }),
         new Table({ width: { size: 9360, type: WidthType.DXA }, columnWidths: [3400, 1900, 1900, 2160], rows: tlRows }),
@@ -866,6 +879,48 @@ async function buildDocx({ sessionId, projectTitle, formalScope, narrative, requ
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
+// ─── Profile Setup Screen (first login) ──────────────────────
+function ProfileSetupScreen({ onComplete }) {
+  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handle = async () => {
+    if (!name.trim()) { setErr("Please enter your name."); return; }
+    setBusy(true); setErr("");
+    const ok = await saveUserProfile({ name: name.trim(), title: title.trim(), role: "buyer" });
+    if (ok) {
+      onComplete({ name: name.trim(), title: title.trim() });
+    } else {
+      setErr("Could not save profile — please try again.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rq-root" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: "100%", maxWidth: 400, padding: "0 24px" }}>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 8 }}>One quick thing</div>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 26, fontWeight: 800, color: "#111827", marginBottom: 6 }}>Tell us who you are</div>
+        <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#6B7280", marginBottom: 28 }}>This appears on your exported documents.</div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 6 }}>Your name</div>
+          <input className="rq-input" placeholder="e.g. Jane Smith" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === "Enter" && handle()} autoFocus />
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 6 }}>Your title <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></div>
+          <input className="rq-input" placeholder="e.g. VP Operations" value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && handle()} />
+        </div>
+        {err && <div className="rq-error" style={{ marginBottom: 14 }}>{err}</div>}
+        <button className="rq-btn-primary" style={{ width: "100%", justifyContent: "center", padding: "12px" }} onClick={handle} disabled={busy}>
+          {busy ? <><Loader size={13} className="spin" /> Saving…</> : <>Let's go <ChevronRight size={13} /></>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Login Screen ─────────────────────────────────────────────
 function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -888,7 +943,7 @@ function LoginScreen() {
   return (
     <div className="rq-root" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: "100%", maxWidth: 400, padding: "0 24px" }}>
-        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 8 }}>BuyRight · Acuity Sourcing</div>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 8 }}>BuyRight</div>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 26, fontWeight: 800, color: "#111827", marginBottom: 6 }}>
           {mode === "signup" ? "Create your account" : "Welcome back"}
         </div>
@@ -926,6 +981,10 @@ export default function RequirementsAgent() {
   const [saveStatus, setSaveStatus] = useState("idle");
   const [lastSaved, setLastSaved] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileEditName, setProfileEditName] = useState("");
+  const [profileEditTitle, setProfileEditTitle] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
@@ -1418,34 +1477,51 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
     setReqDragId(null); setReqDragOverId(null);
   };
   const updateActivity = (id, field, val) => {
-    setActivities(prev => prev.map(a => {
-      if (a.id !== id) return a;
-      const next = { ...a, [field]: val };
+    setActivities(prev => {
+      const arr = prev.map(a => {
+        if (a.id !== id) return a;
+        const next = { ...a, [field]: val };
 
-      if (field === "startDate") {
-        // Preserve duration, shift end date, recalculate startOffsetDays
-        const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : (a.offsetDays ?? 7);
-        next.endDate = addCalDays(val, dur);
-        next.startOffsetDays = rfpStart ? calDaysBetween(rfpStart, val) : 0;
-        next.offsetDays = dur;
-      }
+        if (field === "startDate") {
+          const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : (a.offsetDays ?? 7);
+          next.endDate = addCalDays(val, dur);
+          next.startOffsetDays = rfpStart ? calDaysBetween(rfpStart, val) : 0;
+          next.offsetDays = dur;
+        }
+        if (field === "endDate") {
+          if (a.startDate) next.offsetDays = calDaysBetween(a.startDate, val);
+        }
+        if (field === "offsetDays") {
+          if (a.startDate) next.endDate = addCalDays(a.startDate, parseInt(val) || 0);
+        }
+        return next;
+      });
 
-      if (field === "endDate") {
-        // Recalculate offsetDays from start to new end
-        if (a.startDate) {
-          next.offsetDays = calDaysBetween(a.startDate, val);
+      // Cascade start/end date changes to children
+      if (field === "startDate" || field === "endDate") {
+        const parent = arr.find(a => a.id === id);
+        const original = prev.find(a => a.id === id);
+        if (parent && original) {
+          const delta = field === "startDate"
+            ? calDaysBetween(original.startDate, parent.startDate)
+            : calDaysBetween(original.endDate, parent.endDate);
+
+          if (delta !== 0) {
+            return arr.map(a => {
+              if (a.parentId !== id) return a;
+              return {
+                ...a,
+                startDate: a.startDate ? addCalDays(a.startDate, delta) : a.startDate,
+                endDate:   a.endDate   ? addCalDays(a.endDate,   delta) : a.endDate,
+                startOffsetDays: rfpStart && a.startDate ? calDaysBetween(rfpStart, addCalDays(a.startDate, delta)) : a.startOffsetDays,
+              };
+            });
+          }
         }
       }
 
-      if (field === "offsetDays") {
-        // Recompute end date from start + new offset
-        if (a.startDate) {
-          next.endDate = addCalDays(a.startDate, parseInt(val) || 0);
-        }
-      }
-
-      return next;
-    }));
+      return arr;
+    });
   };
 
   const deleteActivity = (id) => setActivities(p => p.filter(a => a.id !== id && a.parentId !== id));
@@ -1571,6 +1647,11 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
     return <LoginScreen />;
   }
 
+  // ── First login — profile setup ──
+  if (authUser && userProfile !== null && !userProfile?.name) {
+    return <ProfileSetupScreen onComplete={(profile) => setUserProfile(p => ({ ...p, ...profile }))} />;
+  }
+
   // ── Splash ──
   if (view === "splash") {
     return (
@@ -1595,7 +1676,7 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
 
               {/* Hero */}
               <div style={{ marginBottom: 52 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 14 }}>BuyRight · by Acuity Sourcing</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 14 }}>BuyRight</div>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 38, fontWeight: 800, color: "#111827", lineHeight: 1.12, marginBottom: 16 }}>Build the business case.<br />Own the conversation.</div>
                 <div style={{ fontFamily: "'Lora',serif", fontSize: 15, color: "#C2410C", lineHeight: 1.6, marginBottom: 12, fontStyle: "italic" }}>
                   "Software buying moves pretty fast. If you don't stop and define what you need, vendors will define it for you."
@@ -1620,7 +1701,7 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                     { n: "02", title: "Requirements", body: "Generates binary success criteria — yes/no questions vendors must answer. No narratives, no wiggle room." },
                     { n: "03", title: "Due Diligence", body: "Discovery questions per requirement that expose how vendors actually implement each capability." },
                     { n: "04", title: "Market Survey", body: "Agent-identified vendor shortlist with pricing signals and requirements fit — mainstream and niche categories alike." },
-                    { n: "05", title: "Buying Timeline", body: "Procurement timeline calibrated to your buying channel with a Gantt chart ready to share." },
+                    { n: "05", title: "Buying Timeline", body: "Buying timeline calibrated to your channel with a Gantt chart ready to share." },
                     { n: "06", title: "Business Case", body: "Narrative, vendor comparison, and pricing estimates formatted for executive presentation or internal alignment." },
                   ].map(s => (
                     <div key={s.n} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "18px 20px" }}>
@@ -1632,12 +1713,12 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 </div>
               </div>
 
-              {/* Footer / Acuity */}
+              {/* Footer */}
               <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
                 <div style={{ fontFamily: "'Lora',serif", fontSize: 12, color: "#9CA3AF", lineHeight: 1.7, maxWidth: 420 }}>
-                  BuyRight is built on 20 years of procurement practice by <a href="https://acuitysourcing.com" target="_blank" rel="noopener noreferrer" style={{ color: "#C2410C", textDecoration: "none" }}>Acuity Sourcing</a>. The methodology is the same one used in client engagements — buy based on needs, not what vendors want to sell you. When the stakes are high enough to want a practitioner in the room, that's what Acuity is for.
+                  BuyRight encodes 20 years of software buying experience into a structured workflow. The methodology is simple: define what you need before vendors tell you what you want.
                 </div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#D1D5DB", paddingTop: 4 }}>Acuity Sourcing</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#D1D5DB", paddingTop: 4 }}>BuyRight</div>
               </div>
 
             </div>
@@ -1691,6 +1772,29 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
           <div className="rq-nav-num"><ArrowLeft size={9} /></div>Home
         </div>
       </div>
+      {/* Profile footer */}
+      {authUser && (
+        <div className="rq-sidebar-footer">
+          <div
+            onClick={() => { setProfileEditName(userProfile?.name || ""); setProfileEditTitle(userProfile?.title || ""); setShowProfileModal(true); setSidebarOpen(false); }}
+            style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "6px 8px", borderRadius: 6, transition: "background .15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.04)"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+          >
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#FFF7ED", border: "1px solid #FDBA74", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: "#C2410C" }}>
+                {(userProfile?.name || authUser?.email || "?").charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {userProfile?.name || authUser?.email?.split("@")[0] || "Profile"}
+              </div>
+              {userProfile?.title && <div style={{ fontFamily: "'Lora',serif", fontSize: 10, color: "#9CA3AF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userProfile.title}</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
@@ -1715,7 +1819,6 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
         </div>
         <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}><Save size={11} /> Save</button>
         <button className="rq-btn-icon rq-btn-del" onClick={doDeleteCurrentSession} title="Delete this project"><Trash2 size={13} /></button>
-        {authUser && <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={signOut}>Sign out</button>}
         <button className="rq-export-btn" onClick={doExport} disabled={!formalScope || exportBusy}>
           {exportBusy ? <Loader size={14} className="spin" /> : <FileText size={14} />} <span>Export .docx</span>
         </button>
@@ -1725,6 +1828,29 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
 
   return (
     <div className="rq-root">
+      {/* Profile edit modal */}
+      {showProfileModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#FFFFFF", borderRadius: 12, padding: "28px 28px 24px", width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 20 }}>Edit profile</div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 6 }}>Name</div>
+              <input className="rq-input" value={profileEditName} onChange={e => setProfileEditName(e.target.value)} placeholder="Your name" />
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 6 }}>Title <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></div>
+              <input className="rq-input" value={profileEditTitle} onChange={e => setProfileEditTitle(e.target.value)} placeholder="Your title" onKeyDown={async e => { if (e.key === "Enter") { setProfileSaving(true); const ok = await saveUserProfile({ name: profileEditName.trim(), title: profileEditTitle.trim(), role: userProfile?.role || "buyer" }); if (ok) { setUserProfile(p => ({ ...p, name: profileEditName.trim(), title: profileEditTitle.trim() })); setShowProfileModal(false); } setProfileSaving(false); }}} />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", alignItems: "center" }}>
+              <button className="rq-btn-ghost" style={{ fontSize: 12 }} onClick={signOut}>Sign out</button>
+              <button className="rq-btn-ghost" style={{ fontSize: 12 }} onClick={() => setShowProfileModal(false)}>Cancel</button>
+              <button className="rq-btn-primary" style={{ fontSize: 12 }} disabled={profileSaving || !profileEditName.trim()} onClick={async () => { setProfileSaving(true); const ok = await saveUserProfile({ name: profileEditName.trim(), title: profileEditTitle.trim(), role: userProfile?.role || "buyer" }); if (ok) { setUserProfile(p => ({ ...p, name: profileEditName.trim(), title: profileEditTitle.trim() })); setShowProfileModal(false); } setProfileSaving(false); }}>
+                {profileSaving ? <><Loader size={11} className="spin" /> Saving…</> : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="rq-shell">
         {sidebarNav}
         <div className="rq-main">
@@ -1734,12 +1860,18 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
             {/* ── Projects ── */}
             {view === "sessions" && (
               <div className="rq-fade">
-                <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                   <div className="rq-section-label" style={{ marginBottom: 0 }}>{sessionsList.length} project{sessionsList.length !== 1 ? "s" : ""}</div>
+                  <button className="rq-btn-primary" style={{ padding: "8px 14px" }} onClick={() => { resetSession(); setView("scope"); }}><Plus size={12} /> New project</button>
                 </div>
                 {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
                 {!sessionsLoading && sessionsList.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "48px 0", color: "#9CA3AF", fontSize: 14, fontStyle: "italic" }}>No projects yet.</div>
+                  <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
+                    <div style={{ fontSize: 36, marginBottom: 14 }}>📂</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>No projects yet</div>
+                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 24, lineHeight: 1.6 }}>Start a new project to build your first business case.</div>
+                    <button className="rq-btn-primary" onClick={() => { resetSession(); setView("scope"); }}><Plus size={13} /> New project</button>
+                  </div>
                 )}
                 {!sessionsLoading && sessionsList.length > 0 && (
                   <div className="sessions-panel">
@@ -1787,45 +1919,73 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", gap: 6, marginBottom: 6, paddingLeft: 10, paddingRight: 4 }}>
                   <div /><div className="tl-col-hdr">Activity</div><div className="tl-col-hdr">Start</div><div className="tl-col-hdr">End</div><div className="tl-col-hdr">Offset (days)</div><div className="tl-col-hdr">Duration</div><div />
                 </div>
-                {GROUPS.map(g => {
-                  const gas = activities.filter(a => a.group === g);
-                  const collapsed = collapsedGroups[g];
-                  const colorClass = g === "Pre-RFx" ? "tl-group-pre" : g === "RFx" ? "tl-group-rfx" : "tl-group-post";
-                  return (
-                    <div key={g} style={{ marginBottom: 14 }}>
-                      <div className="tl-group-header" onClick={() => toggleGroup(g)}>
-                        <div className={`tl-group-label ${colorClass}`}>
-                          <div style={{ width: 7, height: 7, borderRadius: "50%", background: GROUP_COLORS[g] }} />
-                          {g} <span style={{ fontWeight: 400, color: "#9CA3AF", marginLeft: 4 }}>({gas.length})</span>
+
+                {buyingChannel === "sole-source" ? (
+                  // Sole source — flat list, no group headers
+                  <div style={{ marginBottom: 14 }}>
+                    {activities.map(a => {
+                      const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : "—";
+                      return (
+                        <div key={a.id}
+                          className={`tl-act-row is-parent${dragId === a.id ? " dragging" : ""}${dragOverId === a.id ? " drag-over" : ""}`}
+                          style={{ gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", display: "grid", gap: 6 }}
+                          draggable onDragStart={() => onDragStart(a.id)} onDragOver={(e) => onDragOver(e, a.id)} onDrop={(e) => onDrop(e, a.id)}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#9CA3AF" }}><GripVertical size={13} /></div>
+                          <input className="tl-cell-input" value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} />
+                          <input type="date" className="tl-cell-input" value={a.startDate || ""} onChange={e => updateActivity(a.id, "startDate", e.target.value)} />
+                          <input type="date" className="tl-cell-input" value={a.endDate || ""} onChange={e => updateActivity(a.id, "endDate", e.target.value)} />
+                          <input type="number" min="0" className="tl-cell-input" style={{ textAlign: "center" }} value={a.offsetDays ?? ""} onChange={e => updateActivity(a.id, "offsetDays", e.target.value)} />
+                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
+                          <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "4px 6px" }}><Trash2 size={11} /></button>
                         </div>
-                        {collapsed ? <ChevronDown size={13} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={13} style={{ color: "#9CA3AF" }} />}
-                      </div>
-                      {!collapsed && gas.map(a => {
-                        const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : "—";
-                        return (
-                          <div key={a.id}
-                            className={`tl-act-row${a.parentId ? " is-child" : " is-parent"}${dragId === a.id ? " dragging" : ""}${dragOverId === a.id ? " drag-over" : ""}`}
-                            style={{ gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", display: "grid", gap: 6 }}
-                            draggable onDragStart={() => onDragStart(a.id)} onDragOver={(e) => onDragOver(e, a.id)} onDrop={(e) => onDrop(e, a.id)}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#9CA3AF" }}><GripVertical size={13} /></div>
-                            <input className="tl-cell-input" value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} style={{ fontStyle: a.parentId ? "italic" : "normal" }} />
-                            <input type="date" className="tl-cell-input" value={a.startDate || ""} onChange={e => updateActivity(a.id, "startDate", e.target.value)} />
-                            <input type="date" className="tl-cell-input" value={a.endDate || ""} onChange={e => updateActivity(a.id, "endDate", e.target.value)} />
-                            <input type="number" min="0" className="tl-cell-input" style={{ textAlign: "center" }} value={a.offsetDays ?? ""} onChange={e => updateActivity(a.id, "offsetDays", e.target.value)} />
-                            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
-                            <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "4px 6px" }}><Trash2 size={11} /></button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // Competitive bid — grouped with collapsible headers
+                  GROUPS.map(g => {
+                    const gas = activities.filter(a => a.group === g);
+                    const collapsed = collapsedGroups[g];
+                    const colorClass = g === "Pre-RFx" ? "tl-group-pre" : g === "RFx" ? "tl-group-rfx" : "tl-group-post";
+                    return (
+                      <div key={g} style={{ marginBottom: 14 }}>
+                        <div className="tl-group-header" onClick={() => toggleGroup(g)}>
+                          <div className={`tl-group-label ${colorClass}`}>
+                            <div style={{ width: 7, height: 7, borderRadius: "50%", background: GROUP_COLORS[g] }} />
+                            {g} <span style={{ fontWeight: 400, color: "#9CA3AF", marginLeft: 4 }}>({gas.length})</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+                          {collapsed ? <ChevronDown size={13} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={13} style={{ color: "#9CA3AF" }} />}
+                        </div>
+                        {!collapsed && gas.map(a => {
+                          const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : "—";
+                          return (
+                            <div key={a.id}
+                              className={`tl-act-row${a.parentId ? " is-child" : " is-parent"}${dragId === a.id ? " dragging" : ""}${dragOverId === a.id ? " drag-over" : ""}`}
+                              style={{ gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", display: "grid", gap: 6 }}
+                              draggable onDragStart={() => onDragStart(a.id)} onDragOver={(e) => onDragOver(e, a.id)} onDrop={(e) => onDrop(e, a.id)}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#9CA3AF" }}><GripVertical size={13} /></div>
+                              <input className="tl-cell-input" value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} style={{ fontStyle: a.parentId ? "italic" : "normal" }} />
+                              <input type="date" className="tl-cell-input" value={a.startDate || ""} onChange={e => updateActivity(a.id, "startDate", e.target.value)} />
+                              <input type="date" className="tl-cell-input" value={a.endDate || ""} onChange={e => updateActivity(a.id, "endDate", e.target.value)} />
+                              <input type="number" min="0" className="tl-cell-input" style={{ textAlign: "center" }} value={a.offsetDays ?? ""} onChange={e => updateActivity(a.id, "offsetDays", e.target.value)} />
+                              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
+                              <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "4px 6px" }}><Trash2 size={11} /></button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })
+                )}
                 <div className="rq-row" style={{ marginTop: 8, marginBottom: 22 }}>
                   <input className="rq-input" placeholder="New activity name…" value={newActName} onChange={e => setNewActName(e.target.value)} onKeyDown={e => e.key === "Enter" && addActivity()} style={{ flex: 1 }} />
-                  <select style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, padding: "9px 10px", fontFamily: "'Syne',sans-serif", fontSize: 11, color: "#111827", background: "#F9F8F8", outline: "none" }} value={newActGroup} onChange={e => setNewActGroup(e.target.value)}>
-                    {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
+                  {buyingChannel !== "sole-source" && (
+                    <select style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, padding: "9px 10px", fontFamily: "'Syne',sans-serif", fontSize: 11, color: "#111827", background: "#F9F8F8", outline: "none" }} value={newActGroup} onChange={e => setNewActGroup(e.target.value)}>
+                      {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  )}
                   <button className="rq-btn-ghost" onClick={addActivity} disabled={!newActName.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={12} /> Add</button>
                 </div>
               </div>
@@ -1835,9 +1995,11 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
             {view === "market" && (
               <div className="rq-fade">
                 {!formalScope ? (
-                  <div style={{ textAlign: "center", padding: "48px 0" }}>
-                    <div style={{ color: "#6B7280", fontSize: 14, fontStyle: "italic", marginBottom: 16 }}>Start by completing your project scope.</div>
-                    <button className="rq-btn-primary" onClick={() => setView("scope")}>Start scope <ChevronRight size={13} /></button>
+                  <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
+                    <div style={{ fontSize: 36, marginBottom: 14 }}>🏪</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>Complete your scope first</div>
+                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 24, lineHeight: 1.6 }}>The market survey uses your approved scope to identify the right vendors for your category.</div>
+                    <button className="rq-btn-primary" onClick={() => setView("scope")}>Go to scope <ChevronRight size={13} /></button>
                   </div>
                 ) : (
                   <>
@@ -1856,7 +2018,13 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                       {vendors.length > 0 && <div style={{ fontSize: 11, color: "#9CA3AF", fontStyle: "italic", marginTop: 6 }}>Re-running will replace current results and vendor statuses.</div>}
                     </div>
                     {marketErr && <div className="rq-error">{marketErr}</div>}
-                    {marketBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 10 }} /><br />Identifying vendors for this scope…</div>}
+                    {marketBusy && (
+                      <div className="rq-loading-center">
+                        <Loader size={28} className="spin" style={{ marginBottom: 12, color: "#C2410C" }} />
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Surveying the market…</div>
+                        <div style={{ fontSize: 12, color: "#9CA3AF" }}>Identifying vendors for your specific category</div>
+                      </div>
+                    )}
                     {!marketBusy && vendors.map(v => {
                       const status = vendorStatus[v.name];
                       const matchPct = v.requirementsTotal > 0 ? v.requirementsMatch / v.requirementsTotal : 0;
@@ -2293,14 +2461,31 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
             {/* ── Questions ── */}
             {view === "questions" && (
               <div className="rq-fade">
-                <p className="rq-hint">The agent will generate 2–3 follow-up questions per requirement — a mix of open-ended and multiple choice.</p>
                 {qErr && <div className="rq-error">{qErr}</div>}
-                {qBusy && <div className="rq-loading-center"><Loader size={20} className="spin" style={{ marginBottom: 8 }} /><br />Generating questions for {requirements.length} requirement{requirements.length !== 1 ? "s" : ""}…</div>}
+                {qBusy && (
+                  <div className="rq-loading-center">
+                    <Loader size={28} className="spin" style={{ marginBottom: 12, color: "#C2410C" }} />
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Generating questions…</div>
+                    <div style={{ fontSize: 12, color: "#9CA3AF" }}>Building discovery questions for {requirements.length} requirement{requirements.length !== 1 ? "s" : ""}</div>
+                  </div>
+                )}
                 {!qBusy && Object.keys(questions).length === 0 && (
-                  <div className="rq-actions">
-                    <button className="rq-btn-primary" onClick={doGenerateQuestions} disabled={requirements.length === 0}>
-                      {requirements.length === 0 ? "Add requirements first" : <>Generate questions <ChevronRight size={13} /></>}
-                    </button>
+                  <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
+                    <div style={{ fontSize: 36, marginBottom: 14 }}>🔍</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>
+                      {requirements.length === 0 ? "No requirements yet" : "No questions generated yet"}
+                    </div>
+                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 24, lineHeight: 1.6 }}>
+                      {requirements.length === 0
+                        ? "Complete your requirements first, then generate discovery questions."
+                        : "Generate questions to build your vendor discovery questionnaire."}
+                    </div>
+                    {requirements.length > 0 && (
+                      <button className="rq-btn-primary" onClick={doGenerateQuestions}>Generate questions <ChevronRight size={13} /></button>
+                    )}
+                    {requirements.length === 0 && (
+                      <button className="rq-btn-ghost" onClick={() => setView("requirements")}>Go to requirements <ChevronRight size={13} /></button>
+                    )}
                   </div>
                 )}
                 {!qBusy && Object.keys(questions).length > 0 && (
@@ -2378,7 +2563,7 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 <hr className="rq-divider" />
 
                 {/* Timeline summary */}
-                <div className="rq-section-label">Procurement timeline</div>
+                <div className="rq-section-label">Buying timeline</div>
                 {rfpStart && goLive ? (
                   <div style={{ marginBottom: 24 }}>
                     <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
