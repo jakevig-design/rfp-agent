@@ -53,8 +53,6 @@ export async function loadUserProfile() {
 }
 
 // ─── Session helpers ──────────────────────────────────────────
-// NOTE: tenant_id and user_id are passed in directly from the
-// app (loaded once at startup) — no extra DB query per save.
 
 export async function saveSession({ id, projectTitle, status, data, userId, tenantId }) {
   if (!supabase) return null;
@@ -73,33 +71,39 @@ export async function saveSession({ id, projectTitle, status, data, userId, tena
   return !error;
 }
 
-export async function loadSessions() {
+export async function loadSessions(userId) {
   if (!supabase) return [];
-  const { data, error } = await supabase
+  let query = supabase
     .from('procurement_sessions')
     .select('id, project_title, status, updated_at')
     .order('updated_at', { ascending: false });
+  // Belt-and-suspenders: filter by user_id explicitly in addition to RLS
+  if (userId) query = query.eq('user_id', userId);
+  const { data, error } = await query;
   if (error) { console.error('Supabase load error:', error); return []; }
   return data || [];
 }
 
-export async function loadSession(id) {
+export async function loadSession(id, userId) {
   if (!supabase) return null;
-  const { data, error } = await supabase
+  let query = supabase
     .from('procurement_sessions')
     .select('*')
-    .eq('id', id)
-    .single();
+    .eq('id', id);
+  if (userId) query = query.eq('user_id', userId);
+  const { data, error } = await query.single();
   if (error) { console.error('Supabase load error:', error); return null; }
   return data;
 }
 
-export async function deleteSession(id) {
+export async function deleteSession(id, userId) {
   if (!supabase) return null;
-  const { error } = await supabase
+  let query = supabase
     .from('procurement_sessions')
     .delete()
     .eq('id', id);
+  if (userId) query = query.eq('user_id', userId);
+  const { error } = await query;
   if (error) console.error('Supabase delete error:', error);
   return !error;
 }
