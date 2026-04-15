@@ -361,6 +361,48 @@ function makeDefaultActivities(startDate) {
 const GROUPS = ["Pre-RFx", "RFx", "Post-RFx"];
 const GROUP_COLORS = { "Pre-RFx": "#2e5984", "RFx": "#3a6a52", "Post-RFx": "#a05828" };
 
+// ─── Sole source activities ────────────────────────────────────────────────────
+function makeSoleSourceActivities(startDate) {
+  const t = startDate || today();
+  const d = (base, offset) => addCalDays(base, offset);
+
+  const scopeEnd   = d(t, 7);
+  const memoStart  = d(t, 7);
+  const memoEnd    = d(memoStart, 7);
+  const demoStart  = d(memoEnd, 5);
+  const demoEnd    = d(demoStart, 14);
+  const alignStart = d(demoEnd, 3);
+  const alignEnd   = d(alignStart, 5);
+  const finalStart = d(alignEnd, 5);
+  const finalEnd   = d(finalStart, 5);
+  const negoStart  = d(finalEnd, 1);
+  const negoEnd    = d(negoStart, 30);
+  const implStart  = d(negoEnd, 7);
+  const implEnd    = d(implStart, 45);
+
+  return [
+    { id: "s1",  group: "Pre-RFx",  parentId: null, name: "Draft Scope & Requirements",         startDate: t,          endDate: scopeEnd,   offsetDays: 7,  startOffsetDays: 0 },
+    { id: "s2",  group: "Pre-RFx",  parentId: null, name: "Draft Sole Source Justification",    startDate: memoStart,  endDate: memoEnd,    offsetDays: 7,  startOffsetDays: calDaysBetween(t, memoStart) },
+    { id: "s3",  group: "RFx",      parentId: null, name: "Technical Evaluation (Demo / POC)",  startDate: demoStart,  endDate: demoEnd,    offsetDays: 14, startOffsetDays: calDaysBetween(t, demoStart) },
+    { id: "s4",  group: "Post-RFx", parentId: null, name: "Internal Alignment & Confirm Budget",startDate: alignStart, endDate: alignEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
+    { id: "s5",  group: "Post-RFx", parentId: null, name: "Final Recommendation",               startDate: finalStart, endDate: finalEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
+    { id: "s6",  group: "Post-RFx", parentId: null, name: "Negotiate Contract",                 startDate: negoStart,  endDate: negoEnd,    offsetDays: 30, startOffsetDays: calDaysBetween(t, negoStart) },
+    { id: "s7",  group: "Post-RFx", parentId: null, name: "Implementation",                     startDate: implStart,  endDate: implEnd,    offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
+  ];
+}
+
+// ─── Auto-suggest buying channel from scope bullets ───────────────────────────
+function suggestChannel(scopeBullets, formalScope) {
+  const text = [...(scopeBullets || []), formalScope || ""].join(" ").toLowerCase();
+  const soleSourceSignals = [
+    "sole source", "single vendor", "only vendor", "existing vendor", "incumbent",
+    "proprietary", "no alternative", "only option", "continuation", "existing contract",
+    "current provider", "specific vendor", "named vendor", "sole supplier",
+  ];
+  const hits = soleSourceSignals.filter(s => text.includes(s));
+  return hits.length >= 1 ? "sole-source" : "competitive-bid";
+}
+
 // ─── Gantt ────────────────────────────────────────────────────────────────────
 function GanttChart({ activities }) {
   const allDates = activities.flatMap(a => [a.startDate, a.endDate]).filter(Boolean).sort();
@@ -546,7 +588,7 @@ The bullets should be 6-10 clear, factual statements capturing the full picture.
 
 const P_SCOPE_GENERATE = `You are a professional business analyst writing a formal project scope for a software vendor or procurement document.
 
-Given a list of approved scope bullet points and company context, write a formal scope narrative.
+Given a list of approved scope bullet points and company context, write a formal scope narrative in flowing prose paragraphs.
 
 SCOPE QUALITY RULES — the scope MUST:
 1. Be specific — include concrete details about deadlines, milestones, or deliverables where provided
@@ -555,6 +597,8 @@ SCOPE QUALITY RULES — the scope MUST:
 4. Address integration compatibility — when referencing integrations, name the specific tools and note whether open or proprietary formats are required
 5. Include relevant company context (industry, size, regulatory environment) where it affects vendor selection
 6. Be clean and professional — this will be shared with vendors
+
+FORMAT: Plain prose paragraphs only. No markdown, no headers (##), no bullet points (-), no bold (**). Just clean paragraphs separated by blank lines.
 
 Return ONLY the scope text. No preamble, no explanation.`;
 
@@ -926,6 +970,8 @@ export default function RequirementsAgent() {
   const [rfpStart, setRfpStart] = useState(today);
   const [goLive, setGoLive] = useState(() => addCalDays(today(), 180));
   const [activities, setActivities] = useState(() => makeDefaultActivities(today()));
+  const [buyingChannel, setBuyingChannel] = useState(null); // null | "competitive-bid" | "sole-source"
+  const [channelSuggested, setChannelSuggested] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({ "Pre-RFx": false, "RFx": false, "Post-RFx": false });
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
@@ -1038,12 +1084,14 @@ export default function RequirementsAgent() {
     setVendorStatus({});
     setMarketErr("");
     setActivities(makeDefaultActivities(today()));
+    setBuyingChannel(null);
+    setChannelSuggested(false);
     setRfpStart(today());
     setGoLive(addCalDays(today(), 180));
     setView("scope");
   };
 
-  const getSessionData = () => ({ step, projectTitle, answers, formalScope, execSummary, scopeBullets, bulletsApproved, chatMessages, scopeApproved, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus, narrative });
+  const getSessionData = () => ({ step, projectTitle, answers, formalScope, execSummary, scopeBullets, bulletsApproved, chatMessages, scopeApproved, requirements, questions, activities, rfpStart, goLive, buyingChannel, vendors, vendorStatus, narrative });
 
   const doSave = async (status = "draft") => {
     setSaveStatus("saving");
@@ -1071,6 +1119,7 @@ export default function RequirementsAgent() {
     if (d.questions) setQuestions(d.questions);
     if (d.rfpStart) setRfpStart(d.rfpStart);
     if (d.goLive) setGoLive(d.goLive);
+    if (d.buyingChannel) { setBuyingChannel(d.buyingChannel); setChannelSuggested(true); }
     // Only restore activities if they have the new group structure
     if (d.activities && d.activities.length > 0 && d.activities[0].group) {
       // Migrate old Pre-RFP/RFP/Post-RFP group names to Pre-RFx/RFx/Post-RFx
@@ -1103,6 +1152,27 @@ export default function RequirementsAgent() {
     resetSession();
     setView("sessions");
   };
+
+  const doSelectChannel = (channel) => {
+    setBuyingChannel(channel);
+    setChannelSuggested(true);
+    const newActivities = channel === "sole-source"
+      ? makeSoleSourceActivities(rfpStart)
+      : makeDefaultActivities(rfpStart);
+    setActivities(newActivities);
+    // Update go-live to last activity end date
+    const lastDate = newActivities.map(a => a.endDate).filter(Boolean).sort().pop();
+    if (lastDate) setGoLive(lastDate);
+  };
+
+  // Auto-suggest channel when requirements are first generated
+  useEffect(() => {
+    if (requirements.length > 0 && !channelSuggested && (scopeBullets.length > 0 || formalScope)) {
+      const suggested = suggestChannel(scopeBullets, formalScope);
+      setBuyingChannel(suggested);
+      setChannelSuggested(true);
+    }
+  }, [requirements]);
 
   const handleRfpStartChange = (newStart) => {
     setRfpStart(newStart);
@@ -1679,7 +1749,14 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
             {/* ── Timeline ── */}
             {view === "timeline" && (
               <div className="rq-fade">
-                <p className="rq-hint">Set your start and go-live dates — all activity dates cascade automatically.</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                  <p className="rq-hint" style={{ marginBottom: 0, flex: 1 }}>Set your start and go-live dates — all activity dates cascade automatically.</p>
+                  {buyingChannel && (
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4, background: buyingChannel === "sole-source" ? "#FFFBEB" : "#FFF7ED", color: buyingChannel === "sole-source" ? "#D97706" : "#C2410C", whiteSpace: "nowrap" }}>
+                      {buyingChannel === "sole-source" ? "Sole Source" : "Competitive Bid"}
+                    </div>
+                  )}
+                </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 22 }}>
                   <div style={{ background: "#FFFFFF", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "14px 16px" }}>
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#C2410C", marginBottom: 6 }}>RFx Start Date</div>
@@ -1979,12 +2056,52 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 <style>{`@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}`}</style>
 
                 {scopeErr && <div className="rq-error">{scopeErr}</div>}
+
+                {/* Bullet review — always visible once chat completes, even after scope generated */}
+                {scopeBullets.length > 0 && (
+                  <div style={{ marginTop: 16, marginBottom: formalScope ? 24 : 0 }} className="rq-fade">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div className="rq-section-label" style={{ marginBottom: 0 }}>Key points</div>
+                      <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={() => { setChatMessages([]); setScopeBullets([]); setChatInput(""); setFormalScope(""); setScopeApproved(false); setScopeFlags([]); setExpertQuestions([]); }}><RefreshCw size={10} /> Start over</button>
+                    </div>
+                    {scopeBullets.map((bullet, idx) => (
+                      <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                        <div style={{ color: "#C2410C", fontFamily: "'JetBrains Mono',monospace", fontSize: 11, flexShrink: 0 }}>•</div>
+                        <input
+                          className="rq-input"
+                          value={bullet}
+                          onChange={e => { const b = [...scopeBullets]; b[idx] = e.target.value; setScopeBullets(b); }}
+                          style={{ flex: 1 }}
+                        />
+                        <button className="rq-btn-icon rq-btn-del" onClick={() => setScopeBullets(p => p.filter((_, i) => i !== idx))} style={{ flexShrink: 0 }}><X size={11} /></button>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", gap: 8, marginTop: 8, marginBottom: 14 }}>
+                      <input className="rq-input" placeholder="Add a point…" id="newBulletInput"
+                        onKeyDown={e => { if (e.key === "Enter" && e.target.value.trim()) { setScopeBullets(p => [...p, e.target.value.trim()]); e.target.value = ""; }}} />
+                      <button className="rq-btn-ghost" style={{ whiteSpace: "nowrap" }} onClick={() => { const el = document.getElementById("newBulletInput"); if (el?.value.trim()) { setScopeBullets(p => [...p, el.value.trim()]); el.value = ""; }}}><Plus size={11} /> Add</button>
+                    </div>
+                    {!formalScope && (
+                      <div className="rq-actions">
+                        <button className="rq-btn-primary" onClick={doGenerateScope} disabled={scopeBusy || scopeBullets.length === 0}>
+                          {scopeBusy ? <><Loader size={13} className="spin" /> Generating scope…</> : <>Generate scope <ChevronRight size={13} /></>}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {formalScope && (
-                  <div style={{ marginTop: 20 }} className="rq-fade">
-                    <div className="rq-section-label">Generated scope</div>
+                  <div style={{ marginTop: 4 }} className="rq-fade">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div className="rq-section-label">Scope</div>
+                      {scopeBullets.length > 0 && !editingScope && (
+                        <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={doGenerateScope} disabled={scopeBusy}><RefreshCw size={10} /> Regenerate</button>
+                      )}
+                    </div>
                     {editingScope ? (
                       <>
-                        <textarea className="rq-textarea" value={formalScope} onChange={e => setFormalScope(e.target.value)} rows={5} style={{ marginBottom: 10 }} />
+                        <textarea className="rq-textarea" value={formalScope} onChange={e => setFormalScope(e.target.value)} rows={8} style={{ marginBottom: 10 }} />
                         <div className="rq-actions">
                           <button className="rq-btn-ghost" onClick={async () => { setEditingScope(false); setScopeApproved(false); setScopeFlags([]); setExpertQuestions([]); await doEvaluateScope(formalScope); }}><Check size={12} /> Done editing</button>
                           <button className="rq-btn-ghost" onClick={() => setEditingScope(false)}>Cancel</button>
@@ -1992,10 +2109,15 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                       </>
                     ) : (
                       <>
-                        <div className="rq-scope-box">{formalScope}</div>
-                        <div className="rq-actions">
+                        <div className="rq-scope-box" style={{ whiteSpace: "pre-wrap" }}>
+                          {formalScope
+                            .replace(/^#{1,3}\s+/gm, '')
+                            .replace(/^[-*]\s+/gm, '• ')
+                            .replace(/\*\*(.*?)\*\*/g, '$1')
+                            .trim()}
+                        </div>
+                        <div className="rq-actions" style={{ marginTop: 10 }}>
                           <button className="rq-btn-ghost" onClick={() => setEditingScope(true)}><Pencil size={12} /> Edit</button>
-                          <button className="rq-btn-ghost" onClick={doGenerateScope} disabled={scopeBusy}><RefreshCw size={12} /> Regenerate</button>
                         </div>
                       </>
                     )}
@@ -2131,6 +2253,40 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 {!reqsBusy && requirements.length > 0 && (
                   <div style={{ marginTop: 22 }} className="rq-fade">
                     <div className="rq-scope-approved"><CheckCircle size={15} /> Requirements ready — {requirements.length} binary requirement{requirements.length !== 1 ? "s" : ""} defined</div>
+
+                    {/* Buying channel selector */}
+                    <div style={{ marginTop: 20, marginBottom: 20 }}>
+                      <div className="rq-section-label" style={{ marginBottom: 6 }}>Buying channel</div>
+                      <p className="rq-hint" style={{ marginBottom: 12 }}>
+                        {buyingChannel === "sole-source"
+                          ? "Sole source suggested — your scope references a specific vendor or proprietary system. Override below if needed."
+                          : "Competitive bid suggested based on your scope. Override below if needed."}
+                      </p>
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                        {[
+                          { id: "competitive-bid", label: "Competitive Bid", desc: "Full RFx process, multiple vendors, evaluation and scoring." },
+                          { id: "sole-source",     label: "Sole Source",     desc: "Single vendor, direct negotiation, no competitive process." },
+                        ].map(ch => (
+                          <div
+                            key={ch.id}
+                            onClick={() => doSelectChannel(ch.id)}
+                            style={{
+                              flex: 1, minWidth: 180, padding: "14px 16px",
+                              background: buyingChannel === ch.id ? "#FFF7ED" : "#FFFFFF",
+                              border: `1.5px solid ${buyingChannel === ch.id ? "#C2410C" : "rgba(0,0,0,0.07)"}`,
+                              borderRadius: 8, cursor: "pointer", transition: "all .15s",
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                              <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${buyingChannel === ch.id ? "#C2410C" : "#D1D5DB"}`, background: buyingChannel === ch.id ? "#C2410C" : "transparent", flexShrink: 0 }} />
+                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, color: buyingChannel === ch.id ? "#C2410C" : "#374151" }}>{ch.label}</div>
+                            </div>
+                            <div style={{ fontFamily: "'Lora',serif", fontSize: 11, color: "#6B7280", lineHeight: 1.5, paddingLeft: 22 }}>{ch.desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="rq-actions">
                       <button className="rq-btn-primary" onClick={() => { setView("questions"); doGenerateQuestions(); }}>Generate questions <ChevronRight size={13} /></button>
                     </div>
