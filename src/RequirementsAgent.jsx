@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle, Calendar, Save, Clock, ArrowLeft, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { FileText, Plus, Trash2, Loader, ChevronRight, CheckCircle, Pencil, X, Check, RefreshCw, AlertTriangle, Calendar, Save, Clock, ArrowLeft, ChevronDown, ChevronUp, GripVertical, ThumbsUp, ThumbsDown } from "lucide-react";
 import { saveAs } from "file-saver";
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, AlignmentType, HeadingLevel, LevelFormat } from "docx";
-import { saveSession, loadSessions, loadSession, deleteSession, signIn, signUp, signOut, getSession, onAuthStateChange, loadUserProfile, saveUserProfile } from "./supabase";
+import { saveSession, loadSessions, loadSession, deleteSession, signIn, signUp, signOut, getSession, onAuthStateChange, loadUserProfile, saveUserProfile, logEvent } from "./supabase";
+import { P_SCOPE_CHAT, P_SCOPE_GENERATE, P_SCOPE_EVALUATE, P_SCOPE_REFINE, P_SCOPE_EXPERT, P_REQS, P_QS, P_MARKET, P_NARRATIVE, FIVE_WS } from "./prompts";
 
 // ─── Fonts ────────────────────────────────────────────────────────────────────
 const _link = document.createElement("link");
@@ -238,6 +239,10 @@ _style.textContent = `
   .rq-fade{animation:fadeUp .3s ease both}
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
+  /* ── Skeleton loader ── */
+  .rq-skeleton{background:linear-gradient(90deg,#F3F4F6 25%,#E5E7EB 50%,#F3F4F6 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:6px}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
   /* ── Mobile hamburger ── */
   .rq-hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;color:#374151}
   .rq-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:40}
@@ -273,10 +278,24 @@ const uid = () => "a" + Date.now() + Math.random().toString(36).substring(2, 5);
 async function callClaude(system, user, useWebSearch = false, model = null) {
   const body = { system, user, useWebSearch };
   if (model) body.model = model;
-  const res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  const d = await res.json();
-  if (!res.ok || d.error) throw new Error(`API ${res.status}: ${d.error?.type || ""} — ${d.error?.message || JSON.stringify(d)}`);
-  return d.content?.filter(b => b.type === "text").map(b => b.text).join("") ?? "";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout
+  try {
+    const res = await fetch("/api/claude", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const d = await res.json();
+    if (!res.ok || d.error) throw new Error(`API ${res.status}: ${d.error?.type || ""} — ${d.error?.message || JSON.stringify(d)}`);
+    return d.content?.filter(b => b.type === "text").map(b => b.text).join("") ?? "";
+  } catch (e) {
+    clearTimeout(timeout);
+    if (e.name === "AbortError") throw new Error("Request timed out — please try again.");
+    throw e;
+  }
 }
 
 async function callJSON(system, user, useWebSearch = false, model = null) {
@@ -595,186 +614,6 @@ function GanttChart({ activities }) {
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
-const P_SCOPE_CHAT = `You are BuyRight, a smart intake assistant helping a business leader define what they need before buying software. Your ONLY job is to ask clarifying questions and then output a structured bullet list when you have enough information.
-
-STRICT RULES:
-- Ask ONE question at a time — never multiple questions in one message
-- Never generate a scope, never list vendors, never give advice or next steps
-- Never use markdown formatting (no **, no ##, no bullets) in your questions
-- Be brief and conversational — one or two sentences max per message
-- Ask only what would materially change the scope or vendor selection
-- Skip questions where context already implies the answer
-- Maximum 4 questions total across the entire conversation
-- When you type "skip" or the user says skip, move to the next most important question
-
-WHEN YOU HAVE ENOUGH INFORMATION:
-You must have covered: what the system needs to do, who uses it, key integrations or constraints, and what is out of scope. When satisfied — or after 4 questions — output EXACTLY this format and nothing else:
-
-DONE
-["bullet one", "bullet two", "bullet three"]
-
-The bullets should be 6-10 clear factual statements. No other text before or after.`;
-
-const P_SCOPE_GENERATE = `You are a professional business analyst writing a formal project scope for a software vendor or procurement document.
-
-Given a list of approved scope bullet points and company context, write a formal scope narrative in flowing prose paragraphs.
-
-SCOPE QUALITY RULES — the scope MUST:
-1. Be specific — include concrete details about deadlines, milestones, or deliverables where provided
-2. Include exclusions — explicitly state what is out of scope to prevent scope creep
-3. Use plain language — define any technical terms, product names, acronyms, or internal system names on first use
-4. Address integration compatibility — when referencing integrations, name the specific tools and note whether open or proprietary formats are required
-5. Include relevant company context (industry, size, regulatory environment) where it affects vendor selection
-6. Be clean and professional — this will be shared with vendors
-
-FORMAT: Plain prose paragraphs only. No markdown, no headers (##), no bullet points (-), no bold (**). Just clean paragraphs separated by blank lines.
-
-Return ONLY the scope text. No preamble, no explanation.`;
-
-const P_SCOPE_EVALUATE = `You are a senior business analyst reviewing a project scope narrative for quality.
-
-Evaluate the scope against these criteria:
-1. SPECIFICITY — Does the scope clearly explain why this project is being done? What is the business driver or problem being solved?
-2. EXCLUSIONS — Does it explicitly state what is out of scope?
-3. PLAIN LANGUAGE — Are all technical terms, product names, acronyms, and internal system names explained or defined on first use? Flag any unexplained jargon, abbreviations, or system names a reader outside the organization would not recognize.
-4. COMPLETENESS — Does it address all three of the following:
-   - What will be done
-   - When and how it will be done, and potentially by whom
-   - What constitutes an acceptable result
-5. INTEGRATION COMPATIBILITY — If the scope mentions integration with existing tools, systems, or platforms, does it specify the integration method, file formats, or compatibility standards? Flag if it references integrations without addressing whether open or proprietary formats are required — this has significant vendor selection implications.
-
-Respond ONLY with valid JSON, no markdown:
-{
-  "passed": true or false,
-  "flags": [
-    {
-      "criterion": "EXCLUSIONS",
-      "issue": "The scope does not define what is explicitly out of scope.",
-      "prompt": "What should be explicitly excluded from this project? For example, are there integrations, features, or departments that should not be included?"
-    }
-  ]
-}
-
-If all criteria pass, return { "passed": true, "flags": [] }.
-Only flag genuine gaps — do not invent issues if the scope is solid.`;
-
-const P_SCOPE_REFINE = `You are a professional business analyst refining a project scope narrative.
-
-The user has provided additional information to address a gap in the scope. Incorporate their response naturally into the existing scope. Keep the same tone and style. Return ONLY the updated scope text — no preamble, no explanation.`;
-
-const P_SCOPE_EXPERT = `You are a senior procurement consultant with deep domain expertise across enterprise software categories.
-
-Given a project scope, identify the software category being procured and generate 2-4 expert-level clarifying questions that a seasoned business analyst would ask. These questions should surface information that materially affects vendor selection, contract terms, or implementation complexity — things the user likely knows but didn't think to include.
-
-Examples of good expert questions:
-- For HR systems: "How many employees will this system support, and across how many countries or legal entities?"
-- For HR systems: "What are the specific legacy systems being replaced, and what does each currently handle?"
-- For ITSM: "What is the current ticket volume per month, and how many agents will use the system?"
-- For ERP: "Are you on a single instance today, or do you have multiple separate systems by business unit?"
-- For CRM: "How many active opportunities are in your current pipeline, and what is your average deal cycle length?"
-
-RULES:
-- Questions must be specific to the inferred software category — not generic
-- Ask only what would genuinely change the scope, vendor selection, or contract
-- Each question should be skippable — the user may not know or may not want to share
-- Do not re-ask anything already answered in the scope
-
-Respond ONLY with valid JSON, no markdown:
-[
-  {
-    "question": "How many employees will this system support, and across how many countries or legal entities?",
-    "why": "Affects licensing model and compliance requirements"
-  }
-]`;
-
-const P_REQS = `You are a business analyst writing functional requirements for a software procurement RFP.
-
-Generate 5-8 binary functional requirements from the project scope.
-
-RULES FOR A GOOD BINARY REQUIREMENT:
-1. One thing only — a single, testable capability. No compound statements joined by "and", "including", "such as", or lists.
-2. Yes or no — a vendor must be able to answer it with a single yes or no. No partial answers possible.
-3. No detail about how — do not specify fields, methods, integrations, sub-features, or implementation details. Those belong in discovery questions.
-4. Short and direct — one sentence, starting with "The solution shall..." or "The system must..."
-
-BAD example (compound, lists detail): "The solution shall track hardware assets including computers, mobile devices, and peripherals with fields for asset identification, assignment, location, and lifecycle status."
-GOOD example (single, testable): "The solution shall track hardware assets within the ServiceNow CMDB."
-
-Return ONLY a valid JSON array, no markdown, no preamble:
-[{"id":"R-F1","text":"The solution shall..."},...]`;
-
-const P_QS = `You are a business analyst writing a vendor discovery questionnaire.
-
-Given a binary functional requirement, generate 2-3 follow-up questions that unpack the detail behind it. These questions should explore how the vendor implements the capability, what limitations exist, and what configuration or customization may be needed.
-
-RULES:
-- Ask about the specifics that were intentionally left out of the requirement (asset types, fields, methods, integrations, sub-features)
-- Use multiple choice when the answer space is finite and predictable
-- Use open-ended when the answer requires explanation or varies significantly by vendor
-- Do not re-ask the requirement itself — assume the vendor said yes
-
-Return ONLY valid JSON, no markdown:
-[{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}]`;
-
-const P_MARKET = `You are a senior procurement analyst with deep knowledge of enterprise software markets across all industries and categories — from mainstream SaaS (HR, ERP, CRM) to niche technical software (power system simulation, SCADA, CAD, compliance tools, industry-specific platforms).
-
-Given a project scope and functional requirements, identify 5-8 vendors that are realistic fits. Use your knowledge of the market to surface the right vendors for the specific category — do not default to generic enterprise software if the scope describes a specialized need.
-
-RULES:
-- Match vendors to the actual software category described in the scope
-- Include both well-known and niche vendors if they are genuinely relevant
-- For G2 ratings, use your best knowledge — if uncertain, use "N/A"
-- requirementsMatch is your estimate of how many requirements this vendor likely meets
-- matchConfidence is high, medium, or low based on how well you know this vendor's capabilities
-- For pricing: provide an order-of-magnitude Year 1 total cost range based on the company context in the scope. Format as "$X–$Yk/yr" or "$XM–$YM/yr". If pricing is highly opaque, use "Contact for pricing"
-- priceConfidence is high (well-documented public pricing), medium (known ballpark), or low (opaque / varies widely)
-
-OUTPUT: Respond with ONLY a valid JSON array. Start with [ and end with ]. No text before or after. No markdown. No explanation.
-
-[
-  {
-    "name": "Vendor Name — Product Name (e.g. 'Manitoba Hydro International — PSCAD' or 'Workday — HCM' or 'SAP — Ariba'). If vendor and product are the same, just use the product name.",
-    "category": "Software category",
-    "g2Rating": "4.2/5 or N/A",
-    "g2ReviewCount": "1,200 reviews or N/A",
-    "description": "One sentence on what this vendor does and why it fits this scope.",
-    "deployment": "SaaS" or "On-Prem" or "Hybrid",
-    "pricingModel": "Per Seat" or "Enterprise License" or "Usage-Based" or "Flat Annual" or "Module-Based",
-    "estimatedPrice": "$50k–$150k/yr",
-    "priceConfidence": "high" or "medium" or "low",
-    "implementationComplexity": "Low" or "Medium" or "High",
-    "marketPresence": "Startup" or "Growth" or "Established" or "Legacy",
-    "vendorUrl": "https://vendor-official-website.com or null",
-    "requirementsMatch": 4,
-    "requirementsTotal": 6,
-    "matchConfidence": "high",
-    "reviewPlatforms": ["g2", "capterra", "sourceforge", "goodfirms", "reddit"],
-    "g2Url": "https://www.g2.com/products/vendor-name or null"
-  }
-]`;
-
-const P_NARRATIVE = `You are a senior business analyst writing an internal executive business case narrative.
-
-Given approved scope bullet points, timeline data, and vendor shortlist intelligence, write a concise business case narrative of exactly 3 short paragraphs for internal stakeholder alignment and executive presentation.
-
-Paragraph 1 — Problem & context: What is broken, why it matters, who it affects.
-Paragraph 2 — What success looks like: The capability being acquired, key outcomes, what is out of scope. Reference the timeline (start date, go-live) to show urgency and planning.
-Paragraph 3 — Investment rationale: Why now, risk of inaction, and what the market looks like (reference vendor count, pricing range from the shortlist to anchor the investment size).
-
-RULES:
-- Exactly 3 paragraphs, 2-4 sentences each
-- Third person, professional but direct — not marketing language
-- Do not name specific vendors
-- No headers, no bullets — flowing prose only
-- This is internal — include market intel and timeline, not vendor-facing content`;
-
-const FIVE_WS = [
-  { key: "who", label: "Who", question: "Who will use this system, and who owns this initiative?", placeholder: "e.g. Shop floor technicians will use it daily. The VP of Operations is the project sponsor." },
-  { key: "what", label: "What", question: "What problem are you solving, or what capability are you adding?", placeholder: "e.g. We lose track of tools constantly. We need real-time visibility into tool location and condition." },
-  { key: "where", label: "Where", question: "Where does this fit in your current environment? Any existing systems it must work with?", placeholder: "e.g. Must integrate with our SAP ERP. Deployed across 3 facilities in the US." },
-  { key: "when", label: "When", question: "When is this needed, and what is driving the timeline?", placeholder: "e.g. Must be live by Q3. We have an audit in September that requires this to be in place." },
-  { key: "why", label: "Why", question: "Why is the current state inadequate?", placeholder: "e.g. Everything is tracked on spreadsheets. We lose 10-15 tools per month and have no way to audit." },
-];
 
 // ─── DocX Export ──────────────────────────────────────────────────────────────
 async function buildDocx({ sessionId, projectTitle, formalScope, narrative, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus, userProfile }) {
@@ -938,10 +777,10 @@ function ProfileSetupScreen({ onComplete }) {
 }
 
 // ─── Login Screen ─────────────────────────────────────────────
-function LoginScreen() {
+function LoginScreen({ onUnconfirmed }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState("signin"); // signin | signup
+  const [mode, setMode] = useState("signin");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
@@ -950,9 +789,19 @@ function LoginScreen() {
     if (!email.trim() || !password.trim()) { setErr("Email and password are required."); return; }
     setBusy(true); setErr(""); setMsg("");
     const fn = mode === "signup" ? signUp : signIn;
-    const { error } = await fn(email, password);
-    if (error) { setErr(error.message); setBusy(false); return; }
-    if (mode === "signup") setMsg("Check your email to confirm your account, then sign in.");
+    const { data, error } = await fn(email, password);
+    if (error) {
+      if (error.message?.toLowerCase().includes("email not confirmed")) {
+        onUnconfirmed?.();
+      } else {
+        setErr(error.message);
+      }
+      setBusy(false);
+      return;
+    }
+    if (mode === "signup") {
+      onUnconfirmed?.();
+    }
     setBusy(false);
   };
 
@@ -994,6 +843,7 @@ export default function RequirementsAgent() {
   const [view, setView] = useState("splash");
   const [sessionsList, setSessionsList] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle");
   const [lastSaved, setLastSaved] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1014,6 +864,7 @@ export default function RequirementsAgent() {
   const [narrative, setNarrative] = useState("");
   const [narrativeBusy, setNarrativeBusy] = useState(false);
   const [formalScope, setFormalScope] = useState("");
+  const [prevScope, setPrevScope] = useState(null); // versioning
   const [execSummary, setExecSummary] = useState("");
   const [scopeBullets, setScopeBullets] = useState([]);
   const [bulletsApproved, setBulletsApproved] = useState(false);
@@ -1032,6 +883,11 @@ export default function RequirementsAgent() {
 
   // Requirements
   const [requirements, setRequirements] = useState([]);
+  const [prevRequirements, setPrevRequirements] = useState(null); // versioning
+  const [scopeFeedback, setScopeFeedback] = useState(null); // 'up' | 'down' | null
+  const [reqsFeedback, setReqsFeedback] = useState(null);
+  const [vendorsFeedback, setVendorsFeedback] = useState(null);
+  const [emailUnconfirmed, setEmailUnconfirmed] = useState(false);
   const [reqsBusy, setReqsBusy] = useState(false);
   const [reqsErr, setReqsErr] = useState("");
   const [newReq, setNewReq] = useState("");
@@ -1197,7 +1053,9 @@ export default function RequirementsAgent() {
   };
 
   const doLoadSession = async (id) => {
+    setSessionLoading(true);
     const row = await loadSession(id, authUser?.id);
+    setSessionLoading(false);
     if (!row?.data) return;
     const d = row.data;
     setSessionId(id);
@@ -1335,6 +1193,7 @@ export default function RequirementsAgent() {
   };
 
   const doGenerateScope = async () => {
+    if (formalScope) setPrevScope(formalScope); // save previous version
     setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
     try {
       const p = answers.companyProfile;
@@ -1413,6 +1272,7 @@ export default function RequirementsAgent() {
     } catch {
       setScopeFlags([]);
       setScopeApproved(true);
+      logEvent("scope_approved", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id });
     }
   };
 
@@ -1459,8 +1319,13 @@ export default function RequirementsAgent() {
 
   // ── Requirements ──
   const doGenerateReqs = async () => {
+    if (requirements.length) setPrevRequirements(requirements); // save previous version
     setReqsBusy(true); setReqsErr("");
-    try { const arr = await callJSON(P_REQS, `Scope: ${formalScope}`); setRequirements(arr); }
+    try {
+      const arr = await callJSON(P_REQS, `Scope: ${formalScope}`);
+      setRequirements(arr);
+      logEvent("requirements_generated", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id, meta: { count: arr.length } });
+    }
     catch { setReqsErr("Could not generate requirements. Please try again."); }
     finally { setReqsBusy(false); }
   };
@@ -1613,6 +1478,7 @@ Example format:
       const result = await callJSON(P_MARKET, userMsg, false, "claude-haiku-4-5-20251001");
       setVendors(result);
       setVendorStatus({});
+      logEvent("market_research_run", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id, meta: { vendorCount: result.length } });
     } catch (e) {
       setMarketErr(`Market research failed: ${e.message}`);
     } finally {
@@ -1626,21 +1492,25 @@ Example format:
       const bulletText = scopeBullets.length > 0
         ? `Scope bullets:\n${scopeBullets.map(b => `• ${b}`).join("\n")}`
         : `Scope:\n${formalScope}`;
-
       const timelineCtx = rfpStart && goLive
         ? `\n\nTimeline: Start ${new Date(rfpStart + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}, Go-live ${new Date(goLive + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} (${Math.round(calDaysBetween(rfpStart, goLive) / 7)} weeks)`
         : "";
-
       const shortlisted = vendors.filter(v => vendorStatus[v.name] === "shortlisted");
       const vendorCtx = vendors.length > 0 ? `\n\nVendor market: ${vendors.length} vendors identified${shortlisted.length > 0 ? `, ${shortlisted.length} shortlisted` : ""}. ${
         vendors.filter(v => v.estimatedPrice && v.estimatedPrice !== "Contact for pricing").map(v => v.estimatedPrice).slice(0, 3).join(", ")
       }${vendors.some(v => v.estimatedPrice) ? " estimated Year 1 cost range." : ""}` : "";
-
       const userMsg = `${bulletText}${timelineCtx}${vendorCtx}`;
       const result = await callClaude(P_NARRATIVE, userMsg, false, "claude-sonnet-4-5");
       setNarrative(result.trim());
+      logEvent("narrative_generated", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id });
     } catch { /* silent fail */ }
     finally { setNarrativeBusy(false); }
+  };
+
+  const doLogFeedback = (type, value) => {
+    const setters = { scope: setScopeFeedback, requirements: setReqsFeedback, vendors: setVendorsFeedback };
+    setters[type]?.(value);
+    logEvent(`feedback_${value}`, { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id, meta: { type } });
   };
 
   const toggleVendorStatus = (name, status) => {
@@ -1653,6 +1523,7 @@ Example format:
     try {
       await buildDocx({ sessionId, projectTitle, formalScope, narrative, requirements, questions, activities, rfpStart, goLive, vendors, vendorStatus, userProfile });
       await doSave("complete");
+      logEvent("docx_exported", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id });
     } catch { setExportErr("Export failed. Please try again."); }
     finally { setExportBusy(false); }
   };
@@ -1690,7 +1561,21 @@ Example format:
 
   // ── Login screen ──
   if (!authUser) {
-    return <LoginScreen />;
+    return <LoginScreen onUnconfirmed={() => setEmailUnconfirmed(true)} />;
+  }
+
+  // ── Email not confirmed ──
+  if (emailUnconfirmed) {
+    return (
+      <div className="rq-root" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: "100%", maxWidth: 400, padding: "0 24px", textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>📬</div>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, color: "#111827", marginBottom: 8 }}>Check your email</div>
+          <div style={{ fontFamily: "'Lora',serif", fontSize: 14, color: "#6B7280", lineHeight: 1.7, marginBottom: 24 }}>We sent you a confirmation link. Click it to activate your account, then come back and sign in.</div>
+          <button className="rq-btn-ghost" onClick={() => setEmailUnconfirmed(false)}>Back to sign in</button>
+        </div>
+      </div>
+    );
   }
 
   // ── First login — profile setup ──
@@ -1936,6 +1821,20 @@ Example format:
           {topbar}
           <div className="rq-content">
 
+            {/* ── Loading skeleton ── */}
+            {sessionLoading && (
+              <div className="rq-fade">
+                <div className="rq-skeleton" style={{ height: 24, width: "40%", marginBottom: 20 }} />
+                <div className="rq-skeleton" style={{ height: 14, width: "100%", marginBottom: 10 }} />
+                <div className="rq-skeleton" style={{ height: 14, width: "90%", marginBottom: 10 }} />
+                <div className="rq-skeleton" style={{ height: 14, width: "95%", marginBottom: 10 }} />
+                <div className="rq-skeleton" style={{ height: 14, width: "70%", marginBottom: 28 }} />
+                <div className="rq-skeleton" style={{ height: 80, width: "100%", marginBottom: 20 }} />
+                <div className="rq-skeleton" style={{ height: 14, width: "60%", marginBottom: 10 }} />
+                <div className="rq-skeleton" style={{ height: 14, width: "80%", marginBottom: 10 }} />
+              </div>
+            )}
+
             {/* ── Projects ── */}
             {view === "sessions" && (
               <div className="rq-fade">
@@ -2117,6 +2016,13 @@ Example format:
                   <>
                     <p className="rq-hint">The agent identifies relevant vendors based on your scope — mainstream and niche categories alike. Ratings and requirements fit are the agent's assessment based on its knowledge of each vendor. Verify shortlisted vendors on G2 before committing.</p>
                     {vendors.length > 0 && (
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 12 }}>
+                        <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF", letterSpacing: ".08em", textTransform: "uppercase" }}>Results helpful?</span>
+                        <button className="rq-btn-icon" onClick={() => doLogFeedback("vendors", "positive")} style={{ color: vendorsFeedback === "positive" ? "#16A34A" : "#9CA3AF" }}><ThumbsUp size={12} /></button>
+                        <button className="rq-btn-icon" onClick={() => doLogFeedback("vendors", "negative")} style={{ color: vendorsFeedback === "negative" ? "#DC2626" : "#9CA3AF" }}><ThumbsDown size={12} /></button>
+                      </div>
+                    )}
+                    {vendors.length > 0 && (
                       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
                         <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Vendors found</div><div className="rq-metric-val">{vendors.length}</div></div>
                         <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Shortlisted</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "shortlisted").length}</div></div>
@@ -2206,6 +2112,7 @@ Example format:
                           <div className="vendor-actions">
                             <button className={`vendor-btn vendor-btn-shortlist${status === "shortlisted" ? " active" : ""}`} onClick={() => toggleVendorStatus(v.name, "shortlisted")}>{status === "shortlisted" ? "✓ Shortlisted" : "Shortlist"}</button>
                             <button className={`vendor-btn vendor-btn-eliminate${status === "eliminated" ? " active" : ""}`} onClick={() => toggleVendorStatus(v.name, "eliminated")}>{status === "eliminated" ? "✗ Eliminated" : "Eliminate"}</button>
+                            <button className="rq-btn-icon rq-btn-del" title="Remove vendor" onClick={() => setVendors(p => p.filter(x => x.name !== v.name))} style={{ padding: "4px 6px", marginLeft: 4 }}><Trash2 size={11} /></button>
                           </div>
                         </div>
                       );
@@ -2370,9 +2277,14 @@ Example format:
                   <div style={{ marginTop: 4 }} className="rq-fade">
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <div className="rq-section-label">Scope</div>
-                      {scopeBullets.length > 0 && !editingScope && (
-                        <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={doGenerateScope} disabled={scopeBusy}><RefreshCw size={10} /> Regenerate</button>
-                      )}
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {prevScope && !editingScope && (
+                          <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={() => { setFormalScope(prevScope); setPrevScope(null); setScopeApproved(false); setScopeFlags([]); }}>↩ Undo</button>
+                        )}
+                        {scopeBullets.length > 0 && !editingScope && (
+                          <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={doGenerateScope} disabled={scopeBusy}><RefreshCw size={10} /> Regenerate</button>
+                        )}
+                      </div>
                     </div>
                     {editingScope ? (
                       <>
@@ -2391,8 +2303,13 @@ Example format:
                             .replace(/\*\*(.*?)\*\*/g, '$1')
                             .trim()}
                         </div>
-                        <div className="rq-actions" style={{ marginTop: 10 }}>
+                        <div className="rq-actions" style={{ marginTop: 10, justifyContent: "space-between" }}>
                           <button className="rq-btn-ghost" onClick={() => setEditingScope(true)}><Pencil size={12} /> Edit</button>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF", letterSpacing: ".08em", textTransform: "uppercase" }}>Helpful?</span>
+                            <button className="rq-btn-icon" onClick={() => doLogFeedback("scope", "positive")} style={{ color: scopeFeedback === "positive" ? "#16A34A" : "#9CA3AF" }}><ThumbsUp size={12} /></button>
+                            <button className="rq-btn-icon" onClick={() => doLogFeedback("scope", "negative")} style={{ color: scopeFeedback === "negative" ? "#DC2626" : "#9CA3AF" }}><ThumbsDown size={12} /></button>
+                          </div>
                         </div>
                       </>
                     )}
@@ -2527,7 +2444,17 @@ Example format:
                 )}
                 {!reqsBusy && requirements.length > 0 && (
                   <div style={{ marginTop: 22 }} className="rq-fade">
-                    <div className="rq-scope-approved"><CheckCircle size={15} /> Requirements ready — {requirements.length} binary requirement{requirements.length !== 1 ? "s" : ""} defined</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div className="rq-scope-approved" style={{ marginBottom: 0, flex: 1 }}><CheckCircle size={15} /> Requirements ready — {requirements.length} defined</div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: 10 }}>
+                        {prevRequirements && (
+                          <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={() => { setRequirements(prevRequirements); setPrevRequirements(null); }}>↩ Undo</button>
+                        )}
+                        <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF", letterSpacing: ".08em", textTransform: "uppercase" }}>Helpful?</span>
+                        <button className="rq-btn-icon" onClick={() => doLogFeedback("requirements", "positive")} style={{ color: reqsFeedback === "positive" ? "#16A34A" : "#9CA3AF" }}><ThumbsUp size={12} /></button>
+                        <button className="rq-btn-icon" onClick={() => doLogFeedback("requirements", "negative")} style={{ color: reqsFeedback === "negative" ? "#DC2626" : "#9CA3AF" }}><ThumbsDown size={12} /></button>
+                      </div>
+                    </div>
                     <div className="rq-actions">
                       <button className="rq-btn-primary" onClick={() => { setView("questions"); doGenerateQuestions(); }}>Generate questions <ChevronRight size={13} /></button>
                     </div>
@@ -2585,8 +2512,23 @@ Example format:
                         </div>
                       );
                     })}
-                    <div className="rq-actions">
+                    <div className="rq-actions" style={{ justifyContent: "space-between" }}>
                       <button className="rq-btn-ghost" onClick={doGenerateQuestions} disabled={qBusy}><RefreshCw size={11} /> Regenerate</button>
+                      <button className="rq-btn-ghost" onClick={() => {
+                        const lines = requirements.flatMap(req => {
+                          const qs = questions[req.id] || [];
+                          return [`\n${req.id}: ${req.text}`, ...qs.map((q, i) => {
+                            const opts = q.type === "multiple_choice" && q.options?.length
+                              ? "\n" + q.options.map((o, j) => `   ${String.fromCharCode(65+j)}. ${o}`).join("\n")
+                              : "\n   [Open response]";
+                            return `${i+1}. ${q.text}${opts}`;
+                          })];
+                        });
+                        const blob = new Blob([`${projectTitle || "Questions"}\nVendor Discovery Questionnaire\n${"=".repeat(40)}${lines.join("\n")}`], { type: "text/plain" });
+                        saveAs(blob, `${(projectTitle || "questions").replace(/[^a-zA-Z0-9_-]/g, "_")}_questions.txt`);
+                      }}>
+                        <FileText size={11} /> Export questions
+                      </button>
                     </div>
                   </>
                 )}
