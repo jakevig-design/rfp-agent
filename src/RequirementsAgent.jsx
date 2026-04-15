@@ -994,20 +994,18 @@ export default function RequirementsAgent() {
 
   useEffect(() => { isDirty.current = true; }, [projectTitle, answers, formalScope, requirements, questions, activities]);
 
-  useEffect(() => {
-    setSessionsLoading(true);
-    loadSessions(authUser?.id).then(rows => { setSessionsList(rows); setSessionsLoading(false); });
-  }, []);
-
   // Auth + tenant config loading
   useEffect(() => {
     getSession().then(session => {
-      setAuthUser(session?.user || null);
+      const user = session?.user || null;
+      setAuthUser(user);
       setAuthLoading(false);
-      if (session?.user) {
+      if (user) {
+        // Load sessions only after we know who the user is
+        setSessionsLoading(true);
+        loadSessions(user.id).then(rows => { setSessionsList(rows); setSessionsLoading(false); });
         loadUserProfile().then(profile => {
           setUserProfile(profile);
-          // Inject tenant company config into answers.companyProfile
           if (profile?.tenant_config) {
             const tc = profile.tenant_config;
             setAnswers(p => ({
@@ -1030,9 +1028,14 @@ export default function RequirementsAgent() {
       }
     });
     const unsub = onAuthStateChange((event, session) => {
-      setAuthUser(session?.user || null);
-      if (!session) {
+      const user = session?.user || null;
+      setAuthUser(user);
+      if (user) {
+        setSessionsLoading(true);
+        loadSessions(user.id).then(rows => { setSessionsList(rows); setSessionsLoading(false); });
+      } else {
         setUserProfile(null);
+        setSessionsList([]);
         setAnswers(p => ({ ...p, companyProfile: null }));
       }
     });
