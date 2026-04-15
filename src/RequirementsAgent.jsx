@@ -855,6 +855,7 @@ export default function RequirementsAgent() {
   const [authLoading, setAuthLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
   const [tenantBrandName, setTenantBrandName] = useState("");
+  const tenantProfileRef = useRef(null); // persists across session resets
   const isDirty = useRef(false);
 
   // Scope
@@ -954,22 +955,21 @@ export default function RequirementsAgent() {
           if (profile?.tenant_config) {
             const tc = profile.tenant_config;
             setTenantBrandName(tc.brand_name || tc.company_name || "");
-            setAnswers(p => ({
-              ...p,
-              companyProfile: {
-                name: tc.company_name,
-                brandName: tc.brand_name || tc.company_name,
-                vertical: tc.vertical,
-                subVertical: tc.sub_vertical,
-                employeeCount: tc.employee_count,
-                hq: tc.hq,
-                publicPrivate: tc.public_private,
-                ticker: tc.ticker,
-                description: tc.description,
-                knownTechStack: tc.tech_stack || [],
-                regulatoryContext: tc.regulatory_context,
-              }
-            }));
+            const companyProfile = {
+              name: tc.company_name,
+              brandName: tc.brand_name || tc.company_name,
+              vertical: tc.vertical,
+              subVertical: tc.sub_vertical,
+              employeeCount: tc.employee_count,
+              hq: tc.hq,
+              publicPrivate: tc.public_private,
+              ticker: tc.ticker,
+              description: tc.description,
+              knownTechStack: tc.tech_stack || [],
+              regulatoryContext: tc.regulatory_context,
+            };
+            tenantProfileRef.current = companyProfile; // persist across resets
+            setAnswers(p => ({ ...p, companyProfile }));
           }
         });
       }
@@ -1005,7 +1005,7 @@ export default function RequirementsAgent() {
   const resetSession = () => {
     setSessionId(genId());
     setProjectTitle("");
-    setAnswers(prev => ({ who: "", what: "", where: "", when: "", why: "", freeform: "", companyName: prev.companyName || "", companyProfile: prev.companyProfile || null }));
+    setAnswers(prev => ({ who: "", what: "", where: "", when: "", why: "", freeform: "", companyName: prev.companyName || "", companyProfile: tenantProfileRef.current || prev.companyProfile || null }));
     setCompanyLookupBusy(false);
     setCompanyLookupErr("");
     setNarrative("");
@@ -1155,7 +1155,7 @@ export default function RequirementsAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           system: P_SCOPE_CHAT((() => {
-            const p = answers.companyProfile;
+            const p = answers.companyProfile || tenantProfileRef.current;
             if (!p) return null;
             return [
               p.name && `Company: ${p.name}`,
@@ -1208,8 +1208,13 @@ export default function RequirementsAgent() {
         }
       }
 
-      // Strip markdown bold, render clean
-      const clean = reply.replace(/\*\*(.*?)\*\*/g, "$1");
+      // Strip all markdown formatting from conversational replies
+      const clean = reply
+        .replace(/\*\*(.*?)\*\*/g, "$1")  // bold
+        .replace(/\*(.*?)\*/g, "$1")       // italic
+        .replace(/`(.*?)`/g, "$1")         // inline code
+        .replace(/^#+\s+/gm, "")           // headers
+        .trim();
       setChatMessages(prev => [...prev, { role: "assistant", content: clean }]);
     } catch (e) {
       const msg = e.name === "AbortError" ? "Request timed out — please try again." : "Something went wrong — please try again.";
@@ -1232,7 +1237,7 @@ export default function RequirementsAgent() {
     if (formalScope) setPrevScope(formalScope); // save previous version
     setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
     try {
-      const p = answers.companyProfile;
+      const p = answers.companyProfile || tenantProfileRef.current;
       const companyCtx = p ? [
         p.name && `Company: ${p.name}`,
         p.vertical && `Industry: ${p.vertical}${p.subVertical ? ` — ${p.subVertical}` : ""}`,
@@ -1510,8 +1515,16 @@ Example format:
       const reqList = requirements.length > 0
         ? `\n\nFunctional requirements (${requirements.length} total):\n${requirements.map(r => r.text).join("\n")}`
         : "";
+      const p = answers.companyProfile || tenantProfileRef.current;
+      const companyCtx = p ? [
+        p.name && `Company: ${p.name}`,
+        p.vertical && `Industry: ${p.vertical}${p.subVertical ? ` — ${p.subVertical}` : ""}`,
+        p.hq && `HQ: ${p.hq}`,
+        p.regulatoryContext && `Regulatory obligations: ${p.regulatoryContext}`,
+        p.description && `About: ${p.description}`,
+      ].filter(Boolean).join("\n") : null;
       const userMsg = `Project scope:\n${formalScope}${reqList}`;
-      const result = await callJSON(P_MARKET, userMsg, false, "claude-haiku-4-5-20251001");
+      const result = await callJSON(P_MARKET(companyCtx), userMsg, false, "claude-haiku-4-5-20251001");
       setVendors(result);
       setVendorStatus({});
       logEvent("market_research_run", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id, meta: { vendorCount: result.length } });
