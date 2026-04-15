@@ -107,3 +107,22 @@ export async function deleteSession(id, userId) {
   if (error) console.error('Supabase delete error:', error);
   return !error;
 }
+
+// ─── Usage event logging ──────────────────────────────────────
+// Fire-and-forget — never blocks the UI
+
+export async function logEvent(event, { sessionId, userId, tenantId, meta = {} } = {}) {
+  if (!supabase) return;
+  try {
+    await supabase.from('session_events').insert({
+      session_id: sessionId || null,
+      user_id:    userId    || null,
+      tenant_id:  tenantId  || null,
+      event,
+      meta,
+      created_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.warn('logEvent failed (non-blocking):', e.message);
+  }
+}
