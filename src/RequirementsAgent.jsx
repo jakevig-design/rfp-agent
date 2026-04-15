@@ -988,6 +988,7 @@ export default function RequirementsAgent() {
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
+  const [tenantBrandName, setTenantBrandName] = useState("");
   const isDirty = useRef(false);
 
   // Scope
@@ -1068,6 +1069,7 @@ export default function RequirementsAgent() {
           setUserProfile(profile);
           if (profile?.tenant_config) {
             const tc = profile.tenant_config;
+            setTenantBrandName(tc.brand_name || tc.company_name || "");
             setAnswers(p => ({
               ...p,
               companyProfile: {
@@ -1445,16 +1447,25 @@ RULES:
 - Use multiple choice when the answer space is finite and predictable
 - Use open-ended when the answer requires explanation or varies by vendor
 - Do not re-ask the requirement itself — assume the vendor said yes
+- Use the EXACT requirement ID as the key (e.g. if the ID is "R-F1", the key must be "R-F1")
 
-Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
-{
-  "R-F1": [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}],
-  "R-F2": [...]
-}`;
+Return ONLY a valid JSON object. No markdown, no code fences, no explanation. Start with { and end with }.
+Example format:
+{"R-F1":[{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}],"R-F2":[...]}`;
+
       const reqPayload = requirements.map(r => `${r.id}: ${r.text}`).join("\n");
-      const out = await callJSON(P_QS_BATCH, `Requirements:\n${reqPayload}`);
+      const raw = await callClaude(P_QS_BATCH, `Requirements:\n${reqPayload}`);
+
+      // Strip any markdown fences and parse
+      const clean = raw.replace(/```(?:json)?/g, "").replace(/```/g, "").trim();
+      const objMatch = clean.match(/\{[\s\S]*\}/);
+      if (!objMatch) throw new Error(`No JSON object found in response`);
+      const out = JSON.parse(objMatch[0]);
       setQuestions(out);
-    } catch { setQErr("Could not generate questions. Please try again."); }
+    } catch (e) {
+      console.error("Question generation error:", e);
+      setQErr("Could not generate questions. Please try again.");
+    }
     finally { setQBusy(false); }
   };
 
@@ -1660,6 +1671,9 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
           <div className="rq-sidebar">
             <div className="rq-sidebar-logo" style={{ cursor: "pointer" }} onClick={() => setView("splash")}>
               <div className="rq-sidebar-brand">BuyRight</div>
+              {tenantBrandName && (
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#374151", marginTop: 3 }}>{tenantBrandName}</div>
+              )}
             </div>
             <div className="rq-nav">
               <div className="rq-nav-item active"><div className="rq-nav-num" style={{ fontSize: 8 }}>⌂</div>Home</div>
@@ -1735,9 +1749,9 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
       <div className={`rq-sidebar ${sidebarOpen ? "open" : ""}`}>
       <div className="rq-sidebar-logo" style={{ cursor: "pointer", padding: "16px 20px" }} onClick={() => setView("splash")}>
         <div className="rq-sidebar-brand">BuyRight</div>
-        {answers.companyProfile?.brandName && (
+        {tenantBrandName && (
           <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#374151", marginTop: 3, letterSpacing: ".01em" }}>
-            {answers.companyProfile.brandName}
+            {tenantBrandName}
           </div>
         )}
       </div>
@@ -1818,6 +1832,7 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
           {saveStatus === "idle" && lastSaved && <span style={{ color: "#9CA3AF" }}><Clock size={11} style={{ display: "inline", marginRight: 4 }} />{lastSaved.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>}
         </div>
         <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}><Save size={11} /> Save</button>
+        <button className="rq-btn-ghost" onClick={() => { resetSession(); setView("scope"); }} style={{ whiteSpace: "nowrap" }}><Plus size={11} /> New</button>
         <button className="rq-btn-icon rq-btn-del" onClick={doDeleteCurrentSession} title="Delete this project"><Trash2 size={13} /></button>
         <button className="rq-export-btn" onClick={doExport} disabled={!formalScope || exportBusy}>
           {exportBusy ? <Loader size={14} className="spin" /> : <FileText size={14} />} <span>Export .docx</span>
@@ -1906,7 +1921,7 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 22 }}>
                   <div style={{ background: "#FFFFFF", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "14px 16px" }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#C2410C", marginBottom: 6 }}>RFx Start Date</div>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#C2410C", marginBottom: 6 }}>Project Start</div>
                     <input type="date" className="rq-input" value={rfpStart} onChange={e => handleRfpStartChange(e.target.value)} />
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#9CA3AF", marginTop: 5 }}>Drives all activity dates</div>
                   </div>
@@ -1914,6 +1929,39 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#D97706", marginBottom: 6 }}>Go-Live Date</div>
                     <input type="date" className="rq-input" value={goLive} onChange={e => handleGoLiveChange(e.target.value)} />
                     {rfpStart && goLive && <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#6B7280", marginTop: 5 }}>{calDaysBetween(rfpStart, goLive)} calendar days total</div>}
+                  </div>
+                </div>
+
+                {/* Buying channel selector */}
+                <div style={{ marginBottom: 22 }}>
+                  <div className="rq-section-label" style={{ marginBottom: 6 }}>Buying channel</div>
+                  <p className="rq-hint" style={{ marginBottom: 12 }}>
+                    {buyingChannel === "sole-source"
+                      ? "Sole source suggested — your scope references a specific vendor or proprietary system. Override below if needed."
+                      : "Competitive bid suggested based on your scope. Override below if needed."}
+                  </p>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    {[
+                      { id: "competitive-bid", label: "Competitive Bid", desc: "Full process, multiple vendors, evaluation and scoring." },
+                      { id: "sole-source",     label: "Sole Source",     desc: "Single vendor, direct negotiation, no competitive process." },
+                    ].map(ch => (
+                      <div
+                        key={ch.id}
+                        onClick={() => doSelectChannel(ch.id)}
+                        style={{
+                          flex: 1, minWidth: 160, padding: "12px 14px",
+                          background: buyingChannel === ch.id ? "#FFF7ED" : "#FFFFFF",
+                          border: `1.5px solid ${buyingChannel === ch.id ? "#C2410C" : "rgba(0,0,0,0.07)"}`,
+                          borderRadius: 8, cursor: "pointer", transition: "all .15s",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <div style={{ width: 12, height: 12, borderRadius: "50%", border: `2px solid ${buyingChannel === ch.id ? "#C2410C" : "#D1D5DB"}`, background: buyingChannel === ch.id ? "#C2410C" : "transparent", flexShrink: 0 }} />
+                          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, color: buyingChannel === ch.id ? "#C2410C" : "#374151" }}>{ch.label}</div>
+                        </div>
+                        <div style={{ fontFamily: "'Lora',serif", fontSize: 11, color: "#6B7280", lineHeight: 1.5, paddingLeft: 20 }}>{ch.desc}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", gap: 6, marginBottom: 6, paddingLeft: 10, paddingRight: 4 }}>
@@ -2416,40 +2464,6 @@ Return ONLY valid JSON, no markdown — an object keyed by requirement ID:
                 {!reqsBusy && requirements.length > 0 && (
                   <div style={{ marginTop: 22 }} className="rq-fade">
                     <div className="rq-scope-approved"><CheckCircle size={15} /> Requirements ready — {requirements.length} binary requirement{requirements.length !== 1 ? "s" : ""} defined</div>
-
-                    {/* Buying channel selector */}
-                    <div style={{ marginTop: 20, marginBottom: 20 }}>
-                      <div className="rq-section-label" style={{ marginBottom: 6 }}>Buying channel</div>
-                      <p className="rq-hint" style={{ marginBottom: 12 }}>
-                        {buyingChannel === "sole-source"
-                          ? "Sole source suggested — your scope references a specific vendor or proprietary system. Override below if needed."
-                          : "Competitive bid suggested based on your scope. Override below if needed."}
-                      </p>
-                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                        {[
-                          { id: "competitive-bid", label: "Competitive Bid", desc: "Full RFx process, multiple vendors, evaluation and scoring." },
-                          { id: "sole-source",     label: "Sole Source",     desc: "Single vendor, direct negotiation, no competitive process." },
-                        ].map(ch => (
-                          <div
-                            key={ch.id}
-                            onClick={() => doSelectChannel(ch.id)}
-                            style={{
-                              flex: 1, minWidth: 180, padding: "14px 16px",
-                              background: buyingChannel === ch.id ? "#FFF7ED" : "#FFFFFF",
-                              border: `1.5px solid ${buyingChannel === ch.id ? "#C2410C" : "rgba(0,0,0,0.07)"}`,
-                              borderRadius: 8, cursor: "pointer", transition: "all .15s",
-                            }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                              <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${buyingChannel === ch.id ? "#C2410C" : "#D1D5DB"}`, background: buyingChannel === ch.id ? "#C2410C" : "transparent", flexShrink: 0 }} />
-                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 700, color: buyingChannel === ch.id ? "#C2410C" : "#374151" }}>{ch.label}</div>
-                            </div>
-                            <div style={{ fontFamily: "'Lora',serif", fontSize: 11, color: "#6B7280", lineHeight: 1.5, paddingLeft: 22 }}>{ch.desc}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="rq-actions">
                       <button className="rq-btn-primary" onClick={() => { setView("questions"); doGenerateQuestions(); }}>Generate questions <ChevronRight size={13} /></button>
                     </div>
