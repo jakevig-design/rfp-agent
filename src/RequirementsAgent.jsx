@@ -1154,25 +1154,26 @@ export default function RequirementsAgent() {
     setChatInput("");
     setChatBusy(true);
     try {
+      // Build system prompt outside JSON.stringify to catch errors early
+      const p = answers.companyProfile || tenantProfileRef.current;
+      const companyCtx = p ? [
+        p.name && `Company: ${p.name}`,
+        p.vertical && `Industry: ${p.vertical}${p.subVertical ? ` — ${p.subVertical}` : ""}`,
+        p.hq && `HQ: ${p.hq}`,
+        p.publicPrivate && `Type: ${p.publicPrivate}${p.ticker ? ` (${p.ticker})` : ""}`,
+        p.knownTechStack?.length && `Known tech stack: ${p.knownTechStack.join(", ")}`,
+        p.regulatoryContext && `Regulatory obligations: ${p.regulatoryContext}`,
+        p.description && `About: ${p.description}`,
+      ].filter(Boolean).join("\n") : null;
+      const systemPrompt = P_SCOPE_CHAT(companyCtx);
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
       const res = await fetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: P_SCOPE_CHAT((() => {
-            const p = answers.companyProfile || tenantProfileRef.current;
-            if (!p) return null;
-            return [
-              p.name && `Company: ${p.name}`,
-              p.vertical && `Industry: ${p.vertical}${p.subVertical ? ` — ${p.subVertical}` : ""}`,
-              p.hq && `HQ: ${p.hq}`,
-              p.publicPrivate && `Type: ${p.publicPrivate}${p.ticker ? ` (${p.ticker})` : ""}`,
-              p.knownTechStack?.length && `Known tech stack: ${p.knownTechStack.join(", ")}`,
-              p.regulatoryContext && `Regulatory obligations: ${p.regulatoryContext}`,
-              p.description && `About: ${p.description}`,
-            ].filter(Boolean).join("\n");
-          })()),
+          system: systemPrompt,
           user: newMessages.map(m => `${m.role === "user" ? "User" : "Pario"}: ${m.content}`).join("\n\n"),
           model: "claude-haiku-4-5-20251001",
         }),
@@ -1184,6 +1185,8 @@ export default function RequirementsAgent() {
 
       // Handle API errors
       if (!res.ok || data.error) {
+        const detail = data.error?.message || `HTTP ${res.status}`;
+        console.error("Pario chat API error:", detail, data);
         setChatMessages(prev => [...prev, { role: "assistant", content: "Something went wrong — please try again." }]);
         return;
       }
