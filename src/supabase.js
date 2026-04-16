@@ -111,6 +111,18 @@ export async function deleteSession(id, userId) {
 // ─── Usage event logging ──────────────────────────────────────
 // Fire-and-forget — never blocks the UI
 
+export async function saveUserProfile({ name, title, role } = {}) {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({ name, title, role, updated_at: new Date().toISOString() })
+    .eq('user_id', user.id);
+  if (error) { console.error('saveUserProfile error:', error); return false; }
+  return true;
+}
+
 export async function logEvent(event, { sessionId, userId, tenantId, meta = {} } = {}) {
   if (!supabase) return;
   try {
