@@ -730,7 +730,7 @@ async function buildDocx({ sessionId, projectTitle, formalScope, narrative, requ
   });
 
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, `${projectTitle ? projectTitle.replace(/[^a-zA-Z0-9_-]/g, "_") : "Clearpath"}.docx`);
+  saveAs(blob, `${projectTitle ? projectTitle.replace(/[^a-zA-Z0-9_-]/g, "_") : "Pario"}.docx`);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -808,7 +808,7 @@ function LoginScreen({ onUnconfirmed }) {
   return (
     <div className="rq-root" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: "100%", maxWidth: 400, padding: "0 24px" }}>
-        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 8 }}>Clearpath</div>
+        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 8 }}>Pario</div>
         <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 26, fontWeight: 800, color: "#111827", marginBottom: 6 }}>
           {mode === "signup" ? "Create your account" : "Welcome back"}
         </div>
@@ -1173,7 +1173,7 @@ export default function RequirementsAgent() {
               p.description && `About: ${p.description}`,
             ].filter(Boolean).join("\n");
           })()),
-          user: newMessages.map(m => `${m.role === "user" ? "User" : "Clearpath"}: ${m.content}`).join("\n\n"),
+          user: newMessages.map(m => `${m.role === "user" ? "User" : "Pario"}: ${m.content}`).join("\n\n"),
           model: "claude-haiku-4-5-20251001",
         }),
         signal: controller.signal,
@@ -1226,12 +1226,12 @@ export default function RequirementsAgent() {
         .replace(/^#+\s+/gm, "")
         .trim();
 
-      // If the reply accidentally contains conversation history, extract only the last Clearpath line
+      // If the reply accidentally contains conversation history, extract only the last Pario line
       const lines = clean.split("\n").filter(Boolean);
-      const lastClearpath = [...lines].reverse().find(l => !l.startsWith("User:") && !l.startsWith("Clearpath:"));
-      const finalContent = lastClearpath
-        ? lastClearpath.replace(/^Clearpath:\s*/i, "").trim()
-        : clean.replace(/^Clearpath:\s*/i, "").trim();
+      const lastPario = [...lines].reverse().find(l => !l.startsWith("User:") && !l.startsWith("Pario:"));
+      const finalContent = lastPario
+        ? lastPario.replace(/^Pario:\s*/i, "").trim()
+        : clean.replace(/^Pario:\s*/i, "").trim();
 
       setChatMessages(prev => [...prev, { role: "assistant", content: finalContent }]);
     } catch (e) {
@@ -1609,7 +1609,7 @@ Example format:
     market: "Market Research", timeline: "Timeline", summary: "Summary",
   };
   const topbarSubs = {
-    splash: "Clearpath", sessions: "All projects",
+    splash: "Pario", sessions: "All projects",
     scope: projectTitle || "Untitled project",
     requirements: projectTitle || "Untitled project",
     questions: projectTitle || "Untitled project",
@@ -1658,7 +1658,7 @@ Example format:
         <div className="rq-shell">
           <div className="rq-sidebar">
             <div className="rq-sidebar-logo" style={{ cursor: "pointer" }} onClick={() => setView("splash")}>
-              <div className="rq-sidebar-brand">Clearpath</div>
+              <div className="rq-sidebar-brand">Pario</div>
               {tenantBrandName && (
                 <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#374151", marginTop: 3 }}>{tenantBrandName}</div>
               )}
@@ -1679,14 +1679,14 @@ Example format:
               {/* Hero */}
               <div style={{ marginBottom: 52 }}>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".2em", textTransform: "uppercase", color: "#C2410C", marginBottom: 14 }}>
-                  Clearpath{tenantBrandName ? ` · ${tenantBrandName}` : ""}
+                  Pario{tenantBrandName ? ` · ${tenantBrandName}` : ""}
                 </div>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 38, fontWeight: 800, color: "#111827", lineHeight: 1.12, marginBottom: 16 }}>Build the business case.<br />Own the conversation.</div>
                 <div style={{ fontFamily: "'Lora',serif", fontSize: 15, color: "#C2410C", lineHeight: 1.6, marginBottom: 12, fontStyle: "italic" }}>
                   "Software buying moves pretty fast. If you don't stop and define what you need, vendors will define it for you."
                 </div>
                 <div style={{ fontFamily: "'Lora',serif", fontSize: 16, color: "#6B7280", lineHeight: 1.75, marginBottom: 28, maxWidth: 560 }}>
-                  Clearpath gives any business leader the structured thinking required to evaluate software on their own terms, not the vendor's.
+                  Pario gives any business leader the structured thinking required to evaluate software on their own terms, not the vendor's.
                 </div>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                   <button className="rq-btn-primary" style={{ padding: "13px 28px", fontSize: 13 }} onClick={resetSession}>
@@ -1720,9 +1720,9 @@ Example format:
               {/* Footer */}
               <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
                 <div style={{ fontFamily: "'Lora',serif", fontSize: 12, color: "#9CA3AF", lineHeight: 1.7, maxWidth: 420 }}>
-                  Clearpath encodes 20 years of software buying experience into a structured workflow. The methodology is simple: define what you need before vendors tell you what you want.
+                  Pario encodes 20 years of software buying experience into a structured workflow. The methodology is simple: define what you need before vendors tell you what you want.
                 </div>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#D1D5DB", paddingTop: 4 }}>Clearpath</div>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#D1D5DB", paddingTop: 4 }}>Pario</div>
               </div>
 
             </div>
@@ -1738,7 +1738,7 @@ Example format:
       <div className={`rq-sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
       <div className={`rq-sidebar ${sidebarOpen ? "open" : ""}`}>
       <div className="rq-sidebar-logo" style={{ cursor: "pointer", padding: "16px 20px" }} onClick={() => setView("splash")}>
-        <div className="rq-sidebar-brand">Clearpath</div>
+        <div className="rq-sidebar-brand">Pario</div>
         {tenantBrandName && (
           <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#374151", marginTop: 3, letterSpacing: ".01em" }}>
             {tenantBrandName}
