@@ -275,15 +275,20 @@ document.head.appendChild(_style);
 const genId = () => "SES-" + Math.random().toString(36).substring(2, 9).toUpperCase();
 const uid = () => "a" + Date.now() + Math.random().toString(36).substring(2, 5);
 
-async function callClaude(system, user, useWebSearch = false, model = null) {
+async function callClaude(system, user, useWebSearch = false, model = null, identity = {}) {
   const body = { system, user, useWebSearch };
   if (model) body.model = model;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000); // 45s timeout
+  const timeout = setTimeout(() => controller.abort(), 45000);
   try {
     const res = await fetch("/api/claude", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(identity.userId   && { "X-User-Id":    identity.userId }),
+        ...(identity.tenantId && { "X-Tenant-Id":  identity.tenantId }),
+        ...(identity.sessionId && { "X-Session-Id": identity.sessionId }),
+      },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
@@ -298,8 +303,8 @@ async function callClaude(system, user, useWebSearch = false, model = null) {
   }
 }
 
-async function callJSON(system, user, useWebSearch = false, model = null) {
-  const t = await callClaude(system, user, useWebSearch, model);
+async function callJSON(system, user, useWebSearch = false, model = null, identity = {}) {
+  const t = await callClaude(system, user, useWebSearch, model, identity);
   const fenceMatch = t.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenceMatch ? fenceMatch[1].trim() : t;
   const arrMatch = candidate.match(/\[[\s\S]*\]/);
@@ -391,8 +396,9 @@ function makeDefaultActivities(startDate) {
     // ── Post-RFx ──
     { id: "a8",  group: "Post-RFx", parentId: null, name: "Internal Alignment & Confirm Budget",   startDate: alignStart,  endDate: alignEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
     { id: "a9",  group: "Post-RFx", parentId: null, name: "Final Recommendation",                  startDate: finalStart,  endDate: finalEnd,     offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
-    { id: "a10", group: "Post-RFx", parentId: null, name: "Negotiate Contract",                    startDate: negoStart,   endDate: negoEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, negoStart) },
-    { id: "a11", group: "Post-RFx", parentId: null, name: "Implementation",                        startDate: implStart,   endDate: implEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
+    { id: "a10", group: "Post-RFx", parentId: null, name: "Due Diligence",                         startDate: vendorEnd,   endDate: negoEnd,      offsetDays: calDaysBetween(vendorEnd, negoEnd), startOffsetDays: calDaysBetween(t, vendorEnd) },
+    { id: "a11", group: "Post-RFx", parentId: null, name: "Negotiate Contract",                    startDate: negoStart,   endDate: negoEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, negoStart) },
+    { id: "a12", group: "Post-RFx", parentId: null, name: "Implementation",                        startDate: implStart,   endDate: implEnd,      offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
   ];
 }
 
@@ -423,10 +429,11 @@ function makeSoleSourceActivities(startDate) {
     { id: "s1", group: "Activities", parentId: null, name: "Draft Scope & Requirements",          startDate: t,          endDate: scopeEnd,   offsetDays: 7,  startOffsetDays: 0 },
     { id: "s2", group: "Activities", parentId: null, name: "Draft Sole Source Justification",     startDate: memoStart,  endDate: memoEnd,    offsetDays: 7,  startOffsetDays: calDaysBetween(t, memoStart) },
     { id: "s3", group: "Activities", parentId: null, name: "Technical Evaluation (Demo / POC)",   startDate: demoStart,  endDate: demoEnd,    offsetDays: 14, startOffsetDays: calDaysBetween(t, demoStart) },
-    { id: "s4", group: "Activities", parentId: null, name: "Internal Alignment & Confirm Budget", startDate: alignStart, endDate: alignEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
-    { id: "s5", group: "Activities", parentId: null, name: "Final Recommendation",                startDate: finalStart, endDate: finalEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
-    { id: "s6", group: "Activities", parentId: null, name: "Negotiate Contract",                  startDate: negoStart,  endDate: negoEnd,    offsetDays: 30, startOffsetDays: calDaysBetween(t, negoStart) },
-    { id: "s7", group: "Activities", parentId: null, name: "Implementation",                      startDate: implStart,  endDate: implEnd,    offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
+    { id: "s4", group: "Activities", parentId: null, name: "Due Diligence",                       startDate: demoEnd,    endDate: negoEnd,    offsetDays: calDaysBetween(demoEnd, negoEnd), startOffsetDays: calDaysBetween(t, demoEnd) },
+    { id: "s5", group: "Activities", parentId: null, name: "Internal Alignment & Confirm Budget", startDate: alignStart, endDate: alignEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, alignStart) },
+    { id: "s6", group: "Activities", parentId: null, name: "Final Recommendation",                startDate: finalStart, endDate: finalEnd,   offsetDays: 5,  startOffsetDays: calDaysBetween(t, finalStart) },
+    { id: "s7", group: "Activities", parentId: null, name: "Negotiate Contract",                  startDate: negoStart,  endDate: negoEnd,    offsetDays: 30, startOffsetDays: calDaysBetween(t, negoStart) },
+    { id: "s8", group: "Activities", parentId: null, name: "Implementation",                      startDate: implStart,  endDate: implEnd,    offsetDays: 45, startOffsetDays: calDaysBetween(t, implStart) },
   ];
 }
 
@@ -875,6 +882,7 @@ export default function RequirementsAgent() {
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [bulletsCollapsed, setBulletsCollapsed] = useState(false);
   const [continuingChat, setContinuingChat] = useState(false);
+  const [inputCollapsed, setInputCollapsed] = useState(false);
   const [scopeFlags, setScopeFlags] = useState([]);
   const [flagResponses, setFlagResponses] = useState({});
   const [scopeApproved, setScopeApproved] = useState(false);
@@ -971,8 +979,13 @@ export default function RequirementsAgent() {
               knownTechStack: tc.tech_stack || [],
               regulatoryContext: tc.regulatory_context,
             };
-            tenantProfileRef.current = companyProfile; // persist across resets
+            tenantProfileRef.current = companyProfile;
             setAnswers(p => ({ ...p, companyProfile }));
+
+            // Demo tenant — sign out on browser close so session never persists
+            if (profile.tenant_id === 'demo') {
+              window.addEventListener('beforeunload', () => { signOut(); });
+            }
           }
         });
       }
@@ -1022,6 +1035,7 @@ export default function RequirementsAgent() {
     setChatCollapsed(false);
     setBulletsCollapsed(false);
     setContinuingChat(false);
+    setInputCollapsed(false);
     setScopeFlags([]);
     setFlagResponses({});
     setScopeApproved(false);
@@ -1171,7 +1185,12 @@ export default function RequirementsAgent() {
       const timeout = setTimeout(() => controller.abort(), 30000);
       const res = await fetch("/api/claude", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authUser?.id           && { "X-User-Id":    authUser.id }),
+          ...(userProfile?.tenant_id  && { "X-Tenant-Id":  userProfile.tenant_id }),
+          ...(sessionId              && { "X-Session-Id": sessionId }),
+        },
         body: JSON.stringify({
           system: systemPrompt,
           user: newMessages.map(m => `${m.role === "user" ? "User" : "Pario"}: ${m.content}`).join("\n\n"),
@@ -1251,6 +1270,7 @@ export default function RequirementsAgent() {
     setScopeBullets([]); setBulletsApproved(false);
     setFormalScope(""); setScopeApproved(false); setScopeFlags([]); setExpertQuestions([]);
     setChatMessages([]);
+    setInputCollapsed(true);
     await doSendChatMessage(input);
   };
 
@@ -1272,7 +1292,7 @@ export default function RequirementsAgent() {
         ? scopeBullets.map(b => `• ${b}`).join("\n")
         : (answers.freeform || FIVE_WS.map(w => answers[w.key]).filter(Boolean).join("\n"));
       const userMsg = companyCtx ? `${companyCtx}\n\nApproved scope bullets:\n${bulletText}` : `Scope bullets:\n${bulletText}`;
-      const scope = await callClaude(P_SCOPE_GENERATE, userMsg);
+      const scope = await callClaude(P_SCOPE_GENERATE, userMsg, false, null, getIdentity());
       setFormalScope(scope.trim());
       setBulletsCollapsed(true);
       await doEvaluateScope(scope.trim());
@@ -1311,13 +1331,13 @@ export default function RequirementsAgent() {
 
   const doEvaluateScope = async (scopeText) => {
     try {
-      const result = await callJSON(P_SCOPE_EVALUATE, `Scope to evaluate:\n\n${scopeText}`);
+      const result = await callJSON(P_SCOPE_EVALUATE, `Scope to evaluate:\n\n${scopeText}`, false, null, getIdentity());
       if (result.passed && result.flags.length === 0) {
         setScopeFlags([]);
         setFlagResponses({});
         // Fire expert questions
         try {
-          const eq = await callJSON(P_SCOPE_EXPERT, `Scope:\n\n${scopeText}`);
+          const eq = await callJSON(P_SCOPE_EXPERT, `Scope:\n\n${scopeText}`, false, null, getIdentity());
           if (eq && eq.length > 0) {
             setExpertQuestions(eq);
             setExpertApproved(false);
@@ -1353,7 +1373,7 @@ export default function RequirementsAgent() {
         return;
       }
       const additions = answered.map(q => `EXPERT QUESTION: ${q.question}\nUSER RESPONSE: ${expertResponses[q.question]}`).join("\n\n");
-      const refined = await callClaude(P_SCOPE_REFINE, `EXISTING SCOPE:\n${formalScope}\n\nADDITIONAL INFORMATION:\n${additions}`);
+      const refined = await callClaude(P_SCOPE_REFINE, `EXISTING SCOPE:\n${formalScope}\n\nADDITIONAL INFORMATION:\n${additions}`, false, null, getIdentity());
       setFormalScope(refined.trim());
       setExpertQuestions([]);
       setExpertResponses({});
@@ -1385,7 +1405,7 @@ export default function RequirementsAgent() {
     if (requirements.length) setPrevRequirements(requirements); // save previous version
     setReqsBusy(true); setReqsErr("");
     try {
-      const arr = await callJSON(P_REQS, `Scope: ${formalScope}`);
+      const arr = await callJSON(P_REQS, `Scope: ${formalScope}`, false, null, getIdentity());
       setRequirements(arr);
       logEvent("requirements_generated", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id, meta: { count: arr.length } });
     }
@@ -1417,7 +1437,7 @@ Example format:
 {"R-F1":[{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}],"R-F2":[...]}`;
 
       const reqPayload = requirements.map(r => `${r.id}: ${r.text}`).join("\n");
-      const raw = await callClaude(P_QS_BATCH, `Requirements:\n${reqPayload}`);
+      const raw = await callClaude(P_QS_BATCH, `Requirements:\n${reqPayload}`, false, null, getIdentity());
 
       // Strip any markdown fences and parse
       const clean = raw.replace(/```(?:json)?/g, "").replace(/```/g, "").trim();
@@ -1546,7 +1566,7 @@ Example format:
         p.description && `About: ${p.description}`,
       ].filter(Boolean).join("\n") : null;
       const userMsg = `Project scope:\n${formalScope}${reqList}`;
-      const result = await callJSON(P_MARKET(companyCtx), userMsg, false, "claude-haiku-4-5-20251001");
+      const result = await callJSON(P_MARKET(companyCtx), userMsg, false, "claude-haiku-4-5-20251001", getIdentity());
       setVendors(result);
       setVendorStatus({});
       logEvent("market_research_run", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id, meta: { vendorCount: result.length } });
@@ -1571,12 +1591,34 @@ Example format:
         vendors.filter(v => v.estimatedPrice && v.estimatedPrice !== "Contact for pricing").map(v => v.estimatedPrice).slice(0, 3).join(", ")
       }${vendors.some(v => v.estimatedPrice) ? " estimated Year 1 cost range." : ""}` : "";
       const userMsg = `${bulletText}${timelineCtx}${vendorCtx}`;
-      const result = await callClaude(P_NARRATIVE, userMsg, false, "claude-sonnet-4-5");
+      const result = await callClaude(P_NARRATIVE, userMsg, false, "claude-sonnet-4-5", getIdentity());
       setNarrative(result.trim());
       logEvent("narrative_generated", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id });
     } catch { /* silent fail */ }
     finally { setNarrativeBusy(false); }
   };
+
+  // ── Auto-generate on tab arrival ──────────────────────────
+  useEffect(() => {
+    if (view === "requirements" && formalScope && requirements.length === 0 && !reqsBusy) {
+      doGenerateReqs();
+    }
+    if (view === "questions" && requirements.length > 0 && Object.keys(questions).length === 0 && !qBusy) {
+      doGenerateQuestions();
+    }
+    if (view === "market" && formalScope && vendors.length === 0 && !marketBusy) {
+      doMarketResearch();
+    }
+    if (view === "summary" && formalScope && !narrative && !narrativeBusy) {
+      doGenerateNarrative();
+    }
+  }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getIdentity = () => ({
+    userId: authUser?.id,
+    tenantId: userProfile?.tenant_id,
+    sessionId,
+  });
 
   const doLogFeedback = (type, value) => {
     const setters = { scope: setScopeFeedback, requirements: setReqsFeedback, vendors: setVendorsFeedback };
@@ -1819,6 +1861,13 @@ Example format:
             {saveStatus === "error" && <span style={{ color: "#e07070" }}>Save failed</span>}
             {saveStatus === "idle" && lastSaved && <span style={{ color: "#9CA3AF" }}><Clock size={11} style={{ display: "inline", marginRight: 4 }} />{lastSaved.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>}
           </div>
+          <button className="rq-btn-ghost" style={{ whiteSpace: "nowrap" }} onClick={() => {
+            if (formalScope || scopeBullets.length > 0 || chatMessages.length > 0) {
+              if (!window.confirm("Start a new project? Your current project will remain saved.")) return;
+            }
+            resetSession();
+            setView("scope");
+          }}><Plus size={11} /> New project</button>
           {view !== "sessions" && view !== "splash" && (
             <>
               <button className="rq-btn-ghost" onClick={() => doSave("draft")} disabled={saveStatus === "saving"}><Save size={11} /> Save</button>
@@ -1910,15 +1959,13 @@ Example format:
               <div className="rq-fade">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                   <div className="rq-section-label" style={{ marginBottom: 0 }}>{sessionsList.length} project{sessionsList.length !== 1 ? "s" : ""}</div>
-                  <button className="rq-btn-primary" style={{ padding: "8px 14px" }} onClick={() => { resetSession(); setView("scope"); }}><Plus size={12} /> New project</button>
                 </div>
                 {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
                 {!sessionsLoading && sessionsList.length === 0 && (
                   <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
                     <div style={{ fontSize: 36, marginBottom: 14 }}>📂</div>
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>No projects yet</div>
-                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 24, lineHeight: 1.6 }}>Start a new project to build your first business case.</div>
-                    <button className="rq-btn-primary" onClick={() => { resetSession(); setView("scope"); }}><Plus size={13} /> New project</button>
+                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", lineHeight: 1.6 }}>Use the <strong>New project</strong> button in the header to get started.</div>
                   </div>
                 )}
                 {!sessionsLoading && sessionsList.length > 0 && (
@@ -2069,6 +2116,9 @@ Example format:
                   )}
                   <button className="rq-btn-ghost" onClick={addActivity} disabled={!newActName.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={12} /> Add</button>
                 </div>
+                <div className="rq-actions" style={{ marginTop: 8, justifyContent: "flex-end" }}>
+                  <button className="rq-btn-primary" onClick={() => setView("summary")}>Continue to Summary <ChevronRight size={13} /></button>
+                </div>
               </div>
             )}
 
@@ -2099,12 +2149,6 @@ Example format:
                         <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Eliminated</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "eliminated").length}</div></div>
                       </div>
                     )}
-                    <div className="rq-actions" style={{ marginBottom: 20, marginTop: 0 }}>
-                      <button className="rq-btn-primary" onClick={doMarketResearch} disabled={marketBusy}>
-                        {marketBusy ? <><Loader size={13} className="spin" /> Researching vendors…</> : vendors.length > 0 ? <><RefreshCw size={13} /> Re-run research</> : <>Search vendors</>}
-                      </button>
-                      {vendors.length > 0 && <div style={{ fontSize: 11, color: "#9CA3AF", fontStyle: "italic", marginTop: 6 }}>Re-running will replace current results and vendor statuses.</div>}
-                    </div>
                     {marketErr && <div className="rq-error">{marketErr}</div>}
                     {marketBusy && (
                       <div className="rq-loading-center">
@@ -2187,6 +2231,12 @@ Example format:
                         </div>
                       );
                     })}
+                    {vendors.length > 0 && (
+                      <div className="rq-actions" style={{ justifyContent: "space-between", marginTop: 16 }}>
+                        <button className="rq-btn-ghost" onClick={doMarketResearch} disabled={marketBusy}><RefreshCw size={11} /> Re-run research</button>
+                        <button className="rq-btn-primary" onClick={() => setView("timeline")}>Continue to Timeline <ChevronRight size={13} /></button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -2202,25 +2252,67 @@ Example format:
 
                 <div className="rq-section-label" style={{ marginBottom: 8 }}>What business problem are you trying to solve?</div>
 
-                {/* ── Stage 1: Initial textarea — before chat starts ── */}
-                {chatMessages.length === 0 && !scopeBullets.length && !formalScope && (
-                  <>
-                    <p className="rq-hint" style={{ marginBottom: 12 }}>Describe what you need in your own words — the system, the problem, who will use it, any deadlines or constraints, and what's out of scope. The more context you provide, the better the output.</p>
-                    <textarea
-                      className="rq-textarea"
-                      placeholder="e.g. Our HR team manages payroll, benefits, and employee records across three legacy systems that don't talk to each other. We need a single platform to consolidate these by end of 2026. Recruiting and performance management are out of scope..."
-                      value={answers.freeform || ""}
-                      onChange={e => setAnswers(p => ({ ...p, freeform: e.target.value }))}
-                      rows={5}
-                      style={{ marginBottom: 10 }}
-                    />
-                    <div className="rq-actions">
-                      <button className="rq-btn-primary" onClick={doStartChat} disabled={!allAnswered || chatBusy || scopeBusy}>
-                        {chatBusy ? <><Loader size={13} className="spin" /> Thinking…</> : <>Begin <ChevronRight size={13} /></>}
-                      </button>
+                {/* ── Stage 1: Initial input — always accessible, collapses after chat starts ── */}
+                <div style={{ marginBottom: chatMessages.length > 0 || scopeBullets.length > 0 ? 16 : 0 }}>
+                  {/* Header — only shown as collapsible after chat has started */}
+                  {(chatMessages.length > 0 || scopeBullets.length > 0 || formalScope) && (
+                    <div
+                      onClick={() => setInputCollapsed(p => !p)}
+                      style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: inputCollapsed ? 0 : 10, userSelect: "none" }}
+                    >
+                      {inputCollapsed ? <ChevronDown size={11} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={11} style={{ color: "#9CA3AF" }} />}
+                      <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>
+                        {inputCollapsed ? "View initial description" : "Initial description"}
+                      </span>
                     </div>
-                  </>
-                )}
+                  )}
+
+                  {/* Textarea — always shown when no chat, collapsible after */}
+                  {!inputCollapsed && (
+                    <div className="rq-fade">
+                      {chatMessages.length === 0 && (
+                        <p className="rq-hint" style={{ marginBottom: 12 }}>Describe what you need in your own words — the system, the problem, who will use it, any deadlines or constraints, and what's out of scope. The more context you provide, the better the output.</p>
+                      )}
+                      <textarea
+                        className="rq-textarea"
+                        placeholder="e.g. Our HR team manages payroll, benefits, and employee records across three legacy systems that don't talk to each other. We need a single platform to consolidate these by end of 2026. Recruiting and performance management are out of scope..."
+                        value={answers.freeform || ""}
+                        onChange={e => setAnswers(p => ({ ...p, freeform: e.target.value }))}
+                        rows={chatMessages.length > 0 ? 3 : 5}
+                        style={{ marginBottom: 10 }}
+                      />
+                      {chatMessages.length === 0 ? (
+                        <div className="rq-actions">
+                          <button className="rq-btn-primary" onClick={doStartChat} disabled={!allAnswered || chatBusy || scopeBusy}>
+                            {chatBusy ? <><Loader size={13} className="spin" /> Thinking…</> : <>Begin <ChevronRight size={13} /></>}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="rq-actions">
+                          <button className="rq-btn-ghost" style={{ fontSize: 11 }} onClick={() => {
+                            if (!answers.freeform?.trim()) return;
+                            if (window.confirm("Updating your description will restart the conversation. Continue?")) {
+                              setChatMessages([]);
+                              setScopeBullets([]);
+                              setFormalScope("");
+                              setScopeApproved(false);
+                              setScopeFlags([]);
+                              setExpertQuestions([]);
+                              setChatInput("");
+                              setChatCollapsed(false);
+                              setBulletsCollapsed(false);
+                              setContinuingChat(false);
+                              setInputCollapsed(false);
+                              doStartChat();
+                            }
+                          }}>
+                            ↺ Restart with updated description
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* ── Stage 2: Active chat OR collapsed chat history ── */}
                 {chatMessages.length > 0 && (
@@ -2446,7 +2538,7 @@ Example format:
                       <div style={{ marginTop: 14 }} className="rq-fade">
                         <div className="rq-scope-approved"><CheckCircle size={15} /> Scope approved — all criteria met</div>
                         <div className="rq-actions">
-                          <button className="rq-btn-primary" onClick={() => { doGenerateReqs(); setView("requirements"); }}>Continue to Requirements <ChevronRight size={13} /></button>
+                          <button className="rq-btn-primary" onClick={() => setView("requirements")}>Continue to Requirements <ChevronRight size={13} /></button>
                         </div>
                       </div>
                     )}
@@ -2563,8 +2655,9 @@ Example format:
                         <button className="rq-btn-icon" onClick={() => doLogFeedback("requirements", "negative")} style={{ color: reqsFeedback === "negative" ? "#DC2626" : "#9CA3AF" }}><ThumbsDown size={12} /></button>
                       </div>
                     </div>
-                    <div className="rq-actions">
-                      <button className="rq-btn-primary" onClick={() => { setView("questions"); doGenerateQuestions(); }}>Generate questions <ChevronRight size={13} /></button>
+                    <div className="rq-actions" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                      <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={doGenerateReqs} disabled={reqsBusy || !formalScope}><RefreshCw size={10} /> Regenerate</button>
+                      <button className="rq-btn-primary" onClick={() => setView("questions")}>Continue to Questions <ChevronRight size={13} /></button>
                     </div>
                   </div>
                 )}
@@ -2586,16 +2679,13 @@ Example format:
                   <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
                     <div style={{ fontSize: 36, marginBottom: 14 }}>🔍</div>
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>
-                      {requirements.length === 0 ? "No requirements yet" : "No questions generated yet"}
+                      {requirements.length === 0 ? "No requirements yet" : "Preparing questions…"}
                     </div>
                     <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 24, lineHeight: 1.6 }}>
                       {requirements.length === 0
-                        ? "Complete your requirements first, then generate discovery questions."
-                        : "Generate questions to build your vendor discovery questionnaire."}
+                        ? "Complete your scope and requirements first."
+                        : "Building your vendor discovery questionnaire."}
                     </div>
-                    {requirements.length > 0 && (
-                      <button className="rq-btn-primary" onClick={doGenerateQuestions}>Generate questions <ChevronRight size={13} /></button>
-                    )}
                     {requirements.length === 0 && (
                       <button className="rq-btn-ghost" onClick={() => setView("requirements")}>Go to requirements <ChevronRight size={13} /></button>
                     )}
@@ -2621,22 +2711,25 @@ Example format:
                       );
                     })}
                     <div className="rq-actions" style={{ justifyContent: "space-between" }}>
-                      <button className="rq-btn-ghost" onClick={doGenerateQuestions} disabled={qBusy}><RefreshCw size={11} /> Regenerate</button>
-                      <button className="rq-btn-ghost" onClick={() => {
-                        const lines = requirements.flatMap(req => {
-                          const qs = questions[req.id] || [];
-                          return [`\n${req.id}: ${req.text}`, ...qs.map((q, i) => {
-                            const opts = q.type === "multiple_choice" && q.options?.length
-                              ? "\n" + q.options.map((o, j) => `   ${String.fromCharCode(65+j)}. ${o}`).join("\n")
-                              : "\n   [Open response]";
-                            return `${i+1}. ${q.text}${opts}`;
-                          })];
-                        });
-                        const blob = new Blob([`${projectTitle || "Questions"}\nVendor Discovery Questionnaire\n${"=".repeat(40)}${lines.join("\n")}`], { type: "text/plain" });
-                        saveAs(blob, `${(projectTitle || "questions").replace(/[^a-zA-Z0-9_-]/g, "_")}_questions.txt`);
-                      }}>
-                        <FileText size={11} /> Export questions
-                      </button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="rq-btn-ghost" onClick={doGenerateQuestions} disabled={qBusy}><RefreshCw size={11} /> Regenerate</button>
+                        <button className="rq-btn-ghost" onClick={() => {
+                          const lines = requirements.flatMap(req => {
+                            const qs = questions[req.id] || [];
+                            return [`\n${req.id}: ${req.text}`, ...qs.map((q, i) => {
+                              const opts = q.type === "multiple_choice" && q.options?.length
+                                ? "\n" + q.options.map((o, j) => `   ${String.fromCharCode(65+j)}. ${o}`).join("\n")
+                                : "\n   [Open response]";
+                              return `${i+1}. ${q.text}${opts}`;
+                            })];
+                          });
+                          const blob = new Blob([`${projectTitle || "Questions"}\nVendor Discovery Questionnaire\n${"=".repeat(40)}${lines.join("\n")}`], { type: "text/plain" });
+                          saveAs(blob, `${(projectTitle || "questions").replace(/[^a-zA-Z0-9_-]/g, "_")}_questions.txt`);
+                        }}>
+                          <FileText size={11} /> Export questions
+                        </button>
+                      </div>
+                      <button className="rq-btn-primary" onClick={() => setView("market")}>Continue to Market <ChevronRight size={13} /></button>
                     </div>
                   </>
                 )}
@@ -2678,16 +2771,22 @@ Example format:
                 {/* Business narrative */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <div className="rq-section-label" style={{ marginBottom: 0 }}>Business case narrative</div>
-                  <button className="rq-btn-ghost" onClick={doGenerateNarrative} disabled={narrativeBusy || !formalScope} style={{ fontSize: 9 }}>
-                    {narrativeBusy ? <><Loader size={10} className="spin" /> Generating…</> : narrative ? <><RefreshCw size={10} /> Regenerate</> : <>Generate</>}
-                  </button>
+                  {narrative && (
+                    <button className="rq-btn-ghost" onClick={doGenerateNarrative} disabled={narrativeBusy || !formalScope} style={{ fontSize: 9 }}>
+                      {narrativeBusy ? <><Loader size={10} className="spin" /> Regenerating…</> : <><RefreshCw size={10} /> Regenerate</>}
+                    </button>
+                  )}
                 </div>
-                {narrative
+                {narrativeBusy && (
+                  <div className="rq-loading-center" style={{ marginBottom: 24 }}>
+                    <Loader size={20} className="spin" style={{ color: "#C2410C", marginBottom: 8 }} />
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, color: "#9CA3AF" }}>Generating business case…</div>
+                  </div>
+                )}
+                {!narrativeBusy && (narrative
                   ? <div className="rq-scope-box" style={{ marginBottom: 24, whiteSpace: "pre-line" }}>{narrative}</div>
-                  : formalScope
-                    ? <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>Click Generate to create a business case narrative from your scope.</div>
-                    : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>Complete your scope first, then generate a narrative here.</div>
-                }
+                  : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>Complete your scope first to generate a narrative.</div>
+                )}
                 <hr className="rq-divider" />
 
                 {/* Timeline summary */}
