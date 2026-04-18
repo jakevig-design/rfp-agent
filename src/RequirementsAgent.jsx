@@ -838,6 +838,12 @@ function LoginScreen({ onUnconfirmed }) {
         <div style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: "#6B7280" }}>
           {mode === "signin" ? <>No account? <button style={{ background: "none", border: "none", color: "#C2410C", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0 }} onClick={() => { setMode("signup"); setErr(""); setMsg(""); }}>Create one</button></> : <>Have an account? <button style={{ background: "none", border: "none", color: "#C2410C", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0 }} onClick={() => { setMode("signin"); setErr(""); setMsg(""); }}>Sign in</button></>}
         </div>
+        <div style={{ textAlign: "center", marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.07)", fontSize: 11, color: "#9CA3AF", lineHeight: 1.6 }}>
+          By continuing you agree to Pario's{" "}
+          <a href="https://www.planwithpario.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: "#C2410C", textDecoration: "none" }}>Terms of Use</a>
+          {" "}and{" "}
+          <a href="https://www.planwithpario.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#C2410C", textDecoration: "none" }}>Privacy Policy</a>.
+        </div>
       </div>
     </div>
   );
