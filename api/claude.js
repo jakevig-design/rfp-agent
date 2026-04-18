@@ -1,4 +1,4 @@
-a// api/claude.js
+// api/claude.js
 // ─────────────────────────────────────────────────────────────
 // Vercel serverless function — proxies Anthropic API calls.
 // Rate limiting: per-user sliding window (in-memory + Supabase usage log)
@@ -113,10 +113,13 @@ async function callAnthropic(headers, body, retries = 3) {
 
 // ── Allowed origins ───────────────────────────────────────────
 const ALLOWED_ORIGINS = [
-  'https://pario.acuitysourcing.com',
+  'https://www.planwithpario.com',
+  'https://planwithpario.com',
   'https://agent.acuitysourcing.com',
   'https://www.jvtestspace.com',
   'https://jvtestspace.com',
+  // Keep pario.acuitysourcing.com during DNS transition — remove once planwithpario.com is live
+  'https://pario.acuitysourcing.com',
 ];
 
 // ── Main handler ──────────────────────────────────────────────
