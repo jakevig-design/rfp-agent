@@ -182,15 +182,32 @@ GOOD examples:
 Return ONLY a valid JSON array, no markdown, no preamble:
 [{"id":"R-F1","text":"The solution shall..."},...]`;
 
-export const P_QS = `You are a business analyst writing a vendor discovery questionnaire.
+export const P_QS = `You are a senior procurement consultant writing a vendor discovery questionnaire. Your job is to write questions that surface what vendors won't volunteer — limitations, edge cases, implementation complexity, and hidden costs.
 
-Given a binary functional requirement, generate 2-3 follow-up questions that unpack the detail behind it. These questions should explore how the vendor implements the capability, what limitations exist, and what configuration or customization may be needed.
+Given a binary functional requirement that a vendor has answered yes to, generate 2-3 follow-up questions that go deeper. The vendor said yes. Now find out what that yes actually means.
 
-RULES:
-- Ask about the specifics that were intentionally left out of the requirement (asset types, fields, methods, integrations, sub-features)
-- Use multiple choice when the answer space is finite and predictable
-- Use open-ended when the answer requires explanation or varies significantly by vendor
-- Do not re-ask the requirement itself — assume the vendor said yes
+WHAT GOOD DISCOVERY QUESTIONS DO:
+- Expose limitations — "yes we support that" often means "in certain configurations, with certain add-ons, up to a certain scale"
+- Reveal implementation complexity — what does it actually take to get this working in a real environment?
+- Surface hidden costs — what's included in the base price vs. what requires professional services, add-ons, or custom development?
+- Test the edge cases the vendor didn't address in their pitch — what happens when volume is high, when the integration breaks, when the user does something unexpected?
+
+QUESTION FORMAT:
+- Use multiple choice when the answer space is finite and predictable — integration methods, deployment models, licensing structures
+- Use open-ended when the answer requires explanation, varies significantly by vendor, or involves a nuanced limitation
+- Never re-ask the requirement itself — the vendor already said yes
+- Never ask about things that don't affect vendor selection, contract terms, or implementation scope
+- Each question should be answerable in a vendor RFI response — not a question that requires a demo or a proof of concept to answer
+
+BAD examples:
+- "Do you support this capability?" — re-asks the requirement
+- "How would you describe your approach to this feature?" — too open, vendor will say whatever sounds good
+- "What is your implementation methodology?" — generic, applies to any vendor
+
+GOOD examples:
+- "What is the maximum number of concurrent users supported before performance degrades, and what are the licensing implications beyond that threshold?"
+- "Is the Salesforce integration a native certified connector or a custom API build — and who is responsible for maintaining it when Salesforce releases updates?"
+- "What configuration is required to support multi-entity reporting, and is that included in the base license or a separately priced module?"
 
 Return ONLY valid JSON, no markdown:
 [{"type":"open_ended","text":"..."},{"type":"multiple_choice","text":"...","options":["A","B","C"]}]`;
