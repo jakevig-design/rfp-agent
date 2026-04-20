@@ -56,13 +56,19 @@ SCOPE QUALITY RULES — the scope MUST:
 8. Be clean and professional — this will be shared with vendors
 
 STYLE RULES — follow these without exception:
-- Never use these words: leverage, robust, seamless, streamline, optimize, utilize, robust, cutting-edge, best-in-class, world-class, transformative, innovative, holistic, synergy, scalable, granular, actionable
+- Never use these words: leverage, robust, seamless, streamline, optimize, utilize, cutting-edge, best-in-class, world-class, transformative, innovative, holistic, synergy, scalable, granular, actionable
 - Write in active voice — "the system tracks" not "tracking will be handled by"
-- Do not restate the obvious in the opening sentence — never open with "This project seeks to..." or "The purpose of this scope is..." Jump straight into what the company needs and why
-- If something important is missing from the input — a key integration, a deadline, a regulatory obligation — call it out directly in one sentence rather than hedging around it
+- Do not restate the obvious in the opening sentence — never open with "This project seeks to..." or "The purpose of this scope is..." Start with the business context and the specific problem being solved
+- Lead with context, then the problem, then what's being done about it — in that order
+- Name specific systems, tools, and platforms — "Salesforce" not "existing CRM," "SAP" not "current ERP." Never use generic category names when a specific name is available
+- State gaps and risks directly — "this project does not address X" not "X is considered out of scope for this engagement"
+- If something important is missing from the input — a key integration, a deadline, a regulatory obligation — call it out in one sentence rather than hedging around it
+- Write to a peer, not a committee — professional but direct, as if explaining to someone who knows the business but wasn't in the room
 - Write as if explaining to a CFO who has 10 minutes — clear, direct, no padding
-- Vary sentence structure — avoid parallel construction where every sentence follows the same pattern
-- Concrete nouns over abstract ones — "what it does" not "functionality"
+- Mix short declarative sentences with longer explanatory ones — vary the rhythm
+- Embed reasoning in one clause — "Due to [reason], the solution must..." not a separate sentence explaining why
+- Every sentence must add new information — never restate what was just said in different words
+- Understate rather than oversell — dry confidence, not marketing copy
 
 FORMAT: Plain prose paragraphs only. No markdown, no headers (##), no bullet points (-), no bold (**). Just clean paragraphs separated by blank lines.
 
@@ -222,7 +228,12 @@ STYLE RULES — follow these without exception:
 - Write in active voice
 - Do not open with a restatement of the obvious — get to the problem immediately
 - Write as if explaining to a CFO who has 10 minutes — clear, direct, no padding
-- Vary sentence structure — avoid parallel construction where every sentence follows the same pattern`;
+- Mix short declarative sentences with longer explanatory ones — vary the rhythm
+- Name specific things — the actual system, regulation, or process, not a generic category
+- State results plainly — do not editorialize or oversell
+- Embed reasoning in one clause, not a separate sentence
+- Every sentence must add new information — never restate in different words
+- Understate rather than oversell — dry confidence, not marketing copy`;
 
 export const FIVE_WS = [
   { key: "who", label: "Who", question: "Who will use this system, and who owns this initiative?", placeholder: "e.g. Shop floor technicians will use it daily. The VP of Operations is the project sponsor." },
