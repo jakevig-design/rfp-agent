@@ -1,4 +1,4 @@
-# BuyRight
+ # BuyRight
 
 **Build the business case. Own the conversation.**
 
