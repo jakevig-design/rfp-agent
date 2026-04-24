@@ -1260,8 +1260,9 @@ export default function RequirementsAgent() {
               setChatCollapsed(true);
               setBulletsCollapsed(false);
               setContinuingChat(false);
-              // Auto-trigger scope generation — user should never see this step
-              setTimeout(() => doGenerateScope(), 100);
+              // Auto-trigger scope generation with bullets passed directly
+              // (can't rely on state update having flushed yet)
+              setTimeout(() => doGenerateScopeFromBullets(bullets), 100);
               return;
             }
           } catch { /* fall through to render as message */ }
@@ -1300,6 +1301,30 @@ export default function RequirementsAgent() {
     setChatMessages([]);
     setInputCollapsed(true);
     await doSendChatMessage(input);
+  };
+
+  const doGenerateScopeFromBullets = async (bullets) => {
+    if (formalScope) setPrevScope(formalScope);
+    setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
+    try {
+      const p = answers.companyProfile || tenantProfileRef.current;
+      const companyCtx = p ? [
+        p.name && `Company: ${p.name}`,
+        p.vertical && `Industry: ${p.vertical}${p.subVertical ? ` — ${p.subVertical}` : ""}`,
+        p.employeeCount && `Employees: ${p.employeeCount}`,
+        p.hq && `HQ: ${p.hq}`,
+        p.publicPrivate && `Type: ${p.publicPrivate}${p.ticker ? ` (${p.ticker})` : ""}`,
+        p.knownTechStack?.length && `Known tech: ${p.knownTechStack.join(", ")}`,
+        p.regulatoryContext && `Regulatory context: ${p.regulatoryContext}`,
+      ].filter(Boolean).join("\n") : "";
+      const bulletText = bullets.map(b => `• ${b}`).join("\n");
+      const userMsg = companyCtx ? `${companyCtx}\n\nApproved scope bullets:\n${bulletText}` : `Scope bullets:\n${bulletText}`;
+      const scope = await callClaude(P_SCOPE_GENERATE, userMsg, false, null, getIdentity());
+      setFormalScope(scope.trim());
+      setBulletsCollapsed(true);
+      await doEvaluateScope(scope.trim());
+    } catch { setScopeErr("Could not generate scope. Please try again."); }
+    finally { setScopeBusy(false); }
   };
 
   const doGenerateScope = async () => {
