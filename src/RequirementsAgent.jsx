@@ -2225,8 +2225,6 @@ export default function RequirementsAgent() {
   const sidebarNav = advancedDrawer;
   const topbar = null;
 
-  return (;
-
   return (
     <div className="rq-root">
       {/* Profile edit modal */}
