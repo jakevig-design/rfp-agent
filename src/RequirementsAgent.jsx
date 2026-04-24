@@ -2410,7 +2410,7 @@ export default function RequirementsAgent() {
                         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                           <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>Pario</div>
                           <div style={{ background: "#F9F8F8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "0 10px 10px 10px", padding: "11px 14px", fontSize: 13, lineHeight: 1.65, maxWidth: "88%", fontFamily: "'Lora',serif", color: "#111827" }}>
-                            {tenantBrandName ? `Welcome${userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ""}. ` : ""}Tell me about the problem you're trying to solve. What's broken or missing, and why does it matter now?
+                            {tenantBrandName ? `Welcome${userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ""}. ` : ""}What's the business problem you're trying to solve — and how do you think software can help?
                           </div>
                         </div>
                       )}
