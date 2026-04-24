@@ -1260,6 +1260,8 @@ export default function RequirementsAgent() {
               setChatCollapsed(true);
               setBulletsCollapsed(false);
               setContinuingChat(false);
+              // Auto-trigger scope generation — user should never see this step
+              setTimeout(() => doGenerateScope(), 100);
               return;
             }
           } catch { /* fall through to render as message */ }
@@ -1685,6 +1687,14 @@ export default function RequirementsAgent() {
       doGenerateNarrative();
     }
   }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-trigger full flow when scope is approved ──────────
+  useEffect(() => {
+    if (scopeApproved && formalScope && !autoFlowing && !narrative) {
+      setChatCollapsed(true);
+      doAutoFlow();
+    }
+  }, [scopeApproved]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getIdentity = () => ({
     userId: authUser?.id,
