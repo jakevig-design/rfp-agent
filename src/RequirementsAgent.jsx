@@ -30,7 +30,7 @@ _style.textContent = `
   .rq-root{font-family:'Lora',Georgia,serif;background:#F9F8F8;min-height:100vh;color:#111827;display:flex;flex-direction:column}
 
   /* Two-panel consumer shell */
-  .rq-shell{display:grid;grid-template-columns:400px 1fr;flex:1;height:100vh;overflow:hidden}
+  .rq-shell{display:flex;flex:1;min-height:100vh}
   .rq-chat-panel{display:flex;flex-direction:column;background:#FFFFFF;border-right:1px solid rgba(0,0,0,0.07);min-height:0;overflow:hidden}
   .rq-chat-header{padding:14px 18px;border-bottom:1px solid rgba(0,0,0,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
   .rq-chat-logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#1E293B;letter-spacing:-0.02em}
@@ -2226,11 +2226,12 @@ export default function RequirementsAgent() {
   const topbar = null;
 
   return (
-    <div className="rq-root">
-      {/* Profile edit modal */}
+    <div className="rq-root" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+
+      {/* ── Profile modal ── */}
       {showProfileModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div style={{ background: "#FFFFFF", borderRadius: 12, padding: "28px 28px 24px", width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#FFFFFF", borderRadius: 16, padding: "28px 28px 24px", width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
             <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 20 }}>Edit profile</div>
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 6 }}>Name</div>
@@ -2238,9 +2239,9 @@ export default function RequirementsAgent() {
             </div>
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 6 }}>Title <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></div>
-              <input className="rq-input" value={profileEditTitle} onChange={e => setProfileEditTitle(e.target.value)} placeholder="Your title" onKeyDown={async e => { if (e.key === "Enter") { setProfileSaving(true); const ok = await saveUserProfile({ name: profileEditName.trim(), title: profileEditTitle.trim(), role: userProfile?.role || "buyer" }); if (ok) { setUserProfile(p => ({ ...p, name: profileEditName.trim(), title: profileEditTitle.trim() })); setShowProfileModal(false); } setProfileSaving(false); }}} />
+              <input className="rq-input" value={profileEditTitle} onChange={e => setProfileEditTitle(e.target.value)} placeholder="Your title" />
             </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button className="rq-btn-ghost" style={{ fontSize: 12 }} onClick={signOut}>Sign out</button>
               <button className="rq-btn-ghost" style={{ fontSize: 12 }} onClick={() => setShowProfileModal(false)}>Cancel</button>
               <button className="rq-btn-primary" style={{ fontSize: 12 }} disabled={profileSaving || !profileEditName.trim()} onClick={async () => { setProfileSaving(true); const ok = await saveUserProfile({ name: profileEditName.trim(), title: profileEditTitle.trim(), role: userProfile?.role || "buyer" }); if (ok) { setUserProfile(p => ({ ...p, name: profileEditName.trim(), title: profileEditTitle.trim() })); setShowProfileModal(false); } setProfileSaving(false); }}>
@@ -2251,1191 +2252,459 @@ export default function RequirementsAgent() {
         </div>
       )}
 
-      {/* Advanced drawer */}
+      {/* ── Advanced drawer ── */}
       {advancedDrawer}
 
-      <div className="rq-shell">
-        {/* ── LEFT: Chat panel ── */}
-        <div className="rq-chat-panel">
-          <div className="rq-chat-header">
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button className="rq-hamburger" style={{ display: "flex" }} onClick={() => setSidebarOpen(o => !o)} aria-label="Workspace">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect y="2" width="16" height="1.5" rx=".75" fill="currentColor"/><rect y="7.25" width="16" height="1.5" rx=".75" fill="currentColor"/><rect y="12.5" width="16" height="1.5" rx=".75" fill="currentColor"/></svg>
+      {/* ── Sessions view ── */}
+      {view === "sessions" && (
+        <div className="rq-content" style={{ maxWidth: 720, margin: "0 auto", width: "100%", padding: "32px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, color: "#111827", letterSpacing: "-0.02em" }}>Projects</div>
+            <button className="rq-btn-ghost" onClick={() => setView("scope")}><ArrowLeft size={11} /> Back</button>
+          </div>
+          {sessionsLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[1,2,3].map(i => <div key={i} className="rq-skeleton" style={{ height: 64, borderRadius: 10 }} />)}
+            </div>
+          ) : sessions.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px 24px", color: "#9CA3AF", fontFamily: "'Lora',serif", fontSize: 14 }}>No saved projects yet.</div>
+          ) : (
+            sessions.map(s => (
+              <div key={s.id} onClick={() => loadSession(s)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "14px 18px", marginBottom: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color .15s" }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(194,65,12,0.3)"}
+                onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,0,0,0.07)"}
+              >
+                <div>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 3 }}>{s.project_title || "Untitled project"}</div>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#9CA3AF" }}>{new Date(s.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {s.status || "draft"}</div>
+                </div>
+                <ChevronRight size={14} style={{ color: "#9CA3AF" }} />
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ── Main app shell ── */}
+      {view !== "sessions" && (
+        <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+
+          {/* ── Pill nav ── */}
+          <div style={{ width: 52, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0 16px", gap: 0, background: "#FFFFFF", borderRight: "1px solid rgba(0,0,0,0.06)" }}>
+            {/* Logo mark */}
+            <div style={{ marginBottom: 16, cursor: "pointer" }} onClick={() => { setProfileEditName(userProfile?.name || ""); setProfileEditTitle(userProfile?.title || ""); setShowProfileModal(true); }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#FFF7ED", border: "1px solid #FDBA74", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: "#C2410C" }}>
+                  {(userProfile?.name || authUser?.email || "P").charAt(0).toUpperCase()}
+                </span>
+              </div>
+            </div>
+
+            {NAV_VIEWS.map((v, i) => {
+              const isActive = view === v;
+              const isDone = NAV_VIEWS.indexOf(view) > i || (scopeApproved && i === 0);
+              const isLocked = !formalScope && v !== "scope";
+              return (
+                <div key={v} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  {i > 0 && <div style={{ width: 1, height: 8, background: isDone ? "#FDBA74" : "rgba(0,0,0,0.08)" }} />}
+                  <div
+                    onClick={() => { if (!isLocked) { setView(v); setSidebarOpen(false); } }}
+                    title={NAV_LABELS[i]}
+                    style={{
+                      width: 36, borderRadius: 20, padding: "8px 0",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                      cursor: isLocked ? "default" : "pointer",
+                      border: `0.5px solid ${isActive ? "#1E293B" : isDone ? "#FDBA74" : "rgba(0,0,0,0.1)"}`,
+                      background: isActive ? "#1E293B" : isDone ? "#FFF7ED" : "#F9F8F8",
+                      opacity: isLocked ? 0.3 : 1,
+                      transition: "all .2s",
+                    }}
+                  >
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: isActive ? "#FFFFFF" : isDone ? "#C2410C" : "#9CA3AF" }}>{i + 1}</div>
+                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: isActive ? "#C2410C" : isDone ? "#FDBA74" : "rgba(0,0,0,0.15)" }} />
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Bottom actions */}
+            <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+              <button title="Projects" onClick={() => setView("sessions")} style={{ width: 32, height: 32, borderRadius: 8, border: "0.5px solid rgba(0,0,0,0.1)", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#9CA3AF" }}>
+                <FileText size={13} />
               </button>
-              <div className="rq-chat-logo">Pario<span className="rq-chat-logo-dot">.</span></div>
-              {tenantBrandName && <div className="rq-chat-tenant">{tenantBrandName}</div>}
-            </div>
-            <div className="rq-chat-actions">
-              {saveStatus === "saving" && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "#D97706" }}>Saving…</span>}
-              {saveStatus === "saved" && lastSaved && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "#C2410C" }}>Saved</span>}
-              <button className="rq-btn-ghost" style={{ fontSize: 9, padding: "5px 10px" }} onClick={() => {
-                if (formalScope || scopeBullets.length > 0 || chatMessages.length > 0) {
-                  if (!window.confirm("Start a new project? Your current project will remain saved.")) return;
-                }
-                resetSession(); setView("scope");
-              }}><Plus size={10} /> New</button>
-              <button className="rq-btn-ghost" style={{ fontSize: 9, padding: "5px 10px" }} onClick={() => setView("sessions")}><FileText size={10} /> Projects</button>
+              <button title="New project" onClick={() => { if (formalScope || chatMessages.length > 0) { if (!window.confirm("Start a new project?")) return; } resetSession(); setView("scope"); setChatCollapsed(false); }} style={{ width: 32, height: 32, borderRadius: 8, border: "0.5px solid rgba(0,0,0,0.1)", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#9CA3AF" }}>
+                <Plus size={13} />
+              </button>
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="rq-messages" id="chat-messages">
-            {sessionLoading && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "8px 0" }}>
-                <div className="rq-skeleton" style={{ height: 60, width: "80%" }} />
-                <div className="rq-skeleton" style={{ height: 40, width: "60%", alignSelf: "flex-end" }} />
-                <div className="rq-skeleton" style={{ height: 80, width: "85%" }} />
-              </div>
-            )}
-            {!sessionLoading && chatMessages.length === 0 && (
-              <div style={{ padding: "24px 0" }}>
-                <div className="rq-msg rq-msg-bot">
-                  <div className="rq-msg-label">Pario</div>
-                  <div className="rq-bubble">
-                    {tenantBrandName ? `Welcome, ${userProfile?.name ? userProfile.name.split(' ')[0] : tenantBrandName.split(' ')[0]}. ` : ""}
-                    Tell me about the problem you're trying to solve. What's broken or missing, and why does it matter now?
-                  </div>
-                </div>
-              </div>
-            )}
-            {chatMessages.map((m, i) => (
-              <div key={i} className={`rq-msg ${m.role === "user" ? "rq-msg-user" : "rq-msg-bot"}`}>
-                <div className="rq-msg-label">{m.role === "user" ? (userProfile?.name?.split(' ')[0] || "You") : "Pario"}</div>
-                <div className="rq-bubble" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
-              </div>
-            ))}
-            {chatBusy && (
-              <div className="rq-msg rq-msg-bot">
-                <div className="rq-msg-label">Pario</div>
-                <div className="rq-bubble">
-                  <span className="spin" style={{ display: "inline-block", marginRight: 6 }}><Loader size={12} /></span>
-                  <span style={{ color: "#9CA3AF", fontSize: 12 }}>Thinking…</span>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* ── Main content ── */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#F9F8F8" }}>
 
-          {/* Scope approved state — show generate button */}
-          {scopeApproved && !autoFlowing && (
-            <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(0,0,0,0.07)", background: "#FFF7ED", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#C2410C" }}>
-                  Scope confirmed. Ready to build your business case.
-                </div>
-                <button className="rq-btn-primary" onClick={doAutoFlow} style={{ fontSize: 11, flexShrink: 0 }}>
-                  Build business case →
-                </button>
+            {/* Top bar */}
+            <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.02em" }}>
+                Pario<span style={{ color: "#C2410C" }}>.</span>
+                {tenantBrandName && <span style={{ fontSize: 11, fontWeight: 400, color: "#9CA3AF", marginLeft: 10 }}>{tenantBrandName}</span>}
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {saveStatus === "saving" && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#D97706" }}>Saving…</span>}
+                {saveStatus === "saved" && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#C2410C" }}>Saved</span>}
+                {narrative && (
+                  <>
+                    <button className="rq-btn-ghost" style={{ fontSize: 11 }} onClick={doExportPDF} disabled={pdfBusy}>
+                      {pdfBusy ? <><Loader size={11} className="spin" /> Generating…</> : <><FileText size={11} /> Export PDF</>}
+                    </button>
+                    <button className="rq-btn-ghost" style={{ fontSize: 11 }} onClick={doExport} disabled={exportBusy}>
+                      {exportBusy ? <><Loader size={11} className="spin" /></> : <><FileText size={11} /> .docx</>}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Chat input */}
-          {!scopeApproved && (
-            <div className="rq-chat-input-wrap">
-              <div className="rq-chat-input-row">
-                <textarea
-                  className="rq-chat-textarea"
-                  placeholder={chatBusy ? "Pario is thinking…" : "Reply to Pario…"}
-                  value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
-                  disabled={chatBusy || scopeApproved}
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (chatInput.trim() && !chatBusy) doSendChatMessage(chatInput); }
-                  }}
-                  rows={1}
-                />
-                <button className="rq-chat-send" onClick={() => doSendChatMessage(chatInput)} disabled={chatBusy || !chatInput.trim() || scopeApproved}>
-                  <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── RIGHT: Output panel ── */}
-        <div className="rq-output-panel">
-          <div className="rq-output-header">
-            <div>
-              <div className="rq-output-title">{projectTitle || "Business case"}</div>
-              <div className="rq-output-sub">
-                {autoFlowing ? "Building your evaluation package…" : narrative ? "Complete — ready to export" : formalScope ? "Building as you go" : "Waiting for intake"}
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div className="rq-output-steps">
-                {outputSteps.map((s, i) => (
-                  <div key={s.key} className={`rq-output-step ${s.done ? "done" : i === activeStep ? "active" : ""}`}>
-                    {s.label}
-                  </div>
-                ))}
-              </div>
-              {formalScope && (
-                <button className="rq-btn-ghost" style={{ fontSize: 9, padding: "5px 10px" }} onClick={() => setSidebarOpen(true)}>
-                  Edit details →
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="rq-output-body">
-            {outputContent}
-          </div>
-
-          {/* Export row — activates when narrative is ready */}
-          <div className="rq-export-row">
-            <button className="rq-btn-primary" onClick={doExport} disabled={!narrative || exportBusy} style={{ fontSize: 11, padding: "9px 18px" }}>
-              {exportBusy ? <><Loader size={12} className="spin" /> Exporting…</> : <><FileText size={12} /> Export PDF</>}
-            </button>
-            <button className="rq-btn-ghost" onClick={doExport} disabled={!narrative || exportBusy} style={{ fontSize: 11, padding: "9px 18px" }}>
-              {exportBusy ? <><Loader size={12} className="spin" /></> : <><FileText size={12} /> Export .docx</>}
-            </button>
-            {!narrative && <span style={{ fontSize: 11, color: "#9CA3AF", marginLeft: "auto" }}>Available when complete</span>}
-            {narrative && (
-              <span style={{ fontSize: 11, color: "#9CA3AF", marginLeft: "auto" }}>
-                {saveStatus === "saving" ? "Saving…" : lastSaved ? `Last saved ${lastSaved.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : ""}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-          <div className="rq-content">
-
-            {/* ── Auto-flow progress overlay ── */}
+            {/* ── Auto-flow loading screen ── */}
             {autoFlowing && (
-              <div className="rq-fade" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", padding: "48px 24px" }}>
-                <Loader size={36} className="spin" style={{ color: "#C2410C", marginBottom: 28 }} />
-                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, color: "#111827", marginBottom: 10, letterSpacing: "-0.02em" }}>
-                  Building your evaluation package
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", background: "#FFFFFF" }}>
+                <Loader size={32} className="spin" style={{ color: "#C2410C", marginBottom: 24 }} />
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 20, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.02em", marginBottom: 10, textAlign: "center" }}>
+                  Asking the hard questions so you don't have to.
                 </div>
-                <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 40, textAlign: "center", maxWidth: 400, lineHeight: 1.7 }}>
-                  Pario is generating your requirements, vendor discovery questions, market research, and business case. This takes about 60 seconds.
+                <div style={{ fontFamily: "'Lora',serif", fontSize: 14, color: "#9CA3AF", textAlign: "center", maxWidth: 400, lineHeight: 1.7, marginBottom: 40 }}>
+                  Building your requirements, researching vendors, and writing your business case.
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 380 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 360 }}>
                   {[
-                    { label: "Analyzing scope", done: requirements.length > 0 },
-                    { label: "Building requirements", done: requirements.length > 0 },
-                    { label: "Generating vendor questions", done: questions.scope?.length > 0 },
+                    { label: "Identifying differentiators", done: requirements.length > 0 },
+                    { label: "Generating pressure test questions", done: questions.scope?.length > 0 },
                     { label: "Researching the market", done: vendors.length > 0 },
-                    { label: "Writing business case", done: !!narrative },
+                    { label: "Setting the timeline", done: !!rfpStart },
+                    { label: "Writing your business case", done: !!narrative },
                   ].map((step, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", background: step.done ? "#F0FDF4" : "#FFFFFF", border: `1px solid ${step.done ? "#BBF7D0" : "rgba(0,0,0,0.07)"}`, borderRadius: 8, transition: "all .3s" }}>
-                      <div style={{ width: 18, height: 18, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: step.done ? "#22C55E" : "#F1F5F9", flexShrink: 0 }}>
-                        {step.done
-                          ? <span style={{ color: "white", fontSize: 11, fontWeight: 700 }}>✓</span>
-                          : <Loader size={10} className="spin" style={{ color: "#9CA3AF" }} />
-                        }
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", background: step.done ? "#F0FDF4" : "#F9F8F8", border: `1px solid ${step.done ? "#BBF7D0" : "rgba(0,0,0,0.06)"}`, borderRadius: 10, transition: "all .3s" }}>
+                      <div style={{ width: 18, height: 18, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: step.done ? "#22C55E" : "#E5E7EB", flexShrink: 0 }}>
+                        {step.done ? <span style={{ color: "white", fontSize: 10, fontWeight: 700 }}>✓</span> : <Loader size={9} className="spin" style={{ color: "#9CA3AF" }} />}
                       </div>
-                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 600, color: step.done ? "#15803D" : "#6B7280" }}>{step.label}</div>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 600, color: step.done ? "#15803D" : "#9CA3AF" }}>{step.label}</div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ── Loading skeleton ── */}
-            {sessionLoading && (
-              <div className="rq-fade">
-                <div className="rq-skeleton" style={{ height: 24, width: "40%", marginBottom: 20 }} />
-                <div className="rq-skeleton" style={{ height: 14, width: "100%", marginBottom: 10 }} />
-                <div className="rq-skeleton" style={{ height: 14, width: "90%", marginBottom: 10 }} />
-                <div className="rq-skeleton" style={{ height: 14, width: "95%", marginBottom: 10 }} />
-                <div className="rq-skeleton" style={{ height: 14, width: "70%", marginBottom: 28 }} />
-                <div className="rq-skeleton" style={{ height: 80, width: "100%", marginBottom: 20 }} />
-                <div className="rq-skeleton" style={{ height: 14, width: "60%", marginBottom: 10 }} />
-                <div className="rq-skeleton" style={{ height: 14, width: "80%", marginBottom: 10 }} />
-              </div>
-            )}
+            {/* ── Main scrollable content ── */}
+            {!autoFlowing && (
+              <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", maxWidth: 760, margin: "0 auto", width: "100%" }}>
 
-            {/* ── Projects ── */}
-            {view === "sessions" && (
-              <div className="rq-fade">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                  <div className="rq-section-label" style={{ marginBottom: 0 }}>{sessionsList.length} project{sessionsList.length !== 1 ? "s" : ""}</div>
-                </div>
-                {sessionsLoading && <div className="rq-loading-center"><Loader size={18} className="spin" /></div>}
-                {!sessionsLoading && sessionsList.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
-                    <div style={{ fontSize: 36, marginBottom: 14 }}>📂</div>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>No projects yet</div>
-                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", lineHeight: 1.6 }}>Use the <strong>New project</strong> button in the header to get started.</div>
-                  </div>
-                )}
-                {!sessionsLoading && sessionsList.length > 0 && (
-                  <div className="sessions-panel">
-                    <div className="sessions-header"><div className="sessions-title">All projects</div></div>
-                    {sessionsList.map(s => (
-                      <div className="session-row" key={s.id} onClick={() => doLoadSession(s.id)}>
-                        <div style={{ minWidth: 0 }}>
-                          <div className="session-name">{s.project_title || "Untitled"}</div>
-                          <div className="session-meta">Updated {new Date(s.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {new Date(s.updated_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                          <span className={`session-status ${s.status}`}>{s.status}</span>
-                          <button className="rq-btn-icon rq-btn-del" onClick={(e) => doDeleteSession(s.id, e)} style={{ padding: "5px 7px" }}><Trash2 size={12} /></button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Timeline ── */}
-            {view === "timeline" && (
-              <div className="rq-fade">
-                {timelineDefaulted && (
-                  <div style={{ background: "#FFF7ED", border: "1px solid rgba(194,65,12,0.3)", borderRadius: 8, padding: "10px 14px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#C2410C" }}>
-                      No deadline was provided during intake. Timeline defaults to 90 days from today. Adjust the go-live date if needed.
+                {/* ── CHAT BLOCK ── */}
+                {!chatCollapsed ? (
+                  <div style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid rgba(0,0,0,0.07)", marginBottom: 16, overflow: "hidden" }}>
+                    <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(0,0,0,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#C2410C" }}>The problem</div>
+                      {saveStatus === "saving" && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#D97706" }}>Saving…</span>}
                     </div>
-                    <button className="rq-btn-ghost" style={{ fontSize: 11, flexShrink: 0 }} onClick={() => setTimelineDefaulted(false)}>Dismiss</button>
-                  </div>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                  <p className="rq-hint" style={{ marginBottom: 0, flex: 1 }}>Set your start and go-live dates — all activity dates cascade automatically.</p>
-                  {buyingChannel && (
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4, background: buyingChannel === "sole-source" ? "#FFFBEB" : "#FFF7ED", color: buyingChannel === "sole-source" ? "#D97706" : "#C2410C", whiteSpace: "nowrap" }}>
-                      {buyingChannel === "sole-source" ? "Sole Source" : "Competitive Bid"}
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 22 }}>
-                  <div style={{ background: "#FFFFFF", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "14px 16px" }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#C2410C", marginBottom: 6 }}>Project Start</div>
-                    <input type="date" className="rq-input" value={rfpStart} onChange={e => handleRfpStartChange(e.target.value)} />
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#9CA3AF", marginTop: 5 }}>Drives all activity dates</div>
-                  </div>
-                  <div style={{ background: "#FFFFFF", border: "1px solid rgba(239,159,39,0.2)", borderRadius: 8, padding: "14px 16px" }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".18em", textTransform: "uppercase", color: "#D97706", marginBottom: 6 }}>Go-Live Date</div>
-                    <input type="date" className="rq-input" value={goLive} onChange={e => handleGoLiveChange(e.target.value)} />
-                    {rfpStart && goLive && <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#6B7280", marginTop: 5 }}>{calDaysBetween(rfpStart, goLive)} calendar days total</div>}
-                  </div>
-                </div>
 
-                {/* Buying channel selector */}
-                <div style={{ marginBottom: 22 }}>
-                  <div className="rq-section-label" style={{ marginBottom: 6 }}>Buying channel</div>
-                  <p className="rq-hint" style={{ marginBottom: 12 }}>
-                    {buyingChannel === "sole-source"
-                      ? "Sole source suggested — your scope references a specific vendor or proprietary system. Override below if needed."
-                      : "Competitive bid suggested based on your scope. Override below if needed."}
-                  </p>
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    {[
-                      { id: "competitive-bid", label: "Competitive Bid", desc: "Full process, multiple vendors, evaluation and scoring." },
-                      { id: "sole-source",     label: "Sole Source",     desc: "Single vendor, direct negotiation, no competitive process." },
-                    ].map(ch => (
-                      <div
-                        key={ch.id}
-                        onClick={() => doSelectChannel(ch.id)}
-                        style={{
-                          flex: 1, minWidth: 160, padding: "12px 14px",
-                          background: buyingChannel === ch.id ? "#FFF7ED" : "#FFFFFF",
-                          border: `1.5px solid ${buyingChannel === ch.id ? "#C2410C" : "rgba(0,0,0,0.07)"}`,
-                          borderRadius: 8, cursor: "pointer", transition: "all .15s",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                          <div style={{ width: 12, height: 12, borderRadius: "50%", border: `2px solid ${buyingChannel === ch.id ? "#C2410C" : "#D1D5DB"}`, background: buyingChannel === ch.id ? "#C2410C" : "transparent", flexShrink: 0 }} />
-                          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, color: buyingChannel === ch.id ? "#C2410C" : "#374151" }}>{ch.label}</div>
+                    {/* Messages */}
+                    <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10, minHeight: 120 }} id="chat-messages">
+                      {chatMessages.length === 0 && !chatBusy && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>Pario</div>
+                          <div style={{ background: "#F9F8F8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "0 10px 10px 10px", padding: "11px 14px", fontSize: 13, lineHeight: 1.65, maxWidth: "88%", fontFamily: "'Lora',serif", color: "#111827" }}>
+                            {tenantBrandName ? `Welcome${userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ""}. ` : ""}Tell me about the problem you're trying to solve. What's broken or missing, and why does it matter now?
+                          </div>
                         </div>
-                        <div style={{ fontFamily: "'Lora',serif", fontSize: 11, color: "#6B7280", lineHeight: 1.5, paddingLeft: 20 }}>{ch.desc}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", gap: 6, marginBottom: 6, paddingLeft: 10, paddingRight: 4 }}>
-                  <div /><div className="tl-col-hdr">Activity</div><div className="tl-col-hdr">Start</div><div className="tl-col-hdr">End</div><div className="tl-col-hdr">Offset (days)</div><div className="tl-col-hdr">Duration</div><div />
-                </div>
+                      )}
+                      {chatMessages.map((m, i) => (
+                        <div key={i} style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: m.role === "user" ? "flex-end" : "flex-start" }}>
+                          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>
+                            {m.role === "user" ? (userProfile?.name?.split(' ')[0] || "You") : "Pario"}
+                          </div>
+                          <div style={{
+                            background: m.role === "user" ? "#1E293B" : "#F9F8F8",
+                            color: m.role === "user" ? "#F8FAFC" : "#111827",
+                            border: m.role === "user" ? "none" : "1px solid rgba(0,0,0,0.06)",
+                            borderRadius: m.role === "user" ? "10px 10px 0 10px" : "0 10px 10px 10px",
+                            padding: "11px 14px", fontSize: 13, lineHeight: 1.65,
+                            maxWidth: "88%", fontFamily: "'Lora',serif", whiteSpace: "pre-wrap"
+                          }}>{m.content}</div>
+                        </div>
+                      ))}
+                      {chatBusy && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>Pario</div>
+                          <div style={{ background: "#F9F8F8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "0 10px 10px 10px", padding: "11px 14px", fontSize: 13, maxWidth: "88%" }}>
+                            <Loader size={12} className="spin" style={{ color: "#9CA3AF" }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-                {buyingChannel === "sole-source" ? (
-                  // Sole source — flat list, no group headers
-                  <div style={{ marginBottom: 14 }}>
-                    {activities.map(a => {
-                      const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : "—";
-                      return (
-                        <div key={a.id}
-                          className={`tl-act-row is-parent${dragId === a.id ? " dragging" : ""}${dragOverId === a.id ? " drag-over" : ""}`}
-                          style={{ gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", display: "grid", gap: 6 }}
-                          draggable onDragStart={() => onDragStart(a.id)} onDragOver={(e) => onDragOver(e, a.id)} onDrop={(e) => onDrop(e, a.id)}
+                    {/* Scope approved CTA */}
+                    {scopeApproved && !autoFlowing && (
+                      <div style={{ padding: "12px 18px", background: "#FFF7ED", borderTop: "1px solid rgba(194,65,12,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#92400E", fontStyle: "italic" }}>Got it, take a break while I get some work done</div>
+                        <button className="rq-btn-primary" style={{ flexShrink: 0 }} onClick={() => { setChatCollapsed(true); doAutoFlow(); }}>
+                          Build business case →
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Chat input */}
+                    {!scopeApproved && (
+                      <div style={{ padding: "10px 18px", borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", gap: 8, alignItems: "flex-end" }}>
+                        <textarea
+                          style={{ flex: 1, border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 13px", fontSize: 13, resize: "none", minHeight: 42, maxHeight: 120, background: "#F9F8F8", color: "#111827", fontFamily: "'Lora',serif", outline: "none", lineHeight: 1.5 }}
+                          placeholder={chatBusy ? "Pario is thinking…" : "Reply to Pario…"}
+                          value={chatInput}
+                          disabled={chatBusy}
+                          onChange={e => setChatInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (chatInput.trim() && !chatBusy) doSendChatMessage(chatInput); }}}
+                          rows={1}
+                        />
+                        <button
+                          onClick={() => doSendChatMessage(chatInput)}
+                          disabled={chatBusy || !chatInput.trim()}
+                          style={{ width: 38, height: 38, background: chatInput.trim() ? "#1E293B" : "#E5E7EB", border: "none", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: chatInput.trim() ? "pointer" : "default", flexShrink: 0, transition: "background .15s" }}
                         >
-                          <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#9CA3AF" }}><GripVertical size={13} /></div>
-                          <input className="tl-cell-input" value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} />
-                          <input type="date" className="tl-cell-input" value={a.startDate || ""} onChange={e => updateActivity(a.id, "startDate", e.target.value)} />
-                          <input type="date" className="tl-cell-input" value={a.endDate || ""} onChange={e => updateActivity(a.id, "endDate", e.target.value)} />
-                          <input type="number" min="0" className="tl-cell-input" style={{ textAlign: "center" }} value={a.offsetDays ?? ""} onChange={e => updateActivity(a.id, "offsetDays", e.target.value)} />
-                          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
-                          <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "4px 6px" }}><Trash2 size={11} /></button>
-                        </div>
-                      );
-                    })}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill={chatInput.trim() ? "white" : "#9CA3AF"}><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  // Competitive bid — grouped with collapsible headers
-                  GROUPS.map(g => {
-                    const gas = activities.filter(a => a.group === g);
-                    const collapsed = collapsedGroups[g];
-                    const colorClass = g === "Pre-RFx" ? "tl-group-pre" : g === "RFx" ? "tl-group-rfx" : "tl-group-post";
-                    return (
-                      <div key={g} style={{ marginBottom: 14 }}>
-                        <div className="tl-group-header" onClick={() => toggleGroup(g)}>
-                          <div className={`tl-group-label ${colorClass}`}>
-                            <div style={{ width: 7, height: 7, borderRadius: "50%", background: GROUP_COLORS[g] }} />
-                            {g} <span style={{ fontWeight: 400, color: "#9CA3AF", marginLeft: 4 }}>({gas.length})</span>
-                          </div>
-                          {collapsed ? <ChevronDown size={13} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={13} style={{ color: "#9CA3AF" }} />}
-                        </div>
-                        {!collapsed && gas.map(a => {
-                          const dur = a.startDate && a.endDate ? calDaysBetween(a.startDate, a.endDate) : "—";
-                          return (
-                            <div key={a.id}
-                              className={`tl-act-row${a.parentId ? " is-child" : " is-parent"}${dragId === a.id ? " dragging" : ""}${dragOverId === a.id ? " drag-over" : ""}`}
-                              style={{ gridTemplateColumns: "20px 1fr 110px 110px 70px 60px 32px", display: "grid", gap: 6 }}
-                              draggable onDragStart={() => onDragStart(a.id)} onDragOver={(e) => onDragOver(e, a.id)} onDrop={(e) => onDrop(e, a.id)}
-                            >
-                              <div style={{ display: "flex", alignItems: "center", cursor: "grab", color: "#9CA3AF" }}><GripVertical size={13} /></div>
-                              <input className="tl-cell-input" value={a.name} onChange={e => updateActivity(a.id, "name", e.target.value)} style={{ fontStyle: a.parentId ? "italic" : "normal" }} />
-                              <input type="date" className="tl-cell-input" value={a.startDate || ""} onChange={e => updateActivity(a.id, "startDate", e.target.value)} />
-                              <input type="date" className="tl-cell-input" value={a.endDate || ""} onChange={e => updateActivity(a.id, "endDate", e.target.value)} />
-                              <input type="number" min="0" className="tl-cell-input" style={{ textAlign: "center" }} value={a.offsetDays ?? ""} onChange={e => updateActivity(a.id, "offsetDays", e.target.value)} />
-                              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center" }}>{dur}d</div>
-                              <button className="rq-btn-icon rq-btn-del" onClick={() => deleteActivity(a.id)} style={{ padding: "4px 6px" }}><Trash2 size={11} /></button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })
-                )}
-                <div className="rq-row" style={{ marginTop: 8, marginBottom: 22 }}>
-                  <input className="rq-input" placeholder="New activity name…" value={newActName} onChange={e => setNewActName(e.target.value)} onKeyDown={e => e.key === "Enter" && addActivity()} style={{ flex: 1 }} />
-                  {buyingChannel !== "sole-source" && (
-                    <select style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, padding: "9px 10px", fontFamily: "'Syne',sans-serif", fontSize: 11, color: "#111827", background: "#F9F8F8", outline: "none" }} value={newActGroup} onChange={e => setNewActGroup(e.target.value)}>
-                      {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  )}
-                  <button className="rq-btn-ghost" onClick={addActivity} disabled={!newActName.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={12} /> Add</button>
-                </div>
-                <div className="rq-actions" style={{ marginTop: 8, justifyContent: "flex-end" }}>
-                  <button className="rq-btn-primary" onClick={() => setView("summary")}>Continue to Summary <ChevronRight size={13} /></button>
-                </div>
-              </div>
-            )}
-
-            {/* ── Market ── */}
-            {view === "market" && (
-              <div className="rq-fade">
-                <StaleWarning />
-                {!formalScope ? (
-                  <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
-                    <div style={{ fontSize: 36, marginBottom: 14 }}>🏪</div>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>Complete your scope first</div>
-                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 24, lineHeight: 1.6 }}>The market survey uses your approved scope to identify the right vendors for your category.</div>
-                    <button className="rq-btn-primary" onClick={() => setView("scope")}>Go to scope <ChevronRight size={13} /></button>
-                  </div>
-                ) : (
-                  <>
-                    <p className="rq-hint" style={{ marginBottom: 16 }}>Vendors are identified based on your approved scope and requirements. Pricing estimates, ratings, and requirements fit scores are AI-generated estimates based on publicly available market data — not live transaction data or verified vendor pricing. Treat all figures as directional. Verify pricing and capabilities directly with vendors before using in budget planning or executive presentations.</p>
-                    {vendors.length > 0 && (
-                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 12 }}>
-                        <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF", letterSpacing: ".08em", textTransform: "uppercase" }}>Results helpful?</span>
-                        <button className="rq-btn-icon" onClick={() => doLogFeedback("vendors", "positive")} style={{ color: vendorsFeedback === "positive" ? "#16A34A" : "#9CA3AF" }}><ThumbsUp size={12} /></button>
-                        <button className="rq-btn-icon" onClick={() => doLogFeedback("vendors", "negative")} style={{ color: vendorsFeedback === "negative" ? "#DC2626" : "#9CA3AF" }}><ThumbsDown size={12} /></button>
-                      </div>
-                    )}
-                    {vendors.length > 0 && (
-                      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-                        <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Vendors found</div><div className="rq-metric-val">{vendors.length}</div></div>
-                        <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Shortlisted</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "shortlisted").length}</div></div>
-                        <div className="rq-metric" style={{ minWidth: 100 }}><div className="rq-metric-label">Eliminated</div><div className="rq-metric-val">{Object.values(vendorStatus).filter(s => s === "eliminated").length}</div></div>
-                      </div>
-                    )}
-                    {marketErr && <div className="rq-error">{marketErr}</div>}
-                    {marketBusy && (
-                      <div className="rq-loading-center">
-                        <Loader size={28} className="spin" style={{ marginBottom: 12, color: "#C2410C" }} />
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Surveying the market…</div>
-                        <div style={{ fontSize: 12, color: "#9CA3AF" }}>Identifying vendors for your specific category</div>
-                      </div>
-                    )}
-                    {!marketBusy && vendors.map(v => {
-                      const status = vendorStatus[v.name];
-                      const matchPct = v.requirementsTotal > 0 ? v.requirementsMatch / v.requirementsTotal : 0;
-                      return (
-                        <div key={v.name} className={`vendor-card rq-fade${status === "shortlisted" ? " shortlisted" : status === "eliminated" ? " eliminated" : ""}`}>
-                          {/* Header row: name + status + search links all on one line */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                            <div className="vendor-name" style={{ margin: 0, flex: 1, minWidth: 0 }}>
-                              <a href={v.vendorUrl || `https://www.google.com/search?q=${encodeURIComponent(v.name + " " + v.category)}`} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", borderBottom: "1px solid rgba(93,202,165,0.35)" }}>
-                                {v.name}
-                              </a>
-                            </div>
-                            {status === "shortlisted" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#C2410C", background: "#FFF7ED", padding: "2px 7px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>}
-                            {status === "eliminated" && <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#e07070", background: "rgba(184,80,80,0.1)", padding: "2px 7px", borderRadius: 3, flexShrink: 0 }}>Eliminated</span>}
-                            {/* Search links — consistent across all cards */}
-                            {(() => {
-                              const q = encodeURIComponent(v.name.split(" — ").pop());
-                              const g2Link = `https://www.g2.com/search#q=${q}&segment=all`;
-                              return (
-                                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                                  <a href={g2Link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-                                    <button className="vendor-btn vendor-btn-g2" style={{ padding: "2px 6px", fontSize: 9 }}>G2 ↗</button>
-                                  </a>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          <div className="vendor-category" style={{ marginBottom: 8 }}>{v.category}</div>
-                          <div className="vendor-badges">
-                            {v.deployment && (
-                              <span className={`vendor-badge ${v.deployment === "SaaS" ? "vb-saas" : v.deployment === "On-Prem" ? "vb-onprem" : "vb-hybrid"}`}>
-                                {v.deployment}
-                              </span>
-                            )}
-                            {v.pricingModel && (
-                              <span className="vendor-badge vb-neutral">{v.pricingModel}</span>
-                            )}
-                            {v.implementationComplexity && (
-                              <span className={`vendor-badge ${v.implementationComplexity === "Low" ? "vb-low" : v.implementationComplexity === "Medium" ? "vb-medium" : "vb-high"}`}>
-                                {v.implementationComplexity} impl.
-                              </span>
-                            )}
-                            {v.marketPresence && (
-                              <span className={`vendor-badge ${v.marketPresence === "Startup" ? "vb-startup" : v.marketPresence === "Growth" ? "vb-growth" : v.marketPresence === "Established" ? "vb-established" : "vb-legacy"}`}>
-                                {v.marketPresence}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="vendor-meta">
-                            {v.g2Rating && v.g2Rating !== "N/A" && (
-                              <div className="vendor-rating">
-                                <span style={{ color: "#D97706" }}>★</span> {v.g2Rating}
-                                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 8, color: "#9CA3AF", marginLeft: 5, letterSpacing: ".05em" }}>agent est.</span>
-                              </div>
-                            )}
-                            {v.g2ReviewCount && v.g2ReviewCount !== "N/A" && <div className="vendor-reviews">{v.g2ReviewCount}</div>}
-                          </div>
-                          <div className="vendor-desc">{v.description}</div>
-                          <div className="vendor-match">
-                            <div className={`confidence-dot confidence-${v.matchConfidence || "low"}`} />
-                            <div className="vendor-match-bar">
-                              <div className={`vendor-match-fill ${v.matchConfidence === "medium" ? "medium" : v.matchConfidence === "low" ? "low" : ""}`} style={{ width: `${matchPct * 100}%` }} />
-                            </div>
-                            <div className="vendor-match-text">Agent estimates {v.requirementsMatch} of {v.requirementsTotal} requirements met</div>
-                          </div>
-                          <div className="vendor-actions">
-                            <button className={`vendor-btn vendor-btn-shortlist${status === "shortlisted" ? " active" : ""}`} onClick={() => toggleVendorStatus(v.name, "shortlisted")}>{status === "shortlisted" ? "✓ Shortlisted" : "Shortlist"}</button>
-                            <button className={`vendor-btn vendor-btn-eliminate${status === "eliminated" ? " active" : ""}`} onClick={() => toggleVendorStatus(v.name, "eliminated")}>{status === "eliminated" ? "✗ Eliminated" : "Eliminate"}</button>
-                            <button className="rq-btn-icon rq-btn-del" title="Remove vendor" onClick={() => setVendors(p => p.filter(x => x.name !== v.name))} style={{ padding: "4px 6px", marginLeft: 4 }}><Trash2 size={11} /></button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {vendors.length > 0 && (
-                      <div className="rq-actions" style={{ justifyContent: "space-between", marginTop: 16 }}>
-                        <button className="rq-btn-ghost" onClick={doMarketResearch} disabled={marketBusy}><RefreshCw size={11} /> Re-run research</button>
-                        <button className="rq-btn-primary" onClick={() => setView("timeline")}>Continue to Timeline <ChevronRight size={13} /></button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* ── Scope ── */}
-            {view === "scope" && (
-              <div className="rq-fade">
-
-                {/* Editable project title */}
-                <div className="rq-section-label" style={{ marginBottom: 6 }}>Project title</div>
-                <input className="rq-input" style={{ marginBottom: 22 }} placeholder="e.g. Enterprise HR Management System" value={projectTitle} onChange={e => setProjectTitle(e.target.value)} />
-
-                <div className="rq-section-label" style={{ marginBottom: 8 }}>What business problem are you trying to solve?</div>
-
-                {/* ── Stage 1: Initial input — always accessible, collapses after chat starts ── */}
-                <div style={{ marginBottom: chatMessages.length > 0 || scopeBullets.length > 0 ? 16 : 0 }}>
-                  {/* Header — only shown as collapsible after chat has started */}
-                  {(chatMessages.length > 0 || scopeBullets.length > 0 || formalScope) && (
-                    <div
-                      onClick={() => setInputCollapsed(p => !p)}
-                      style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: inputCollapsed ? 0 : 10, userSelect: "none" }}
-                    >
-                      {inputCollapsed ? <ChevronDown size={11} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={11} style={{ color: "#9CA3AF" }} />}
-                      <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>
-                        {inputCollapsed ? "View initial description" : "Initial description"}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Textarea — always shown when no chat, collapsible after */}
-                  {!inputCollapsed && (
-                    <div className="rq-fade">
-                      {chatMessages.length === 0 && (
-                        <p className="rq-hint" style={{ marginBottom: 12 }}>Describe what you need in your own words — the system, the problem, who will use it, any deadlines or constraints, and what's out of scope. The more context you provide, the better the output.</p>
-                      )}
-                      <textarea
-                        className="rq-textarea"
-                        placeholder="e.g. Our HR team manages payroll, benefits, and employee records across three legacy systems that don't talk to each other. We need a single platform to consolidate these by end of 2026. Recruiting and performance management are out of scope..."
-                        value={answers.freeform || ""}
-                        onChange={e => setAnswers(p => ({ ...p, freeform: e.target.value }))}
-                        rows={chatMessages.length > 0 ? 3 : 5}
-                        style={{ marginBottom: 10 }}
-                      />
-                      {chatMessages.length === 0 ? (
-                        <div className="rq-actions">
-                          <button className="rq-btn-primary" onClick={doStartChat} disabled={!allAnswered || chatBusy || scopeBusy}>
-                            {chatBusy ? <><Loader size={13} className="spin" /> Thinking…</> : <>Begin <ChevronRight size={13} /></>}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="rq-actions">
-                          <button className="rq-btn-ghost" style={{ fontSize: 11 }} onClick={() => {
-                            if (!answers.freeform?.trim()) return;
-                            if (window.confirm("Updating your description will restart the conversation. Continue?")) {
-                              setChatMessages([]);
-                              setScopeBullets([]);
-                              setFormalScope("");
-                              setScopeApproved(false);
-                              setScopeFlags([]);
-                              setExpertQuestions([]);
-                              setChatInput("");
-                              setChatCollapsed(false);
-                              setBulletsCollapsed(false);
-                              setContinuingChat(false);
-                              setInputCollapsed(false);
-                              doStartChat();
-                            }
-                          }}>
-                            ↺ Restart with updated description
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Stage 2: Active chat OR collapsed chat history ── */}
-                {chatMessages.length > 0 && (
-                  <div style={{ marginBottom: 16 }}>
-                    {/* Collapsible header */}
-                    <div
-                      onClick={() => setChatCollapsed(p => !p)}
-                      style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: chatCollapsed ? 0 : 12, userSelect: "none" }}
-                    >
-                      {chatCollapsed ? <ChevronDown size={11} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={11} style={{ color: "#9CA3AF" }} />}
-                      <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>
-                        {chatCollapsed ? `View conversation (${chatMessages.length} messages)` : "Conversation"}
-                      </span>
-                    </div>
-
-                    {/* Chat messages */}
-                    {!chatCollapsed && (
-                      <div className="rq-fade">
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-                          {chatMessages.map((msg, idx) => (
-                            <div key={idx} style={{ display: "flex", gap: 10, justifyContent: msg.role === "user" ? "flex-end" : "flex-start", alignItems: "flex-end" }}>
-                              {msg.role === "assistant" && (
-                                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#FFF7ED", border: "1px solid #FDBA74", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 2 }}>
-                                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#C2410C" }} />
-                                </div>
-                              )}
-                              <div style={{
-                                maxWidth: "78%", padding: "10px 14px",
-                                borderRadius: msg.role === "user" ? "14px 14px 3px 14px" : "3px 14px 14px 14px",
-                                background: msg.role === "user" ? "#FFF7ED" : "#FFFFFF",
-                                border: msg.role === "user" ? "1px solid #FDBA74" : "1px solid rgba(0,0,0,0.07)",
-                                fontSize: 13, lineHeight: 1.55, color: msg.role === "user" ? "#7C2D12" : "#374151",
-                                fontFamily: "'Lora',serif",
-                              }}>
-                                {msg.content}
-                              </div>
-                            </div>
-                          ))}
-                          {chatBusy && (
-                            <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-                              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#FFF7ED", border: "1px solid #FDBA74", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#C2410C" }} />
-                              </div>
-                              <div style={{ padding: "10px 14px", borderRadius: "3px 14px 14px 14px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", display: "flex", gap: 4, alignItems: "center" }}>
-                                {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#D1D5DB", animation: `pulse 1.2s ease-in-out ${i*0.2}s infinite` }} />)}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Reply input — shown when chat is active (no bullets yet) OR continuing */}
-                        {(!scopeBullets.length || continuingChat) && !chatBusy && (
-                          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                            <input
-                              className="rq-input"
-                              style={{ flex: 1, borderRadius: 24, padding: "10px 16px" }}
-                              placeholder="Reply… (type 'skip' to skip this question)"
-                              value={chatInput}
-                              onChange={e => setChatInput(e.target.value)}
-                              onKeyDown={e => e.key === "Enter" && !e.shiftKey && doSendChatMessage(chatInput)}
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => doSendChatMessage(chatInput)}
-                              disabled={!chatInput.trim()}
-                              style={{ width: 38, height: 38, borderRadius: "50%", background: chatInput.trim() ? "#C2410C" : "#F3F4F6", border: "none", cursor: chatInput.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background .15s" }}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke={chatInput.trim() ? "#fff" : "#9CA3AF"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Actions below chat */}
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          {scopeBullets.length > 0 && !continuingChat && (
-                            <button className="rq-btn-ghost" style={{ fontSize: 10 }} onClick={() => { setContinuingChat(true); setChatCollapsed(false); }}>
-                              + Continue conversation
-                            </button>
-                          )}
-                          <button className="rq-btn-ghost" style={{ fontSize: 10 }} onClick={() => {
-                            if (window.confirm("Restart intake? This will clear the conversation, bullets, and scope.")) {
-                              if (requirements.length > 0 || vendors.length > 0) setIsStale(true);
-                              setChatMessages([]); setScopeBullets([]); setFormalScope(""); setScopeApproved(false);
-                              setScopeFlags([]); setExpertQuestions([]); setChatInput(""); setChatCollapsed(false);
-                              setBulletsCollapsed(false); setContinuingChat(false); setAnswers(p => ({ ...p, freeform: "" }));
-                            }
-                          }}>
-                            ↺ Restart intake
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ── Stage 3: Bullet review ── */}
-                {scopeBullets.length > 0 && (
-                  <div style={{ marginBottom: 16 }}>
-                    {/* Collapsible header */}
-                    <div
-                      onClick={() => setBulletsCollapsed(p => !p)}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", marginBottom: bulletsCollapsed ? 0 : 10, userSelect: "none" }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        {bulletsCollapsed ? <ChevronDown size={11} style={{ color: "#9CA3AF" }} /> : <ChevronUp size={11} style={{ color: "#9CA3AF" }} />}
-                        <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: "#9CA3AF" }}>
-                          {bulletsCollapsed ? `View bullets (${scopeBullets.length} points)` : "Here's what I captured"}
-                        </span>
-                      </div>
-                      {!bulletsCollapsed && (
-                        <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={e => { e.stopPropagation(); if (window.confirm("Restart intake? This will clear the conversation, bullets, and scope.")) { setChatMessages([]); setScopeBullets([]); setFormalScope(""); setScopeApproved(false); setScopeFlags([]); setExpertQuestions([]); setChatInput(""); setChatCollapsed(false); setBulletsCollapsed(false); setContinuingChat(false); setAnswers(p => ({ ...p, freeform: "" })); } }}>↺ Restart intake</button>
-                      )}
-                    </div>
-
-                    {!bulletsCollapsed && (
-                      <div className="rq-fade">
-                        <p className="rq-hint" style={{ marginBottom: 14 }}>Click any point to edit it. Add or remove points, then generate your scope.</p>
-                        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, overflow: "hidden", marginBottom: 14 }}>
-                          {scopeBullets.map((bullet, idx) => (
-                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: idx < scopeBullets.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none" }}>
-                              <div style={{ color: "#C2410C", fontSize: 16, flexShrink: 0, lineHeight: 1 }}>·</div>
-                              {editId === `bullet-${idx}` ? (
-                                <input autoFocus className="rq-input" style={{ flex: 1, padding: "4px 8px", fontSize: 13 }}
-                                  value={bullet}
-                                  onChange={e => { const b = [...scopeBullets]; b[idx] = e.target.value; setScopeBullets(b); }}
-                                  onBlur={() => setEditId(null)}
-                                  onKeyDown={e => e.key === "Enter" && setEditId(null)}
-                                />
-                              ) : (
-                                <div onClick={() => setEditId(`bullet-${idx}`)} style={{ flex: 1, fontFamily: "'Lora',serif", fontSize: 13, color: "#374151", lineHeight: 1.55, cursor: "text", padding: "2px 0" }}>
-                                  {bullet}
-                                </div>
-                              )}
-                              <button className="rq-btn-icon rq-btn-del" onClick={() => setScopeBullets(p => p.filter((_, i) => i !== idx))} style={{ flexShrink: 0, opacity: 0.4 }}><X size={11} /></button>
-                            </div>
-                          ))}
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px" }}>
-                            <div style={{ color: "#D1D5DB", fontSize: 16, flexShrink: 0, lineHeight: 1 }}>+</div>
-                            <input className="rq-input"
-                              style={{ flex: 1, padding: "4px 8px", fontSize: 13, border: "none", background: "transparent", outline: "none", color: "#9CA3AF" }}
-                              placeholder="Add a point…"
-                              onKeyDown={e => { if (e.key === "Enter" && e.target.value.trim()) { setScopeBullets(p => [...p, e.target.value.trim()]); e.target.value = ""; }}}
-                            />
-                          </div>
-                        </div>
-                        {!formalScope && (
-                          <div className="rq-actions">
-                            <button className="rq-btn-primary" onClick={doGenerateScope} disabled={scopeBusy || scopeBullets.length === 0}>
-                              {scopeBusy ? <><Loader size={13} className="spin" /> Generating scope…</> : <>Generate scope <ChevronRight size={13} /></>}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Typing pulse animation */}
-                <style>{`@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}`}</style>
-
-                {scopeErr && <div className="rq-error">{scopeErr}</div>}
-                {formalScope && (
-                  <div style={{ marginTop: 4 }} className="rq-fade">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <div className="rq-section-label">Scope</div>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        {prevScope && !editingScope && (
-                          <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={() => { setFormalScope(prevScope); setPrevScope(null); setScopeApproved(false); setScopeFlags([]); }}>↩ Undo</button>
-                        )}
-                        {scopeBullets.length > 0 && !editingScope && (
-                          <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={() => { setBulletsCollapsed(false); doGenerateScope(); }} disabled={scopeBusy}><RefreshCw size={10} /> Regenerate</button>
-                        )}
-                      </div>
-                    </div>
-                    {editingScope ? (
-                      <>
-                        <textarea className="rq-textarea" value={formalScope} onChange={e => setFormalScope(e.target.value)} rows={8} style={{ marginBottom: 10 }} />
-                        <div className="rq-actions">
-                          <button className="rq-btn-ghost" onClick={async () => { setEditingScope(false); setScopeApproved(false); setScopeFlags([]); setExpertQuestions([]); await doEvaluateScope(formalScope); }}><Check size={12} /> Done editing</button>
-                          <button className="rq-btn-ghost" onClick={() => setEditingScope(false)}>Cancel</button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="rq-scope-box" style={{ whiteSpace: "pre-wrap" }}>
-                          {formalScope
-                            .replace(/^#{1,3}\s+/gm, '')
-                            .replace(/^[-*]\s+/gm, '• ')
-                            .replace(/\*\*(.*?)\*\*/g, '$1')
-                            .trim()}
-                        </div>
-                        <div className="rq-actions" style={{ marginTop: 10, justifyContent: "space-between" }}>
-                          <button className="rq-btn-ghost" onClick={() => setEditingScope(true)}><Pencil size={12} /> Edit</button>
-                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF", letterSpacing: ".08em", textTransform: "uppercase" }}>Helpful?</span>
-                            <button className="rq-btn-icon" onClick={() => doLogFeedback("scope", "positive")} style={{ color: scopeFeedback === "positive" ? "#16A34A" : "#9CA3AF" }}><ThumbsUp size={12} /></button>
-                            <button className="rq-btn-icon" onClick={() => doLogFeedback("scope", "negative")} style={{ color: scopeFeedback === "negative" ? "#DC2626" : "#9CA3AF" }}><ThumbsDown size={12} /></button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {scopeFlags.length > 0 && !editingScope && (
-                      <div style={{ marginTop: 18 }} className="rq-fade">
-                        <div className="rq-section-label" style={{ marginBottom: 10 }}>Scope review — action required</div>
-                        {scopeFlags.map((flag, idx) => {
-                          const val = flagResponses[idx] || "";
-                          const skipped = isSkipped(val);
-                          return (
-                            <div className="rq-flag-card" key={idx} style={{ opacity: skipped ? 0.5 : 1 }}>
-                              <div className="rq-flag-title"><AlertTriangle size={13} /> {flag.criterion}{skipped && <span style={{ marginLeft: 8, fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#D97706", background: "rgba(239,159,39,0.15)", padding: "2px 7px", borderRadius: 3 }}>SKIPPED</span>}</div>
-                              {!skipped && <div className="rq-flag-text">{flag.prompt}</div>}
-                              <textarea className="rq-textarea" placeholder={`Your response… (type "skip" to dismiss)`} value={val} onChange={e => setFlagResponses(p => ({ ...p, [idx]: e.target.value }))} rows={skipped ? 1 : 2} style={{ opacity: skipped ? 0.6 : 1 }} />
-                            </div>
-                          );
-                        })}
-                        <div className="rq-actions">
-                          <button className="rq-btn-primary" onClick={doRefineScope} disabled={scopeBusy || !allFlagResponsesFilled}>
-                            {scopeBusy ? <><Loader size={13} className="spin" /> Refining…</> : <>Refine scope <ChevronRight size={13} /></>}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {scopeApproved && !editingScope && (
-                      <div style={{ marginTop: 14 }} className="rq-fade">
-                        <div className="rq-scope-approved"><CheckCircle size={15} /> Scope approved — all criteria met</div>
-                        <div className="rq-actions">
-                          <button className="rq-btn-primary" onClick={doAutoFlow}>Generate Requirements <ChevronRight size={13} /></button>
-                        </div>
-                      </div>
-                    )}
-                    {formalScope && !scopeApproved && !editingScope && !scopeBusy && (
-                      <div style={{ marginTop: 14 }} className="rq-actions">
-                        <button className="rq-btn-primary" onClick={doAutoFlow}>Generate Requirements <ChevronRight size={13} /></button>
-                      </div>
-                    )}
-                    {expertQuestions.length > 0 && !scopeApproved && !editingScope && (
-                      <div style={{ marginTop: 18 }} className="rq-fade">
-                        <div className="rq-section-label" style={{ marginBottom: 4 }}>Expert questions</div>
-                        <p className="rq-hint" style={{ marginBottom: 14 }}>These questions will help sharpen the scope. Answer what you can — type "skip" to dismiss any you'd rather not answer.</p>
-                        {expertQuestions.map(q => {
-                          const val = expertResponses[q.question] || "";
-                          const skipped = val.trim().toLowerCase() === "skip";
-                          return (
-                            <div key={q.question} className="rq-flag-card" style={{ opacity: skipped ? 0.5 : 1, background: "rgba(93,202,165,0.04)", borderColor: "rgba(194,65,12,0.2)" }}>
-                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#374151", marginBottom: 4 }}>{q.question}</div>
-                              <div style={{ fontFamily: "'Lora',serif", fontSize: 11, color: "#6B7280", fontStyle: "italic", marginBottom: 8 }}>{q.why}</div>
-                              <textarea
-                                className="rq-textarea"
-                                placeholder={`Your answer… (type "skip" to dismiss)`}
-                                value={val}
-                                onChange={e => setExpertResponses(p => ({ ...p, [q.question]: e.target.value }))}
-                                rows={skipped ? 1 : 2}
-                                style={{ opacity: skipped ? 0.6 : 1 }}
-                              />
-                            </div>
-                          );
-                        })}
-                        <div className="rq-actions">
-                          <button className="rq-btn-primary" onClick={doSubmitExpertAnswers} disabled={scopeBusy}>
-                            {scopeBusy ? <><Loader size={13} className="spin" /> Updating scope…</> : <>Update scope <ChevronRight size={13} /></>}
-                          </button>
-                          <button className="rq-btn-ghost" onClick={() => { setExpertQuestions([]); setScopeApproved(true); }}>
-                            Skip all
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Requirements ── */}
-            {view === "requirements" && (
-              <div className="rq-fade">
-                <StaleWarning />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
-                  <p className="rq-hint" style={{ marginBottom: 0 }}>Drag to reorder. Edit, delete, or add your own.</p>
-                  <button className="rq-btn-ghost" onClick={doGenerateReqs} disabled={reqsBusy}>{reqsBusy ? <Loader size={11} className="spin" /> : <RefreshCw size={11} />} Regenerate</button>
-                </div>
-                {reqsBusy && (
-                  <div className="rq-loading-center">
-                    <Loader size={28} className="spin" style={{ marginBottom: 12, color: "#C2410C" }} />
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Generating requirements…</div>
-                    <div style={{ fontSize: 12, color: "#9CA3AF" }}>Translating your scope into binary requirements</div>
-                  </div>
-                )}
-                {reqsErr && <div className="rq-error">{reqsErr}</div>}
-                {!reqsBusy && requirements.length === 0 && !reqsErr && (
-                  <div style={{ textAlign: "center", padding: "48px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, marginBottom: 18 }}>
-                    <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 6 }}>No requirements yet</div>
-                    <div style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 20 }}>Generate requirements from your approved scope, or add your own below.</div>
-                    <button className="rq-btn-primary" onClick={doGenerateReqs} disabled={!formalScope}>
-                      {!formalScope ? "Complete scope first" : <>Generate requirements <ChevronRight size={13} /></>}
-                    </button>
-                  </div>
-                )}
-                {!reqsBusy && requirements.map(req => (
-                  <div
-                    className="rq-card rq-fade"
-                    key={req.id}
-                    draggable
-                    onDragStart={() => onReqDragStart(req.id)}
-                    onDragOver={(e) => onReqDragOver(e, req.id)}
-                    onDrop={(e) => onReqDrop(e, req.id)}
-                    style={{ cursor: "grab", borderColor: reqDragOverId === req.id ? "#C2410C" : undefined, borderStyle: reqDragOverId === req.id ? "dashed" : undefined, opacity: reqDragId === req.id ? 0.5 : 1 }}
+                  /* Chat collapsed */
+                  <div style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.07)", marginBottom: 16, padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                    onClick={() => setChatCollapsed(false)}
                   >
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                      <div style={{ color: "#D1D5DB", paddingTop: 2, flexShrink: 0 }}><GripVertical size={13} /></div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="rq-req-id">{req.id}</div>
-                        {editId === req.id ? (
-                          <>
-                            <input className="rq-input" value={editText} onChange={e => setEditText(e.target.value)} style={{ marginTop: 8, marginBottom: 10 }} />
-                            <div className="rq-row"><button className="rq-btn-ghost" onClick={() => saveEdit(req.id)}><Check size={11} /> Save</button><button className="rq-btn-ghost" onClick={() => setEditId(null)}><X size={11} /> Cancel</button></div>
-                          </>
-                        ) : (
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                            <div className="rq-req-text">{req.text}</div>
-                            <div className="rq-row" style={{ flexShrink: 0 }}>
-                              <button className="rq-btn-icon" onClick={() => { setEditId(req.id); setEditText(req.text); }}><Pencil size={12} /></button>
-                              <button className="rq-btn-icon rq-btn-del" onClick={() => deleteReq(req.id)}><Trash2 size={12} /></button>
-                            </div>
-                          </div>
-                        )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E" }} />
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                        {projectTitle || "Scope captured"}
                       </div>
                     </div>
-                  </div>
-                ))}
-                {!reqsBusy && (
-                  <div className="rq-row" style={{ marginTop: 8 }}>
-                    <input className="rq-input" placeholder="Add your own requirement…" value={newReq} onChange={e => setNewReq(e.target.value)} onKeyDown={e => e.key === "Enter" && addReq()} />
-                    <button className="rq-btn-ghost" onClick={addReq} disabled={!newReq.trim()} style={{ whiteSpace: "nowrap" }}><Plus size={12} /> Add</button>
+                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#9CA3AF" }}>Tap to review ↓</div>
                   </div>
                 )}
-                {!reqsBusy && requirements.length > 0 && (
-                  <div style={{ marginTop: 22 }} className="rq-fade">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <div className="rq-scope-approved" style={{ marginBottom: 0, flex: 1 }}><CheckCircle size={15} /> Requirements ready — {requirements.length} defined</div>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: 10 }}>
-                        {prevRequirements && (
-                          <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={() => { setRequirements(prevRequirements); setPrevRequirements(null); }}>↩ Undo</button>
-                        )}
-                        <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF", letterSpacing: ".08em", textTransform: "uppercase" }}>Helpful?</span>
-                        <button className="rq-btn-icon" onClick={() => doLogFeedback("requirements", "positive")} style={{ color: reqsFeedback === "positive" ? "#16A34A" : "#9CA3AF" }}><ThumbsUp size={12} /></button>
-                        <button className="rq-btn-icon" onClick={() => doLogFeedback("requirements", "negative")} style={{ color: reqsFeedback === "negative" ? "#DC2626" : "#9CA3AF" }}><ThumbsDown size={12} /></button>
-                      </div>
-                    </div>
-                    <div className="rq-actions" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                      <button className="rq-btn-ghost" style={{ fontSize: 9 }} onClick={doGenerateReqs} disabled={reqsBusy || !formalScope}><RefreshCw size={10} /> Regenerate</button>
-                      <button className="rq-btn-primary" onClick={() => setView("questions")}>Continue to Questions <ChevronRight size={13} /></button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
-            {/* ── Questions ── */}
-            {view === "questions" && (
-              <div className="rq-fade">
-                <StaleWarning />
-                {qErr && <div className="rq-error">{qErr}</div>}
-                {qBusy && (
-                  <div className="rq-loading-center">
-                    <Loader size={28} className="spin" style={{ marginBottom: 12, color: "#C2410C" }} />
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Generating questions…</div>
-                    <div style={{ fontSize: 12, color: "#9CA3AF" }}>Building 5 vendor discovery questions from your scope</div>
-                  </div>
-                )}
-                {!qBusy && (!questions.scope || questions.scope.length === 0) && (
-                  <div style={{ textAlign: "center", padding: "56px 24px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
-                    <div style={{ fontSize: 36, marginBottom: 14 }}>🔍</div>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 15, fontWeight: 700, color: "#374151", marginBottom: 8 }}>
-                      {requirements.length === 0 ? "No requirements yet" : "No questions yet"}
-                    </div>
-                    <div style={{ fontFamily: "'Lora',serif", fontSize: 13, color: "#9CA3AF", marginBottom: 24, lineHeight: 1.6 }}>
-                      {requirements.length === 0 ? "Complete your scope and requirements first." : "Questions will generate automatically or click below."}
-                    </div>
-                    {requirements.length > 0 && (
-                      <button className="rq-btn-primary" onClick={doGenerateQuestions}>Generate questions</button>
-                    )}
-                  </div>
-                )}
-                {!qBusy && questions.scope && questions.scope.length > 0 && (
+                {/* ── OUTPUT ── appears after auto-flow */}
+                {narrative && !autoFlowing && (
                   <>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                      <div className="rq-section-label" style={{ marginBottom: 0 }}>Vendor discovery questions</div>
-                      <button className="rq-btn-ghost" onClick={doGenerateQuestions} disabled={qBusy} style={{ fontSize: 11 }}>
-                        <RefreshCw size={11} /> Regenerate
-                      </button>
-                    </div>
-                    <p className="rq-hint" style={{ marginBottom: 20 }}>5 questions built from your scope. Send these to vendors to surface limitations, hidden costs, and implementation complexity before committing.</p>
-                    {questions.scope.map((q, i) => (
-                      <div className="rq-q-card" key={i} style={{ marginBottom: 12 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: "#C2410C", letterSpacing: ".1em" }}>Q{i + 1}</div>
-                          <div className={`rq-badge ${q.type === "open_ended" ? "rq-badge-open" : "rq-badge-mc"}`}>{q.type === "open_ended" ? "Open ended" : "Multiple choice"}</div>
-                        </div>
-                        <div className="rq-q-text">{q.text}</div>
-                        {q.type === "multiple_choice" && q.options?.length && (
-                          <div className="rq-mc-opts">{q.options.map((o, j) => <span key={j} className="rq-mc-opt">{String.fromCharCode(65 + j)}. {o}</span>)}</div>
-                        )}
+                    {/* Success banner */}
+                    <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#22C55E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ color: "white", fontSize: 11, fontWeight: 700 }}>✓</span>
                       </div>
-                    ))}
-                    <div className="rq-actions" style={{ justifyContent: "space-between", marginTop: 8 }}>
-                      <button className="rq-btn-ghost" onClick={() => {
-                        const lines = questions.scope.map((q, i) => {
-                          const opts = q.type === "multiple_choice" && q.options?.length
-                            ? "\n" + q.options.map((o, j) => `   ${String.fromCharCode(65+j)}. ${o}`).join("\n")
-                            : "\n   [Open response]";
-                          return `Q${i+1}. ${q.text}${opts}`;
-                        });
-                        const blob = new Blob([`${projectTitle || "Questions"}\nVendor Discovery Questionnaire\n${"=".repeat(40)}\n\n${lines.join("\n\n")}`], { type: "text/plain" });
-                        saveAs(blob, `${(projectTitle || "questions").replace(/[^a-zA-Z0-9_-]/g, "_")}_questions.txt`);
-                      }}>
-                        <FileText size={11} /> Export questions
-                      </button>
-                      <button className="rq-btn-primary" onClick={() => setView("market")}>Continue to Market <ChevronRight size={13} /></button>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#15803D" }}>
+                        Your business case is ready. Go get that alignment!
+                      </div>
+                    </div>
+
+                    {/* Business case narrative */}
+                    <div style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid rgba(0,0,0,0.07)", padding: "22px 24px", marginBottom: 14 }}>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#C2410C", marginBottom: 10 }}>Business case</div>
+                      <div style={{ fontFamily: "'Lora',serif", fontSize: 14, lineHeight: 1.8, color: "#374151", whiteSpace: "pre-line" }}>{narrative}</div>
+                    </div>
+
+                    {/* Vendor comparison */}
+                    {vendors.filter(v => vendorStatus[v.name] === "shortlisted").length > 0 && (
+                      <div style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid rgba(0,0,0,0.07)", padding: "22px 24px", marginBottom: 14 }}>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#C2410C", marginBottom: 14 }}>Vendor comparison</div>
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                            <thead>
+                              <tr>
+                                <th style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "#9CA3AF", textAlign: "left", padding: "6px 10px", borderBottom: "1px solid rgba(0,0,0,0.07)", width: "40%" }}>Differentiator</th>
+                                {vendors.filter(v => vendorStatus[v.name] === "shortlisted").slice(0, 3).map(v => (
+                                  <th key={v.name} style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "#9CA3AF", textAlign: "center", padding: "6px 10px", borderBottom: "1px solid rgba(0,0,0,0.07)" }}>{v.name}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {requirements.map(r => (
+                                <tr key={r.id}>
+                                  <td style={{ padding: "9px 10px", borderBottom: "1px solid rgba(0,0,0,0.05)", fontSize: 12, color: "#374151", lineHeight: 1.5 }}>{r.text}</td>
+                                  {vendors.filter(v => vendorStatus[v.name] === "shortlisted").slice(0, 3).map(v => {
+                                    const score = v.requirementsMatch / (v.requirementsTotal || 1);
+                                    return (
+                                      <td key={v.name} style={{ padding: "9px 10px", borderBottom: "1px solid rgba(0,0,0,0.05)", textAlign: "center" }}>
+                                        <span style={{ fontSize: 15, color: score > 0.6 ? "#15803D" : "#DC2626" }}>{score > 0.6 ? "✓" : "✗"}</span>
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {/* Cost range */}
+                        {(() => {
+                          const prices = vendors.filter(v => v.estimatedPrice).map(v => {
+                            const m = v.estimatedPrice?.match(/[\d,]+/g);
+                            return m ? parseInt(m[0].replace(/,/g, '')) : null;
+                          }).filter(Boolean);
+                          if (prices.length < 2) return null;
+                          const low = Math.min(...prices);
+                          const high = Math.max(...prices);
+                          return (
+                            <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 16, padding: "12px 16px", background: "#F9F8F8", borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)" }}>
+                              <div>
+                                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 3 }}>Market pricing range</div>
+                                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.03em" }}>${Math.round(low/1000)}K – ${Math.round(high/1000)}K <span style={{ fontSize: 13, fontWeight: 400, color: "#9CA3AF" }}>/ yr</span></div>
+                              </div>
+                              <div style={{ fontSize: 11, color: "#9CA3AF", fontStyle: "italic", marginLeft: "auto", maxWidth: 180, textAlign: "right", fontFamily: "'Lora',serif" }}>AI estimate — verify with vendors before budgeting</div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Timeline */}
+                    {rfpStart && goLive && (
+                      <div style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid rgba(0,0,0,0.07)", padding: "22px 24px", marginBottom: 14 }}>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#C2410C", marginBottom: 14 }}>The plan</div>
+                        {timelineDefaulted && <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, color: "#C2410C", marginBottom: 10 }}>⚠ No deadline provided — defaulted to 90 days. Adjust in The Plan tab.</div>}
+                        <div style={{ display: "flex", gap: 10 }}>
+                          {[
+                            { label: "RFx start", val: new Date(rfpStart + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric" }) },
+                            { label: "Go-live", val: new Date(goLive + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
+                            { label: "Duration", val: Math.round(calDaysBetween(rfpStart, goLive) / 7) + " weeks" },
+                          ].map(t => (
+                            <div key={t.label} style={{ flex: 1, background: "#F9F8F8", borderRadius: 8, padding: "10px 14px", border: "1px solid rgba(0,0,0,0.06)" }}>
+                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 4 }}>{t.label}</div>
+                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 700, color: "#1E293B" }}>{t.val}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── BUILDING BLOCKS (manual override) ── */}
+                    <div style={{ marginTop: 8, marginBottom: 8 }}>
+                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 10, textAlign: "center" }}>
+                        Edit details
+                      </div>
+                      {NAV_VIEWS.filter(v => v !== "scope").map((v, i) => {
+                        const labels = { requirements: "Differentiators", questions: "Pressure Test", market: "The Landscape", timeline: "The Plan", summary: "Executive Brief" };
+                        const isExpanded = view === v;
+                        return (
+                          <div key={v} style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.07)", marginBottom: 8, overflow: "hidden" }}>
+                            <div
+                              onClick={() => setView(isExpanded ? "summary" : v)}
+                              style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", background: isExpanded ? "#FFF7ED" : "#FFFFFF" }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: isExpanded ? "#C2410C" : "#9CA3AF" }}>{labels[v]}</div>
+                              </div>
+                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, color: "#9CA3AF" }}>{isExpanded ? "↑" : "↓"}</div>
+                            </div>
+                            {isExpanded && (
+                              <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", padding: "16px", maxHeight: 400, overflowY: "auto" }}>
+                                {/* Render the appropriate tab content */}
+                                {view === "requirements" && (
+                                  <div>
+                                    <StaleWarning />
+                                    {reqsBusy ? <div className="rq-loading-center"><Loader size={20} className="spin" style={{ color: "#C2410C" }} /></div> : (
+                                      <>
+                                        {requirements.map(r => (
+                                          <div key={r.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                                            <div className="rq-req-id">{r.id}</div>
+                                            <div className="rq-req-text">{r.text}</div>
+                                          </div>
+                                        ))}
+                                        <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+                                          <button className="rq-btn-ghost" onClick={doGenerateReqs} disabled={reqsBusy}><RefreshCw size={10} /> Regenerate</button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                                {view === "questions" && (
+                                  <div>
+                                    <StaleWarning />
+                                    {qBusy ? <div className="rq-loading-center"><Loader size={20} className="spin" style={{ color: "#C2410C" }} /></div> : (
+                                      <>
+                                        {(questions.scope || []).map((q, i) => (
+                                          <div className="rq-q-card" key={i}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: "#C2410C" }}>Q{i + 1}</div>
+                                              <div className={`rq-badge ${q.type === "open_ended" ? "rq-badge-open" : "rq-badge-mc"}`}>{q.type === "open_ended" ? "Open ended" : "Multiple choice"}</div>
+                                            </div>
+                                            <div className="rq-q-text">{q.text}</div>
+                                          </div>
+                                        ))}
+                                        <div style={{ marginTop: 12 }}>
+                                          <button className="rq-btn-ghost" onClick={doGenerateQuestions} disabled={qBusy}><RefreshCw size={10} /> Regenerate</button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                                {view === "market" && (
+                                  <div>
+                                    <StaleWarning />
+                                    {marketBusy ? <div className="rq-loading-center"><Loader size={20} className="spin" style={{ color: "#C2410C" }} /></div> : (
+                                      <>
+                                        {vendors.map(v => (
+                                          <div key={v.name} className={`vendor-card${vendorStatus[v.name] === "shortlisted" ? " shortlisted" : vendorStatus[v.name] === "eliminated" ? " eliminated" : ""}`}>
+                                            <div className="vendor-name">{v.name}</div>
+                                            <div className="vendor-category">{v.category}</div>
+                                            <div className="vendor-desc">{v.description}</div>
+                                            <div className="vendor-actions">
+                                              <button className={`vendor-btn vendor-btn-shortlist${vendorStatus[v.name] === "shortlisted" ? " active" : ""}`} onClick={() => setVendorStatus(s => ({ ...s, [v.name]: s[v.name] === "shortlisted" ? null : "shortlisted" }))}>Shortlist</button>
+                                              <button className={`vendor-btn vendor-btn-eliminate${vendorStatus[v.name] === "eliminated" ? " active" : ""}`} onClick={() => setVendorStatus(s => ({ ...s, [v.name]: s[v.name] === "eliminated" ? null : "eliminated" }))}>Eliminate</button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                        <div style={{ marginTop: 12 }}>
+                                          <button className="rq-btn-ghost" onClick={doMarketResearch} disabled={marketBusy}><RefreshCw size={10} /> Rerun market research</button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                                {view === "timeline" && (
+                                  <div>
+                                    {timelineDefaulted && (
+                                      <div style={{ background: "#FFF7ED", border: "1px solid rgba(194,65,12,0.3)", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 11, color: "#C2410C", fontFamily: "'Syne',sans-serif", fontWeight: 600 }}>
+                                        No deadline was provided — timeline defaulted to 90 days. Adjust the go-live date below.
+                                      </div>
+                                    )}
+                                    <GanttChart activities={activities} />
+                                  </div>
+                                )}
+                                {view === "summary" && (
+                                  <div>
+                                    <div className="rq-scope-box" style={{ marginBottom: 16 }}>{formalScope}</div>
+                                    <div style={{ display: "flex", gap: 10 }}>
+                                      <button className="rq-btn-primary" onClick={doExport} disabled={exportBusy}><FileText size={11} /> Export .docx</button>
+                                      <button className="rq-btn-ghost" onClick={doExportPDF} disabled={pdfBusy}><FileText size={11} /> Export PDF</button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </>
                 )}
-              </div>
-            )}
 
-            {/* ── Review ── */}
-            {view === "summary" && (
-              <div className="rq-fade">
-
-                {/* Timeline default warning */}
-                {timelineDefaulted && (
-                  <div style={{ background: "#FFF7ED", border: "1px solid rgba(194,65,12,0.3)", borderRadius: 8, padding: "10px 14px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+                {/* ── Stale warning ── */}
+                {isStale && !autoFlowing && formalScope && (
+                  <div style={{ background: "#FFF7ED", border: "1px solid rgba(194,65,12,0.3)", borderRadius: 10, padding: "10px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 11, fontWeight: 600, color: "#C2410C" }}>
-                      ⚠ Timeline defaulted to 90 days — no deadline was provided during intake. Review the Timeline tab before sharing.
+                      ⚠ Scope changed — business case may be out of date.
                     </div>
+                    <button className="rq-btn-ghost" style={{ fontSize: 11, flexShrink: 0 }} onClick={() => { setChatCollapsed(true); doAutoFlow(); }}>Rebuild →</button>
                   </div>
                 )}
-
-                {/* Summary tiles */}
-                <div className="rq-metrics" style={{ marginBottom: 28 }}>
-                  <div className="rq-metric">
-                    <div className="rq-metric-label">Requirements</div>
-                    <div className="rq-metric-val">{requirements.length || "—"}</div>
-                    <div className="rq-metric-sub">{requirements.length > 0 ? "binary" : "none yet"}</div>
-                  </div>
-                  <div className="rq-metric">
-                    <div className="rq-metric-label">Questions</div>
-                    <div className="rq-metric-val">{openQ + mcQ || "—"}</div>
-                    <div className="rq-metric-sub">{openQ + mcQ > 0 ? `${openQ} open · ${mcQ} mc` : "none yet"}</div>
-                  </div>
-                  <div className="rq-metric">
-                    <div className="rq-metric-label">Vendors shortlisted</div>
-                    <div className="rq-metric-val" style={{ color: vendors.length === 0 ? "#9CA3AF" : "#D97706" }}>
-                      {vendors.length === 0 ? "—" : vendors.filter(v => vendorStatus[v.name] === "shortlisted").length}
-                    </div>
-                    <div className="rq-metric-sub amber">{vendors.length === 0 ? "run market first" : `of ${vendors.length} found`}</div>
-                  </div>
-                  <div className="rq-metric">
-                    <div className="rq-metric-label">Timeline</div>
-                    <div className="rq-metric-val" style={{ color: "#C2410C" }}>
-                      {rfpStart && goLive ? Math.round(calDaysBetween(rfpStart, goLive) / 7) : "—"}
-                    </div>
-                    <div className="rq-metric-sub">{rfpStart && goLive ? "weeks start to go-live" : "set dates in timeline"}</div>
-                  </div>
-                </div>
-
-                {/* Business narrative */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <div className="rq-section-label" style={{ marginBottom: 0 }}>Business case narrative</div>
-                  {narrative && (
-                    <button className="rq-btn-ghost" onClick={doGenerateNarrative} disabled={narrativeBusy || !formalScope} style={{ fontSize: 9 }}>
-                      {narrativeBusy ? <><Loader size={10} className="spin" /> Regenerating…</> : <><RefreshCw size={10} /> Regenerate</>}
-                    </button>
-                  )}
-                </div>
-                {narrativeBusy && (
-                  <div className="rq-loading-center" style={{ marginBottom: 24 }}>
-                    <Loader size={20} className="spin" style={{ color: "#C2410C", marginBottom: 8 }} />
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, color: "#9CA3AF" }}>Generating business case…</div>
-                  </div>
-                )}
-                {!narrativeBusy && (narrative
-                  ? <div className="rq-scope-box" style={{ marginBottom: 24, whiteSpace: "pre-line" }}>{narrative}</div>
-                  : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>Complete your scope first to generate a narrative.</div>
-                )}
-                <hr className="rq-divider" />
-
-                {/* Project scope — collapsible */}
-                <details style={{ marginBottom: 24 }}>
-                  <summary style={{ cursor: "pointer", fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#6B7280", marginBottom: 10, userSelect: "none" }}>
-                    Project scope
-                  </summary>
-                  {formalScope
-                    ? <div className="rq-scope-box" style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>{formalScope.replace(/^#{1,3}\s+/gm, '').replace(/^[-*]\s+/gm, '• ').replace(/\*\*(.*?)\*\*/g, '$1').trim()}</div>
-                    : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13 }}>No scope generated yet.</div>
-                  }
-                </details>
-                <hr className="rq-divider" />
-
-                {/* Requirements — collapsible */}
-                <details style={{ marginBottom: 24 }}>
-                  <summary style={{ cursor: "pointer", fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#6B7280", marginBottom: 10, userSelect: "none" }}>
-                    Functional requirements ({requirements.length})
-                  </summary>
-                  {requirements.length > 0
-                    ? <div style={{ marginTop: 10 }}>
-                        {requirements.map((r, i) => (
-                          <div key={r.id} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: "#C2410C", minWidth: 36, paddingTop: 2 }}>{r.id}</div>
-                            <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{r.text}</div>
-                          </div>
-                        ))}
-                      </div>
-                    : <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginTop: 10 }}>No requirements generated yet.</div>
-                  }
-                </details>
-                <hr className="rq-divider" />
-
-                {/* Vendor shortlist — shortlisted only */}
-                <div className="rq-section-label">Vendor shortlist</div>
-                {vendors.length === 0 ? (
-                  <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, padding: "20px 22px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, color: "#9CA3AF" }}>—</div>
-                    <div>
-                      <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 12, fontWeight: 600, color: "#6B7280", marginBottom: 3 }}>No market research yet</div>
-                      <div style={{ fontSize: 12, color: "#9CA3AF" }}>Go to Market to search for vendors and score them against your requirements.</div>
-                    </div>
-                    <button className="rq-btn-ghost" style={{ marginLeft: "auto", flexShrink: 0 }} onClick={() => setView("market")}>Go to Market <ChevronRight size={12} /></button>
-                  </div>
-                ) : (
-                  <div style={{ marginBottom: 24 }}>
-                    {vendors.filter(v => vendorStatus[v.name] === "shortlisted").length === 0 && (
-                      <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 16 }}>No vendors shortlisted yet. Go to Market to shortlist vendors.</div>
-                    )}
-                    {vendors.filter(v => vendorStatus[v.name] === "shortlisted").map(v => {
-                      const matchPct = v.requirementsTotal > 0 ? v.requirementsMatch / v.requirementsTotal : 0;
-                      return (
-                        <div key={v.name} className="vendor-card shortlisted" style={{ cursor: "default" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                            <div>
-                              <div className="vendor-name">{v.name}</div>
-                              <div className="vendor-category">{v.category}</div>
-                            </div>
-                            <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#C2410C", background: "#FFF7ED", padding: "3px 8px", borderRadius: 3, flexShrink: 0 }}>Shortlisted</span>
-                          </div>
-                          <div className="vendor-desc" style={{ marginTop: 6, marginBottom: 8 }}>{v.description}</div>
-                          {v.estimatedPrice && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "7px 10px", background: "#F9F8F8", borderRadius: 6, border: "1px solid rgba(0,0,0,0.06)" }}>
-                              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 500, color: "#111827" }}>{v.estimatedPrice}</div>
-                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF" }}>{v.pricingModel}</div>
-                              <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
-                                <div style={{ width: 6, height: 6, borderRadius: "50%", background: v.priceConfidence === "high" ? "#C2410C" : v.priceConfidence === "medium" ? "#D97706" : "#D1D5DB" }} />
-                                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, color: "#9CA3AF" }}>{v.priceConfidence} confidence · agent est.</span>
-                              </div>
-                            </div>
-                          )}
-                          <div className="vendor-match">
-                            <div className={`confidence-dot confidence-${v.matchConfidence || "low"}`} />
-                            <div className="vendor-match-bar">
-                              <div className={`vendor-match-fill ${v.matchConfidence === "medium" ? "medium" : v.matchConfidence === "low" ? "low" : ""}`} style={{ width: `${matchPct * 100}%` }} />
-                            </div>
-                            <div className="vendor-match-text">Agent estimates {v.requirementsMatch} of {v.requirementsTotal} requirements</div>
-                            {v.g2Rating && v.g2Rating !== "N/A" && <div className="vendor-rating" style={{ marginLeft: "auto" }}><span style={{ color: "#D97706" }}>★</span> {v.g2Rating}</div>}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <button className="rq-btn-ghost" style={{ fontSize: 11, marginTop: 8 }} onClick={() => setView("market")}>
-                      Edit shortlist in Market →
-                    </button>
-                  </div>
-                )}
-                <hr className="rq-divider" />
-
-                {/* Timeline summary */}
-                <div className="rq-section-label">Buying timeline</div>
-                {rfpStart && goLive ? (
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-                      <div style={{ background: "#FFFFFF", border: "1px solid rgba(194,65,12,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#C2410C", marginBottom: 4 }}>RFx Start</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#111827" }}>{new Date(rfpStart + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
-                      </div>
-                      <div style={{ background: "#FFFFFF", border: "1px solid rgba(239,159,39,0.2)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#D97706", marginBottom: 4 }}>Go-Live</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#111827" }}>{new Date(goLive + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
-                      </div>
-                      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, padding: "12px 18px", flex: 1, minWidth: 140 }}>
-                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#6B7280", marginBottom: 4 }}>Total Duration</div>
-                        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#111827" }}>{Math.round(calDaysBetween(rfpStart, goLive) / 7)} weeks</div>
-                      </div>
-                    </div>
-                    <GanttChart activities={activities} />
-                  </div>
-                ) : (
-                  <div style={{ color: "#9CA3AF", fontStyle: "italic", fontSize: 13, marginBottom: 24 }}>
-                    No dates set — go to Timeline to configure your schedule.
-                  </div>
-                )}
-                <hr className="rq-divider" />
-
-                {/* Export */}
-                {exportErr && <div className="rq-error" style={{ marginBottom: 16 }}>{exportErr}</div>}
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <button className="rq-btn-primary" onClick={doExport} disabled={!formalScope || exportBusy} style={{ padding: "12px 28px" }}>
-                    {exportBusy ? <><Loader size={14} className="spin" /> Exporting…</> : <><FileText size={14} /> Export to .docx</>}
-                  </button>
-                  <button className="rq-btn-ghost" onClick={doExportPDF} disabled={!formalScope || pdfBusy} style={{ padding: "12px 28px" }}>
-                    {pdfBusy ? <><Loader size={14} className="spin" /> Generating PDF…</> : <><FileText size={14} /> Export to PDF</>}
-                  </button>
-                </div>
-                <p style={{ fontSize: 11, color: "#9CA3AF", marginTop: 10 }}>PDF includes cover page, narrative, scope, requirements, shortlisted vendors, and timeline. .docx includes full detail including all vendors and questions.</p>
 
               </div>
             )}
-
-
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
