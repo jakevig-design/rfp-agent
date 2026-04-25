@@ -1262,6 +1262,7 @@ export default function RequirementsAgent() {
               setContinuingChat(false);
               // Auto-trigger scope generation with bullets passed directly
               // (can't rely on state update having flushed yet)
+              console.log('[Pario] DONE detected, bullets:', bullets.length, '— triggering scope generation');
               setTimeout(() => doGenerateScopeFromBullets(bullets), 100);
               return;
             }
@@ -1304,6 +1305,7 @@ export default function RequirementsAgent() {
   };
 
   const doGenerateScopeFromBullets = async (bullets) => {
+    console.log('[Pario] doGenerateScopeFromBullets called, bullets:', bullets.length);
     if (formalScope) setPrevScope(formalScope);
     setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
     try {
@@ -1715,7 +1717,9 @@ export default function RequirementsAgent() {
 
   // ── Auto-trigger full flow when scope is approved ──────────
   useEffect(() => {
+    console.log('[Pario] scopeApproved useEffect fired:', scopeApproved, 'formalScope:', !!formalScope, 'autoFlowing:', autoFlowing, 'narrative:', !!narrative);
     if (scopeApproved && formalScope && !autoFlowing && !narrative) {
+      console.log('[Pario] Triggering doAutoFlow');
       setChatCollapsed(true);
       doAutoFlow();
     }
