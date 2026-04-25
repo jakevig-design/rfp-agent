@@ -1231,10 +1231,12 @@ export default function RequirementsAgent() {
       // Handle API errors
       if (!res.ok || data.error) {
         const detail = data.error?.message || `HTTP ${res.status}`;
-        console.error("Pario chat API error:", detail, data);
+        console.error('[Pario] Chat API error:', detail, JSON.stringify(data).substring(0, 200));
         setChatMessages(prev => [...prev, { role: "assistant", content: "Something went wrong — please try again." }]);
         return;
       }
+
+      console.log('[Pario] Chat API response ok, extracting reply...');
 
       // Extract text from content array
       const reply = (Array.isArray(data.content)
@@ -2378,6 +2380,30 @@ export default function RequirementsAgent() {
                           <div style={{ background: "#F9F8F8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "0 10px 10px 10px", padding: "11px 14px", fontSize: 13, lineHeight: 1.65, maxWidth: "88%", fontFamily: "'Lora',serif", color: "#111827" }}>
                             {tenantBrandName ? `Welcome${userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ""}. ` : ""}What's the business problem you're trying to solve — and how do you think software can help?
                           </div>
+                        </div>
+                      )}
+                      {/* DEV ONLY: Skip chat button */}
+                      {chatMessages.length === 0 && !chatBusy && (
+                        <div style={{ marginTop: 8 }}>
+                          <button
+                            className="rq-btn-ghost"
+                            style={{ fontSize: 10, opacity: 0.5 }}
+                            onClick={() => {
+                              const testBullets = [
+                                "Business problem: Manual contract management process — legal reviewing everything via email, deals slipping before Q3 close",
+                                "Software case: CLM platform to centralize contract lifecycle, reduce review time, and provide audit trail",
+                                "Sponsor: General Counsel. ~40 users across legal and sales",
+                                "Integration required: Salesforce (CRM). SOX compliance — audit trails required",
+                                "Budget: ~$100K annually",
+                                "Success: Legal processing contracts in system instead of email by Q3. Out of scope: e-signature replacement"
+                              ];
+                              setScopeBullets(testBullets);
+                              setChatCollapsed(true);
+                              doGenerateScopeFromBullets(testBullets);
+                            }}
+                          >
+                            [DEV] Skip chat →
+                          </button>
                         </div>
                       )}
                       {chatMessages.map((m, i) => (
