@@ -1928,6 +1928,11 @@ export default function RequirementsAgent() {
     summary: (projectTitle || "Untitled project") + " ",
   };
 
+  // Redirect splash to scope in new consumer UI
+  useEffect(() => {
+    if (view === "splash") setView("scope");
+  }, [view]);
+
   // ── Auth loading ──
   if (authLoading) {
     return (
@@ -1961,11 +1966,6 @@ export default function RequirementsAgent() {
     return <ProfileSetupScreen onComplete={(profile) => setUserProfile(p => ({ ...p, ...profile }))} />;
   }
 
-  // ── Splash ──
-  // Redirect splash to scope in new consumer UI
-  useEffect(() => {
-    if (view === "splash") setView("scope");
-  }, [view]);
   // ── Shared sidebar ──
   // ── Output panel step indicator ──────────────────────────
   const outputSteps = [
