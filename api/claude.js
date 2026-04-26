@@ -243,6 +243,7 @@ async function callAnthropic(headers, body, retries = 3) {
 const ALLOWED_ORIGINS = [
   'https://demo.planwithpario.com',
   'https://app.planwithpario.com',
+  'https://dev.planwithpario.com',
   'https://www.planwithpario.com',
   'https://planwithpario.com',
   'https://agent.acuitysourcing.com',
