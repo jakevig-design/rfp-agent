@@ -1423,8 +1423,10 @@ export default function RequirementsAgent() {
           const eq = await callJSON(P_SCOPE_EXPERT, `Scope:\n\n${scopeText}`, false, null, getIdentity());
           console.log('[Pario] expert questions returned:', eq?.length ?? 0);
           if (eq && eq.length > 0) {
+            console.log('[Pario] expert questions present — approving scope, questions remain available as optional review');
             setExpertQuestions(eq);
             setExpertApproved(false);
+            setScopeApproved(true);
           } else {
             console.log('[Pario] no expert questions — approving scope');
             setExpertApproved(true);
