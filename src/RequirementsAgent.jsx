@@ -884,6 +884,7 @@ export default function RequirementsAgent() {
   const [lastSaved, setLastSaved] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProfileCard, setShowProfileCard] = useState(false);
   const [profileEditName, setProfileEditName] = useState("");
   const [profileEditTitle, setProfileEditTitle] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
@@ -1082,6 +1083,13 @@ export default function RequirementsAgent() {
     }, 30000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    const tenantId = userProfile?.tenant_id;
+    if (!tenantId || !userProfile?.tenant_config) return;
+    const shouldShow = tenantId === 'acme' || !localStorage.getItem(`profile_seen_${tenantId}`);
+    if (shouldShow) setShowProfileCard(true);
+  }, [userProfile?.tenant_id, userProfile?.tenant_config]);
 
   const resetSession = () => {
     setSessionId(genId());
@@ -1964,7 +1972,7 @@ export default function RequirementsAgent() {
 
   const pct = (step / 3) * 100;
   const NAV_VIEWS = ["scope", "requirements", "questions", "market", "timeline", "summary"];
-  const NAV_LABELS = ["The Problem", "Differentiators", "Pressure Test", "The Landscape", "The Plan", "Executive Brief"];
+  const NAV_LABELS = ["The Problem", "Differentiators", "Pressure Test", "The Landscape", "The Plan", "Scope"];
   const answeredReqs = Object.keys(questions).length;
   const allQuestions = questions.scope || Object.values(questions).flat();
   const openQ = allQuestions.filter(q => q.type === "open_ended").length;
@@ -1973,7 +1981,7 @@ export default function RequirementsAgent() {
   const topbarTitles = {
     splash: "Home", sessions: "Projects",
     scope: "Scope", requirements: "Requirements", questions: "Questions",
-    market: "Market Research", timeline: "Timeline", summary: "Summary",
+    market: "Market Research", timeline: "Timeline", summary: "Scope",
   };
   const topbarSubs = {
     splash: "Pario", sessions: "All projects",
@@ -2054,7 +2062,6 @@ export default function RequirementsAgent() {
                 onClick={() => { if (!locked) { setView(v); setSidebarOpen(false); } }}
                 style={{ opacity: locked ? 0.35 : 1, cursor: locked ? "default" : "pointer" }}
               >
-                <div className="rq-nav-num">{i + 1}</div>
                 {NAV_LABELS[i]}
               </div>
             );
@@ -2256,6 +2263,72 @@ export default function RequirementsAgent() {
   return (
     <div className="rq-root" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
+      {/* ── Company profile card (first-load) ── */}
+      {showProfileCard && userProfile?.tenant_config && (() => {
+        const tc = userProfile.tenant_config;
+        const stack = Array.isArray(tc.tech_stack) ? tc.tech_stack : [];
+        const dismiss = () => {
+          if (userProfile.tenant_id !== 'acme') {
+            try { localStorage.setItem(`profile_seen_${userProfile.tenant_id}`, 'true'); } catch {}
+          }
+          setShowProfileCard(false);
+        };
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div style={{ background: "#FFFFFF", borderRadius: 16, padding: "28px 32px 28px", width: "100%", maxWidth: 520, boxShadow: "0 12px 48px rgba(0,0,0,0.18)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+                {tc.logo_url ? (
+                  <img src={tc.logo_url} alt="" style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8, background: "#F9FAFB", padding: 4 }} />
+                ) : null}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#111827", letterSpacing: "-0.01em" }}>
+                    {tc.company_name || tc.brand_name || ""}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>
+                    {[tc.industry, tc.employee_count ? `${tc.employee_count.toLocaleString?.() || tc.employee_count} employees` : null].filter(Boolean).join(" · ")}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 18, fontWeight: 800, color: "#111827", letterSpacing: "-0.02em", marginBottom: 10 }}>
+                Pario already knows your organization.
+              </div>
+              <div style={{ fontFamily: "'Lora',serif", fontSize: 13, lineHeight: 1.55, color: "#374151", marginBottom: 20 }}>
+                Before you type a word, Pario knows your tech stack, your regulatory environment, and your scale. You won't be asked what you already told us. And if your answers don't match what we know, we'll ask why.
+              </div>
+
+              {stack.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 8 }}>Known tech stack</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {stack.map((s, i) => (
+                      <span key={i} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 999, background: "#F3F4F6", color: "#374151", border: "0.5px solid rgba(0,0,0,0.06)" }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tc.regulatory_context && (
+                <div style={{ marginBottom: 18 }}>
+                  <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".15em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 8 }}>Regulatory context</div>
+                  <div style={{ fontSize: 12, color: "#374151" }}>{tc.regulatory_context}</div>
+                </div>
+              )}
+
+              <div style={{ fontSize: 11, color: "#6B7280", fontStyle: "italic", borderTop: "0.5px solid rgba(0,0,0,0.08)", paddingTop: 14, marginBottom: 18, lineHeight: 1.5 }}>
+                This is your company profile. In a real deployment, this reflects your actual organization. Pario's output is only as specific as the profile behind it.
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button className="rq-btn-primary" style={{ fontSize: 12 }} onClick={dismiss}>
+                  Got it, let's go →
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Profile modal ── */}
       {showProfileModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
@@ -2348,7 +2421,6 @@ export default function RequirementsAgent() {
                       transition: "all .2s",
                     }}
                   >
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: isActive ? "#FFFFFF" : isDone ? "#C2410C" : "#9CA3AF" }}>{i + 1}</div>
                     <div style={{ width: 4, height: 4, borderRadius: "50%", background: isActive ? "#C2410C" : isDone ? "#FDBA74" : "rgba(0,0,0,0.15)" }} />
                   </div>
                 </div>
@@ -2634,7 +2706,7 @@ export default function RequirementsAgent() {
                         Edit details
                       </div>
                       {NAV_VIEWS.filter(v => v !== "scope").map((v, i) => {
-                        const labels = { requirements: "Differentiators", questions: "Pressure Test", market: "The Landscape", timeline: "The Plan", summary: "Executive Brief" };
+                        const labels = { requirements: "Differentiators", questions: "Pressure Test", market: "The Landscape", timeline: "The Plan", summary: "Scope" };
                         const isExpanded = expandedBlock === v;
                         return (
                           <div key={v} style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.07)", marginBottom: 8, overflow: "hidden" }}>
