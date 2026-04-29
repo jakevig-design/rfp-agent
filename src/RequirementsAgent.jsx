@@ -322,6 +322,24 @@ function fmtDate(str) {
 
 function today() { return new Date().toISOString().split("T")[0]; }
 
+// Filter < 1000 to drop "100 users" / "5 seats" noise; suffix multipliers handle "$80K", "1.2M".
+function parsePriceNumbers(str) {
+  if (!str) return [];
+  const matches = [...str.matchAll(/(\d[\d,]*(?:\.\d+)?)\s*([KMB])?/gi)];
+  return matches.map(m => {
+    const n = parseFloat(m[1].replace(/,/g, ''));
+    if (isNaN(n)) return NaN;
+    const mul = m[2] ? { K: 1000, M: 1e6, B: 1e9 }[m[2].toUpperCase()] : 1;
+    return n * mul;
+  }).filter(n => !isNaN(n) && n >= 1000);
+}
+
+function priceRangeFromVendors(vendors) {
+  const all = vendors.flatMap(v => parsePriceNumbers(v.estimatedPrice));
+  if (all.length === 0) return null;
+  return { low: Math.min(...all), high: Math.max(...all) };
+}
+
 // ─── Default activities ───────────────────────────────────────────────────────
 // offsetDays: n+ days after startDate for endDate default
 // parentId: sub-activity of another
@@ -1644,6 +1662,8 @@ export default function RequirementsAgent() {
       ].filter(Boolean).join("\n") : null;
       const userMsg = `Project scope:\n${formalScope}${reqList}`;
       const result = await callJSON(P_MARKET(companyCtx), userMsg, false, "claude-haiku-4-5-20251001", getIdentity());
+      console.log("[Pario] vendors raw:", result);
+      console.log("[Pario] estimatedPrice values:", result?.map?.(v => ({ name: v.name, estimatedPrice: v.estimatedPrice })));
       setVendors(result);
       // Auto-shortlist top 3 by requirements fit score
       const sorted = [...result].sort((a, b) => {
@@ -2154,19 +2174,17 @@ export default function RequirementsAgent() {
                   ))
                 )}
                 {/* Cost range */}
-                {vendors.length > 0 && (() => {
-                  const prices = vendors.filter(v => v.estimatedPrice).map(v => {
-                    const m = v.estimatedPrice?.match(/[\d,]+/g);
-                    return m ? parseInt(m[0].replace(/,/g, '')) : null;
-                  }).filter(Boolean);
-                  if (prices.length < 2) return null;
-                  const low = Math.min(...prices);
-                  const high = Math.max(...prices);
+                {(() => {
+                  const range = priceRangeFromVendors(vendors);
+                  if (!range) return null;
+                  const { low, high } = range;
+                  const fmt = n => `$${Math.round(n/1000)}K`;
+                  const display = low === high ? fmt(low) : `${fmt(low)} – ${fmt(high)}`;
                   return (
                     <div className="rq-cost-band">
                       <div>
                         <div className="rq-cost-label">Market pricing range</div>
-                        <div className="rq-cost-range">${(low/1000).toFixed(0)}K – ${(high/1000).toFixed(0)}K <span style={{ fontSize: 13, fontWeight: 400, color: "#9CA3AF" }}>/ yr</span></div>
+                        <div className="rq-cost-range">{display} <span style={{ fontSize: 13, fontWeight: 400, color: "#9CA3AF" }}>/ yr</span></div>
                       </div>
                       <div style={{ fontSize: 10, color: "#9CA3AF", fontStyle: "italic", marginLeft: "auto", maxWidth: 160, textAlign: "right" }}>AI estimate — verify with vendors</div>
                     </div>
@@ -2559,20 +2577,18 @@ export default function RequirementsAgent() {
                         </div>
                         {/* Cost range */}
                         {(() => {
-                          const prices = vendors.filter(v => v.estimatedPrice).map(v => {
-                            const m = v.estimatedPrice?.match(/[\d,]+/g);
-                            return m ? parseInt(m[0].replace(/,/g, '')) : null;
-                          }).filter(Boolean);
-                          if (prices.length < 2) return null;
-                          const low = Math.min(...prices);
-                          const high = Math.max(...prices);
+                          const range = priceRangeFromVendors(vendors);
+                          if (!range) return null;
+                          const { low, high } = range;
+                          const fmt = n => `$${Math.round(n/1000)}K`;
+                          const display = low === high ? fmt(low) : `${fmt(low)} – ${fmt(high)}`;
                           return (
                             <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 16, padding: "12px 16px", background: "#F9F8F8", borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)" }}>
                               <div>
                                 <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 3 }}>Market pricing range</div>
-                                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.03em" }}>${Math.round(low/1000)}K – ${Math.round(high/1000)}K <span style={{ fontSize: 13, fontWeight: 400, color: "#9CA3AF" }}>/ yr</span></div>
+                                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 22, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.03em" }}>{display} <span style={{ fontSize: 13, fontWeight: 400, color: "#9CA3AF" }}>/ yr</span></div>
                               </div>
-                              <div style={{ fontSize: 11, color: "#9CA3AF", fontStyle: "italic", marginLeft: "auto", maxWidth: 180, textAlign: "right", fontFamily: "'Lora',serif" }}>AI estimate — verify with vendors before budgeting</div>
+                              <div style={{ fontSize: 11, color: "#9CA3AF", fontStyle: "italic", marginLeft: "auto", maxWidth: 180, textAlign: "right", fontFamily: "'Lora',serif" }}>AI estimate — verify with vendors</div>
                             </div>
                           );
                         })()}
