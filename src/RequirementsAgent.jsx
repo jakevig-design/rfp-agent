@@ -994,11 +994,24 @@ export default function RequirementsAgent() {
   // Auth + tenant config loading
   useEffect(() => {
     const IS_DEMO_SUBDOMAIN = window.location.hostname === 'demo.planwithpario.com';
+    const IS_DEV_SUBDOMAIN = window.location.hostname === 'dev.planwithpario.com';
+    const DEV_EMAIL = import.meta.env.VITE_DEV_EMAIL;
+    const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD;
 
     getSession().then(async session => {
       // Auto sign-in for demo subdomain if no session exists
       if (!session && IS_DEMO_SUBDOMAIN) {
         const { data, error } = await signIn('test@acme.com', 'test');
+        if (!error && data?.user) {
+          setAuthUser(data.user);
+        }
+        setAuthLoading(false);
+        return;
+      }
+
+      // Auto sign-in for dev subdomain (Acuity Sourcing) if no session exists and creds are configured
+      if (!session && IS_DEV_SUBDOMAIN && DEV_EMAIL && DEV_PASSWORD) {
+        const { data, error } = await signIn(DEV_EMAIL, DEV_PASSWORD);
         if (!error && data?.user) {
           setAuthUser(data.user);
         }
