@@ -1076,7 +1076,10 @@ export default function RequirementsAgent() {
   useEffect(() => {
     const tenantId = userProfile?.tenant_id;
     if (!tenantId || !userProfile?.tenant_config) return;
-    const shouldShow = tenantId === 'acme' || !localStorage.getItem(`profile_seen_${tenantId}`);
+    const isDemoOrDev =
+      window.location.hostname === 'demo.planwithpario.com' ||
+      window.location.hostname === 'dev.planwithpario.com';
+    const shouldShow = isDemoOrDev || !localStorage.getItem(`profile_seen_${tenantId}`);
     if (shouldShow) setShowProfileCard(true);
   }, [userProfile?.tenant_id, userProfile?.tenant_config]);
 
@@ -2256,15 +2259,18 @@ export default function RequirementsAgent() {
       {showProfileCard && userProfile?.tenant_config && (() => {
         const tc = userProfile.tenant_config;
         const stack = Array.isArray(tc.tech_stack) ? tc.tech_stack : [];
+        const isDemoOrDev =
+          window.location.hostname === 'demo.planwithpario.com' ||
+          window.location.hostname === 'dev.planwithpario.com';
         const dismiss = () => {
-          if (userProfile.tenant_id !== 'acme') {
+          if (!isDemoOrDev && userProfile.tenant_id) {
             try { localStorage.setItem(`profile_seen_${userProfile.tenant_id}`, 'true'); } catch {}
           }
           setShowProfileCard(false);
         };
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div style={{ background: "#FFFFFF", borderRadius: 16, padding: "28px 32px 28px", width: "100%", maxWidth: 520, boxShadow: "0 12px 48px rgba(0,0,0,0.18)" }}>
+            <div style={{ background: "#FFFFFF", borderRadius: 16, padding: "28px 32px 28px", width: "100%", maxWidth: 480, boxShadow: "0 12px 48px rgba(0,0,0,0.18)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
                 {tc.logo_url ? (
                   <img src={tc.logo_url} alt="" style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8, background: "#F9FAFB", padding: 4 }} />
@@ -2274,8 +2280,11 @@ export default function RequirementsAgent() {
                     {tc.company_name || tc.brand_name || ""}
                   </div>
                   <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>
-                    {[tc.industry, tc.employee_count ? `${tc.employee_count.toLocaleString?.() || tc.employee_count} employees` : null].filter(Boolean).join(" · ")}
+                    {[tc.vertical, tc.employee_count ? `${tc.employee_count.toLocaleString?.() || tc.employee_count} employees` : null].filter(Boolean).join(" · ")}
                   </div>
+                  {tc.hq && (
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{tc.hq}</div>
+                  )}
                 </div>
               </div>
 
@@ -2305,7 +2314,7 @@ export default function RequirementsAgent() {
               )}
 
               <div style={{ fontSize: 11, color: "#6B7280", fontStyle: "italic", borderTop: "0.5px solid rgba(0,0,0,0.08)", paddingTop: 14, marginBottom: 18, lineHeight: 1.5 }}>
-                This is your company profile. In a real deployment, this reflects your actual organization. Pario's output is only as specific as the profile behind it.
+                This profile drives Pario's outputs. In a real deployment, this reflects your actual organization.
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
