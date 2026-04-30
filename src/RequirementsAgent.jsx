@@ -1037,8 +1037,8 @@ export default function RequirementsAgent() {
             tenantProfileRef.current = companyProfile;
             setAnswers(p => ({ ...p, companyProfile }));
 
-            // Demo tenant — sign out on browser close so session never persists
-            if (profile.tenant_id === 'demo' || profile.tenant_id === 'acme') {
+            // Demo + dev subdomains — sign out on browser close so session never persists
+            if (isDemoOrDev) {
               window.addEventListener('beforeunload', () => { signOut(); });
             }
           }
