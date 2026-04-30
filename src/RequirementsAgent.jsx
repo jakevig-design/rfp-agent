@@ -2265,13 +2265,22 @@ export default function RequirementsAgent() {
           }
           setShowProfileCard(false);
         };
+        const PARIO_LOGO_FALLBACK = 'https://www.planwithpario.com/pario-logo.png';
+        const logoUrl = tc.logo_url || (() => {
+          if (!tc.website_url) return PARIO_LOGO_FALLBACK;
+          try { return `https://logo.clearbit.com/${new URL(tc.website_url).hostname}`; }
+          catch { return PARIO_LOGO_FALLBACK; }
+        })();
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
             <div style={{ background: "#FFFFFF", borderRadius: 16, padding: "28px 32px 28px", width: "100%", maxWidth: 480, boxShadow: "0 12px 48px rgba(0,0,0,0.18)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-                {tc.logo_url ? (
-                  <img src={tc.logo_url} alt="" style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8, background: "#F9FAFB", padding: 4 }} />
-                ) : null}
+                <img
+                  src={logoUrl}
+                  alt=""
+                  onError={(e) => { if (e.currentTarget.src !== PARIO_LOGO_FALLBACK) e.currentTarget.src = PARIO_LOGO_FALLBACK; }}
+                  style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 8, background: "#F9FAFB", padding: 4 }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#111827", letterSpacing: "-0.01em" }}>
                     {tc.company_name || tc.brand_name || ""}
