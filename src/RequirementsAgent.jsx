@@ -999,17 +999,14 @@ export default function RequirementsAgent() {
       window.location.hostname === 'dev.planwithpario.com';
 
     getSession().then(async session => {
+      let user = session?.user || null;
+
       // Auto sign-in on demo + dev subdomains (both use the Acme demo tenant)
-      if (!session && isDemoOrDev) {
+      if (!user && isDemoOrDev) {
         const { data, error } = await signIn('test@acme.com', 'test');
-        if (!error && data?.user) {
-          setAuthUser(data.user);
-        }
-        setAuthLoading(false);
-        return;
+        if (!error && data?.user) user = data.user;
       }
 
-      const user = session?.user || null;
       setAuthUser(user);
       setAuthLoading(false);
       if (user) {
