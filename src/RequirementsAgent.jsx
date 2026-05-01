@@ -2116,8 +2116,7 @@ export default function RequirementsAgent() {
             ) : (
               <div style={{ marginTop: 4 }}>
                 {requirements.map((r, i) => (
-                  <div key={r.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < requirements.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none" }}>
-                    <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 9, fontWeight: 700, color: "#C2410C", minWidth: 32, paddingTop: 2 }}>{r.id}</div>
+                  <div key={r.id} style={{ padding: "8px 0", borderBottom: i < requirements.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none" }}>
                     <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{r.text}</div>
                   </div>
                 ))}
@@ -2685,8 +2684,7 @@ export default function RequirementsAgent() {
                                     {reqsBusy ? <div className="rq-loading-center"><Loader size={20} className="spin" style={{ color: "#C2410C" }} /></div> : (
                                       <>
                                         {requirements.map(r => (
-                                          <div key={r.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                                            <div className="rq-req-id">{r.id}</div>
+                                          <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                                             <div className="rq-req-text">{r.text}</div>
                                           </div>
                                         ))}
@@ -2705,7 +2703,6 @@ export default function RequirementsAgent() {
                                         {(questions.scope || []).map((q, i) => (
                                           <div className="rq-q-card" key={i}>
                                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                                              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: "#C2410C" }}>Q{i + 1}</div>
                                               <div className={`rq-badge ${q.type === "open_ended" ? "rq-badge-open" : "rq-badge-mc"}`}>{q.type === "open_ended" ? "Open ended" : "Multiple choice"}</div>
                                             </div>
                                             <div className="rq-q-text">{q.text}</div>
