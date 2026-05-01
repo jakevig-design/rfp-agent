@@ -2367,10 +2367,10 @@ export default function RequirementsAgent() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {[1,2,3].map(i => <div key={i} className="rq-skeleton" style={{ height: 64, borderRadius: 10 }} />)}
             </div>
-          ) : sessions.length === 0 ? (
+          ) : sessionsList.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 24px", color: "#9CA3AF", fontFamily: "'Lora',serif", fontSize: 14 }}>No saved projects yet.</div>
           ) : (
-            sessions.map(s => (
+            sessionsList.map(s => (
               <div key={s.id} onClick={() => loadSession(s)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "14px 18px", marginBottom: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color .15s" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(194,65,12,0.3)"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,0,0,0.07)"}
