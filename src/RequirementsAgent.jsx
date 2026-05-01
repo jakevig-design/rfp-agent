@@ -705,6 +705,8 @@ async function buildDocx({ sessionId, projectTitle, formalScope, narrative, requ
     sections: [{
       properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
       children: [
+        new Paragraph({ children: [new TextRun({ text: "Internal working document. Raw output — not for external distribution.", font: "Arial", size: 18, italics: true, color: "9A8E82" })] }),
+        new Paragraph({ children: [new TextRun("")] }),
         new Paragraph({ children: [new TextRun({ text: projectTitle || "Requirements Document", bold: true, size: 56, font: "Arial", color: "1A1714" })] }),
         new Paragraph({ children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`, font: "Arial", size: 18, color: "9A8E82" })] }),
         ...(userProfile ? [new Paragraph({ children: [new TextRun({ text: `Prepared by: ${[userProfile.name, userProfile.title, userProfile.department, userProfile.tenant_config?.brand_name || userProfile.tenant_config?.company_name].filter(Boolean).join(", ")}`, font: "Arial", size: 18, color: "9A8E82" })] })] : []),
@@ -733,7 +735,7 @@ async function buildDocx({ sessionId, projectTitle, formalScope, narrative, requ
         new Table({ width: { size: 9360, type: WidthType.DXA }, columnWidths: [3400, 1900, 1900, 2160], rows: tlRows }),
         new Paragraph({ children: [new TextRun("")] }),
         ...(vendors && vendors.length > 0 ? [
-          new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "5. Vendor Shortlist", font: "Arial" })] }),
+          new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "5. Market View", font: "Arial" })] }),
           new Paragraph({ children: [new TextRun({ text: "Pricing estimates are agent-generated. Verify with vendors before use in budget planning.", font: "Arial", size: 18, italics: true, color: "9A8E82" })] }),
           new Paragraph({ children: [new TextRun("")] }),
           new Table({
@@ -1898,16 +1900,13 @@ export default function RequirementsAgent() {
   <h1>Business Case</h1>
   ${narrative ? narrative.split(/\n+/).filter(Boolean).map(p => `<p>${p}</p>`).join('') : '<p>Narrative not yet generated.</p>'}
 
-  <h1>Project Scope</h1>
-  ${cleanScope.split(/\n+/).filter(Boolean).map(p => `<p>${p}</p>`).join('')}
-
   <h1>Functional Requirements</h1>
   ${requirements.length > 0
     ? requirements.map(r => `<div class="req-row"><div class="req-id">${r.id}</div><div class="req-text">${r.text}</div></div>`).join('')
     : '<p>No requirements generated.</p>'
   }
 
-  <h1>Vendor Shortlist</h1>
+  <h1>Market View</h1>
   ${shortlisted.length > 0
     ? shortlisted.map(v => `
       <div class="vendor-card">
@@ -1918,11 +1917,13 @@ export default function RequirementsAgent() {
       </div>`).join('')
     : '<p>No vendors shortlisted.</p>'
   }
+  <p style="font-size: 11px; color: #6B7280; font-style: italic; margin-top: 8px;">Vendors have been shortlisted based on your functional requirements.</p>
+  <p style="font-size: 11px; color: #6B7280; font-style: italic;">Pricing estimates are directional. Verify with vendors before any budget commitment.</p>
 
   <h1>Buying Timeline</h1>
   <div class="timeline-row">
     <div class="timeline-box">
-      <div class="timeline-label">RFx Start</div>
+      <div class="timeline-label">Start</div>
       <div class="timeline-val">${rfpStart ? new Date(rfpStart + 'T00:00:00').toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : '—'}</div>
     </div>
     <div class="timeline-box">
