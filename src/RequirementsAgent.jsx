@@ -1965,7 +1965,7 @@ export default function RequirementsAgent() {
 
   const pct = (step / 3) * 100;
   const NAV_VIEWS = ["scope", "requirements", "questions", "market", "timeline", "summary"];
-  const NAV_LABELS = ["The Problem", "Differentiators", "Pressure Test", "The Landscape", "The Plan", "Scope"];
+  const NAV_LABELS = ["The Problem", "Functional Requirements", "Dig Deeper", "Market View", "Buying Timeline", "Executive Brief"];
   const answeredReqs = Object.keys(questions).length;
   const allQuestions = questions.scope || Object.values(questions).flat();
   const openQ = allQuestions.filter(q => q.type === "open_ended").length;
@@ -2023,17 +2023,6 @@ export default function RequirementsAgent() {
   if (authUser && userProfile !== null && !userProfile?.name) {
     return <ProfileSetupScreen onComplete={(profile) => setUserProfile(p => ({ ...p, ...profile }))} />;
   }
-
-  // ── Shared sidebar ──
-  // ── Output panel step indicator ──────────────────────────
-  const outputSteps = [
-    { key: "problem", label: "Problem", done: !!formalScope },
-    { key: "differentiators", label: "Differentiators", done: requirements.length > 0 },
-    { key: "vendors", label: "Vendors", done: vendors.length > 0 },
-    { key: "plan", label: "Plan", done: !!narrative },
-  ];
-
-  const activeStep = outputSteps.filter(s => s.done).length;
 
   // ── Advanced drawer (replaces sidebar) ───────────────────
   const advancedDrawer = (
@@ -2398,66 +2387,26 @@ export default function RequirementsAgent() {
       {view !== "sessions" && view !== "splash" && (
         <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
 
-          {/* ── Pill nav ── */}
-          <div style={{ width: 52, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0 16px", gap: 0, background: "#FFFFFF", borderRight: "1px solid rgba(0,0,0,0.06)" }}>
-            {/* Logo mark */}
-            <div style={{ marginBottom: 16, cursor: "pointer" }} onClick={() => { setProfileEditName(userProfile?.name || ""); setProfileEditTitle(userProfile?.title || ""); setShowProfileModal(true); }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#FFF7ED", border: "1px solid #FDBA74", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: 10, fontWeight: 700, color: "#C2410C" }}>
-                  {(userProfile?.name || authUser?.email || "P").charAt(0).toUpperCase()}
-                </span>
-              </div>
-            </div>
-
-            {NAV_VIEWS.map((v, i) => {
-              const isActive = view === v;
-              const isDone = NAV_VIEWS.indexOf(view) > i || (scopeApproved && i === 0);
-              const isLocked = !formalScope && v !== "scope";
-              return (
-                <div key={v} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  {i > 0 && <div style={{ width: 1, height: 8, background: isDone ? "#FDBA74" : "rgba(0,0,0,0.08)" }} />}
-                  <div
-                    onClick={() => { if (!isLocked) { setView(v); setSidebarOpen(false); } }}
-                    title={NAV_LABELS[i]}
-                    style={{
-                      width: 36, borderRadius: 20, padding: "8px 0",
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                      cursor: isLocked ? "default" : "pointer",
-                      border: `0.5px solid ${isActive ? "#1E293B" : isDone ? "#FDBA74" : "rgba(0,0,0,0.1)"}`,
-                      background: isActive ? "#1E293B" : isDone ? "#FFF7ED" : "#F9F8F8",
-                      opacity: isLocked ? 0.3 : 1,
-                      transition: "all .2s",
-                    }}
-                  >
-                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: isActive ? "#C2410C" : isDone ? "#FDBA74" : "rgba(0,0,0,0.15)" }} />
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Bottom actions */}
-            <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
-              <button title="Projects" onClick={() => setView("sessions")} style={{ width: 32, height: 32, borderRadius: 8, border: "0.5px solid rgba(0,0,0,0.1)", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#9CA3AF" }}>
-                <FileText size={13} />
-              </button>
-              <button title="New project" onClick={() => { if (formalScope || chatMessages.length > 0) { if (!window.confirm("Start a new project?")) return; } resetSession(); setView("scope"); setChatCollapsed(false); }} style={{ width: 32, height: 32, borderRadius: 8, border: "0.5px solid rgba(0,0,0,0.1)", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#9CA3AF" }}>
-                <Plus size={13} />
-              </button>
-            </div>
-          </div>
-
           {/* ── Main content ── */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#F9F8F8" }}>
 
-            {/* Top bar */}
+            {/* Top bar — project title + status subtitle */}
             <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-              <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.02em" }}>
-                Pario<span style={{ color: "#C2410C" }}>.</span>
-                {tenantBrandName && <span style={{ fontSize: 11, fontWeight: 400, color: "#9CA3AF", marginLeft: 10 }}>{tenantBrandName}</span>}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 14, fontWeight: 800, color: "#111827", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {projectTitle || "Untitled project"}
+                </div>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: saveStatus === "saving" ? "#D97706" : saveStatus === "saved" ? "#C2410C" : "#9CA3AF", marginTop: 2 }}>
+                  {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved" : "Draft"}
+                </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {saveStatus === "saving" && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#D97706" }}>Saving…</span>}
-                {saveStatus === "saved" && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#C2410C" }}>Saved</span>}
+                <button title="Projects" onClick={() => setView("sessions")} className="rq-btn-ghost" style={{ fontSize: 11 }}>
+                  <FileText size={11} /> Projects
+                </button>
+                <button title="New project" onClick={() => { if (formalScope || chatMessages.length > 0) { if (!window.confirm("Start a new project?")) return; } resetSession(); setView("scope"); setChatCollapsed(false); }} className="rq-btn-ghost" style={{ fontSize: 11 }}>
+                  <Plus size={11} /> New
+                </button>
                 {narrative && (
                   <>
                     <button className="rq-btn-ghost" style={{ fontSize: 11 }} onClick={doExportPDF} disabled={pdfBusy}>
@@ -2714,7 +2663,7 @@ export default function RequirementsAgent() {
                         Edit details
                       </div>
                       {NAV_VIEWS.filter(v => v !== "scope").map((v, i) => {
-                        const labels = { requirements: "Differentiators", questions: "Pressure Test", market: "The Landscape", timeline: "The Plan", summary: "Scope" };
+                        const labels = { requirements: "Functional Requirements", questions: "Dig Deeper", market: "Market View", timeline: "Buying Timeline", summary: "Executive Brief" };
                         const isExpanded = expandedBlock === v;
                         return (
                           <div key={v} style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.07)", marginBottom: 8, overflow: "hidden" }}>
