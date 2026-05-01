@@ -43,7 +43,7 @@ VALUES (
   'SES-DEMO01',
   'Contract Lifecycle Management Platform',
   'final',
-  $$
+  $pario$
   {
     "step": 3,
     "projectTitle": "Contract Lifecycle Management Platform",
@@ -105,7 +105,7 @@ VALUES (
     },
     "narrative": "Acme's contract operations are at a breaking point. Legal reviews flow through email threads with redlines tracked in attached Word documents, contract status lives in shared inboxes rather than a system of record, and Q3 close deals are routinely slipping past quarter-end pending legal sign-off. The General Counsel sponsors this initiative because the current state has become a quarterly revenue risk and a SOX Section 404 audit risk simultaneously.\n\nThe target state is a Contract Lifecycle Management platform that centralizes intake, redline tracking, role-based approvals, and a complete audit log — with bidirectional Salesforce CRM integration so contracts populate from opportunities and final status writes back. Acme's existing DocuSign account remains the e-signature engine, integrated rather than replaced. Approximately 40 users across legal, sales operations, and procurement transition into the new system before August 31 to be operational ahead of Q3 close. Migration of the contract template library is explicitly deferred to a phased follow-up.\n\nWhy now: Acme's next SOX audit lands in October, and the current email-based audit trail will not pass without significant manual reconstruction. Risk of inaction is twofold — continued Q3 close delays that hit revenue recognition, and an audit finding on contract controls. The CLM market is mature; five qualified vendors operate at Acme's scale with a Year 1 cost range of $30K–$160K, and budget has been confirmed for a deployment in the upper-mid range to align with capability and integration requirements."
   }
-  $$::jsonb,
+  $pario$::jsonb,
   (SELECT id FROM auth.users WHERE email = 'test@acme.com' LIMIT 1),
   'acme',
   NOW()
