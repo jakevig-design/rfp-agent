@@ -2371,7 +2371,7 @@ export default function RequirementsAgent() {
             <div style={{ textAlign: "center", padding: "48px 24px", color: "#9CA3AF", fontFamily: "'Lora',serif", fontSize: 14 }}>No saved projects yet.</div>
           ) : (
             sessionsList.map(s => (
-              <div key={s.id} onClick={() => loadSession(s)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "14px 18px", marginBottom: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color .15s" }}
+              <div key={s.id} onClick={() => doLoadSession(s.id)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "14px 18px", marginBottom: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color .15s" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(194,65,12,0.3)"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,0,0,0.07)"}
               >
@@ -2379,7 +2379,18 @@ export default function RequirementsAgent() {
                   <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 3 }}>{s.project_title || "Untitled project"}</div>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "#9CA3AF" }}>{new Date(s.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · {s.status || "draft"}</div>
                 </div>
-                <ChevronRight size={14} style={{ color: "#9CA3AF" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <button
+                    onClick={(e) => doDeleteSession(s.id, e)}
+                    title="Delete project"
+                    style={{ background: "transparent", border: "none", padding: 6, borderRadius: 6, cursor: "pointer", color: "#9CA3AF", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.background = "#FEF2F2"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                  <ChevronRight size={14} style={{ color: "#9CA3AF" }} />
+                </div>
               </div>
             ))
           )}
