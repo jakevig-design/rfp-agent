@@ -27,4 +27,4 @@ export const PARIO_QUIPS = [
 ];
 
 // One-line shown alongside the rotating quip.
-export const TURNAROUND_PROMISE = "Usually 90 seconds. Never more than 2.";
+export const TURNAROUND_PROMISE = "Usually a minute. Never more than 2.";
