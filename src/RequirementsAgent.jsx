@@ -2104,7 +2104,7 @@ export default function RequirementsAgent() {
         )}
 
         {/* Differentiators — appears after requirements generated */}
-        {(requirements.length > 0 || reqsBusy) && (
+        {(requirements.length > 0 || reqsBusy || (questions.scope?.length || 0) > 0 || !!narrative) && (
           <div className="rq-output-card">
             <div className="rq-output-card-label">What differentiates the right solution</div>
             {reqsBusy ? (
@@ -2113,7 +2113,7 @@ export default function RequirementsAgent() {
                 <div className="rq-output-building-text">Identifying differentiators…</div>
               </div>
             ) : requirements.length === 0 ? (
-              <div className="rq-output-card-body" style={{ fontStyle: "italic" }}>No clear differentiators found for this category — market data is limited. See Pressure Test for vendor questions.</div>
+              <div className="rq-output-card-body" style={{ fontStyle: "italic" }}>This category is largely homogeneous — most credible vendors meet standard functional needs. We didn't identify requirements that would meaningfully differentiate one solution from another. Use Dig Deeper to probe capability gaps and implementation specifics instead.</div>
             ) : (
               <div style={{ marginTop: 4 }}>
                 {requirements.map((r, i) => (
@@ -2684,11 +2684,17 @@ export default function RequirementsAgent() {
                                     <StaleWarning />
                                     {reqsBusy ? <div className="rq-loading-center"><Loader size={20} className="spin" style={{ color: "#C2410C" }} /></div> : (
                                       <>
-                                        {requirements.map(r => (
-                                          <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                                            <div className="rq-req-text">{r.text}</div>
+                                        {requirements.length === 0 ? (
+                                          <div style={{ fontSize: 13, lineHeight: 1.6, color: "#374151", fontStyle: "italic", fontFamily: "'Lora',serif" }}>
+                                            This category is largely homogeneous — most credible vendors meet standard functional needs. We didn't identify requirements that would meaningfully differentiate one solution from another. Use Dig Deeper to probe capability gaps and implementation specifics instead.
                                           </div>
-                                        ))}
+                                        ) : (
+                                          requirements.map(r => (
+                                            <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                                              <div className="rq-req-text">{r.text}</div>
+                                            </div>
+                                          ))
+                                        )}
                                         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
                                           <button className="rq-btn-ghost" onClick={doGenerateReqs} disabled={reqsBusy}><RefreshCw size={10} /> Regenerate</button>
                                         </div>
