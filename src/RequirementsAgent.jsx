@@ -1275,7 +1275,6 @@ export default function RequirementsAgent() {
         return;
       }
 
-      console.log('[Pario] Chat API response ok, extracting reply...');
 
       // Extract text from content array
       const reply = (Array.isArray(data.content)
@@ -1289,11 +1288,9 @@ export default function RequirementsAgent() {
       }
 
       // DONE detection — catch DONE in any format followed by a JSON array
-      console.log('[Pario] Raw reply first 300 chars:', reply?.substring(0, 300));
       const upperReply = reply.toUpperCase();
       const hasDone = upperReply.includes('DONE');
       const hasArray = reply.includes('[') && reply.includes(']');
-      console.log('[Pario] hasDone:', hasDone, 'hasArray:', hasArray);
 
       if (hasDone && hasArray) {
         // Find the outermost JSON array — first [ to last ]
@@ -1302,7 +1299,6 @@ export default function RequirementsAgent() {
         if (arrStart !== -1 && arrEnd > arrStart) {
           try {
             const jsonStr = reply.substring(arrStart, arrEnd + 1);
-            console.log('[Pario] Attempting JSON parse, length:', jsonStr.length);
             const bullets = JSON.parse(jsonStr);
             if (Array.isArray(bullets) && bullets.length > 0) {
               setScopeBullets(bullets);
@@ -1310,12 +1306,10 @@ export default function RequirementsAgent() {
               setBulletsCollapsed(false);
               setContinuingChat(false);
               setPrepActive(true);
-              console.log('[Pario] DONE + array parsed, bullets:', bullets.length, '— firing scope generation');
               setTimeout(() => doGenerateScopeFromBullets(bullets), 100);
               return;
             }
           } catch(e) {
-            console.log('[Pario] JSON parse failed:', e.message);
           }
         }
       }
@@ -1355,7 +1349,6 @@ export default function RequirementsAgent() {
   };
 
   const doGenerateScopeFromBullets = async (bullets) => {
-    console.log('[Pario] doGenerateScopeFromBullets called, bullets:', bullets.length);
     if (formalScope) setPrevScope(formalScope);
     setScopeBusy(true); setScopeErr(""); setScopeFlags([]); setScopeApproved(false);
     try {
@@ -1372,9 +1365,7 @@ export default function RequirementsAgent() {
       ].filter(Boolean).join("\n") : "";
       const bulletText = bullets.map(b => `• ${b}`).join("\n");
       const userMsg = companyCtx ? `${companyCtx}\n\nApproved scope bullets:\n${bulletText}` : `Scope bullets:\n${bulletText}`;
-      console.log('[Pario] Calling callClaude for scope generation...');
       const scope = await callClaude(P_SCOPE_GENERATE, userMsg, false, null, identity);
-      console.log('[Pario] Scope generated, length:', scope?.length);
       setFormalScope(scope.trim());
       setBulletsCollapsed(true);
       await doEvaluateScope(scope.trim());
@@ -1442,12 +1433,9 @@ export default function RequirementsAgent() {
   };
 
   const doEvaluateScope = async (scopeText) => {
-    console.log('[Pario] doEvaluateScope entered, scope length:', scopeText?.length);
     try {
       const result = await callJSON(P_SCOPE_EVALUATE, `Scope to evaluate:\n\n${scopeText}`, false, null, getIdentity());
-      console.log('[Pario] eval raw result:', result);
       const flags = Array.isArray(result?.flags) ? result.flags : [];
-      console.log('[Pario] eval result — passed:', result?.passed, 'flags:', flags.length);
       // Flags are the source of truth: empty flags = clean pass, regardless of whether `passed` is present.
       if (flags.length === 0) {
         setScopeFlags([]);
@@ -1455,31 +1443,25 @@ export default function RequirementsAgent() {
         // Fire expert questions
         try {
           const eq = await callJSON(P_SCOPE_EXPERT, `Scope:\n\n${scopeText}`, false, null, getIdentity());
-          console.log('[Pario] expert questions returned:', eq?.length ?? 0);
           if (eq && eq.length > 0) {
-            console.log('[Pario] expert questions present — approving scope, questions remain available as optional review');
             setExpertQuestions(eq);
             setExpertApproved(false);
             setScopeApproved(true);
           } else {
-            console.log('[Pario] no expert questions — approving scope');
             setExpertApproved(true);
             setScopeApproved(true);
           }
         } catch (e) {
-          console.log('[Pario] expert questions threw — approving scope (fail open):', e.message);
           setExpertApproved(true); // fail open
           setScopeApproved(true);
         }
       } else {
-        console.log('[Pario] eval has flags — awaiting user, flag count:', flags.length);
         setScopeFlags(flags);
         setFlagResponses({});
         setScopeApproved(false);
         setPrepActive(false);
       }
     } catch (e) {
-      console.log('[Pario] eval threw — approving scope (fail open):', e.message);
       setScopeFlags([]);
       setScopeApproved(true);
       logEvent("scope_approved", { sessionId, userId: authUser?.id, tenantId: userProfile?.tenant_id });
@@ -1678,8 +1660,6 @@ export default function RequirementsAgent() {
       ].filter(Boolean).join("\n") : null;
       const userMsg = `Project scope:\n${formalScope}${reqList}`;
       const result = await callJSON(P_MARKET(companyCtx), userMsg, false, "claude-haiku-4-5-20251001", getIdentity());
-      console.log("[Pario] vendors raw:", result);
-      console.log("[Pario] estimatedPrice values:", result?.map?.(v => ({ name: v.name, estimatedPrice: v.estimatedPrice })));
       setVendors(result);
       // Auto-shortlist top 3 by requirements fit score
       const sorted = [...result].sort((a, b) => {
@@ -1802,11 +1782,9 @@ export default function RequirementsAgent() {
     }
     setPrepTick(0);
     setQuipIdx(Math.floor(Math.random() * PARIO_QUIPS.length));
-    console.log('[Pario] prep screen intervals starting');
     const tickId = setInterval(() => setPrepTick(t => t + 1), 1000);
     const quipId = setInterval(() => setQuipIdx(i => i + 1), 4500);
     return () => {
-      console.log('[Pario] prep screen intervals cleared');
       clearInterval(tickId);
       clearInterval(quipId);
     };
@@ -1814,9 +1792,7 @@ export default function RequirementsAgent() {
 
   // ── Auto-trigger full flow when scope is approved ──────────
   useEffect(() => {
-    console.log('[Pario] scopeApproved useEffect fired:', scopeApproved, 'formalScope:', !!formalScope, 'autoFlowing:', autoFlowing, 'narrative:', !!narrative);
     if (scopeApproved && formalScope && !autoFlowing && !narrative) {
-      console.log('[Pario] Triggering doAutoFlow');
       setChatCollapsed(true);
       doAutoFlow();
     }
@@ -2490,31 +2466,6 @@ export default function RequirementsAgent() {
                           <div style={{ background: "#F9F8F8", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "0 10px 10px 10px", padding: "11px 14px", fontSize: 13, lineHeight: 1.65, maxWidth: "88%", fontFamily: "'Lora',serif", color: "#111827" }}>
                             {tenantBrandName ? `Welcome${userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ""}. ` : ""}What's the business problem you're trying to solve — and how do you think software can help?
                           </div>
-                        </div>
-                      )}
-                      {/* DEV ONLY: Skip chat button */}
-                      {chatMessages.length === 0 && !chatBusy && (
-                        <div style={{ marginTop: 8 }}>
-                          <button
-                            className="rq-btn-ghost"
-                            style={{ fontSize: 10, opacity: 0.5 }}
-                            onClick={() => {
-                              const testBullets = [
-                                "Business problem: Manual contract management process — legal reviewing everything via email, deals slipping before Q3 close",
-                                "Software case: CLM platform to centralize contract lifecycle, reduce review time, and provide audit trail",
-                                "Sponsor: General Counsel. ~40 users across legal and sales",
-                                "Integration required: Salesforce (CRM). SOX compliance — audit trails required",
-                                "Budget: ~$100K annually",
-                                "Success: Legal processing contracts in system instead of email by Q3. Out of scope: e-signature replacement"
-                              ];
-                              setScopeBullets(testBullets);
-                              setChatCollapsed(true);
-                              setPrepActive(true);
-                              doGenerateScopeFromBullets(testBullets);
-                            }}
-                          >
-                            [DEV] Skip chat →
-                          </button>
                         </div>
                       )}
                       {chatMessages.map((m, i) => (
