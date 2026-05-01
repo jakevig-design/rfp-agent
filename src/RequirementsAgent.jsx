@@ -1820,10 +1820,14 @@ export default function RequirementsAgent() {
     setPdfBusy(true);
     try {
       const shortlisted = vendors.filter(v => vendorStatus[v.name] === "shortlisted");
-      const logoUrl = userProfile?.tenant_config?.logo_url ||
+      const PARIO_LOGO_FALLBACK = `${window.location.origin}/pario-logo.png`;
+      // Print window runs at about:blank, so any relative tenant logo path needs to be made absolute.
+      const tenantLogo = userProfile?.tenant_config?.logo_url;
+      const absoluteTenantLogo = tenantLogo?.startsWith('/') ? `${window.location.origin}${tenantLogo}` : tenantLogo;
+      const logoUrl = absoluteTenantLogo ||
         (userProfile?.tenant_config?.website_url
-          ? `https://logo.clearbit.com/${new URL(userProfile.tenant_config.website_url).hostname}`
-          : 'https://www.planwithpario.com/pario-logo.png');
+          ? (() => { try { return `https://logo.clearbit.com/${new URL(userProfile.tenant_config.website_url).hostname}`; } catch { return PARIO_LOGO_FALLBACK; } })()
+          : PARIO_LOGO_FALLBACK);
 
       // Build PDF HTML content
       const timelineStr = rfpStart && goLive
@@ -1877,7 +1881,7 @@ export default function RequirementsAgent() {
 <!-- COVER PAGE -->
 <div class="cover">
   <div>
-    <img src="${logoUrl}" class="cover-logo" onerror="this.src='https://www.planwithpario.com/pario-logo.png'" />
+    <img src="${logoUrl}" class="cover-logo" onerror="this.src='${PARIO_LOGO_FALLBACK}'" />
   </div>
   <div>
     <div class="cover-tag">Software Evaluation Brief</div>
@@ -2265,7 +2269,7 @@ export default function RequirementsAgent() {
           }
           setShowProfileCard(false);
         };
-        const PARIO_LOGO_FALLBACK = 'https://www.planwithpario.com/pario-logo.png';
+        const PARIO_LOGO_FALLBACK = '/pario-logo.png';
         const logoUrl = tc.logo_url || (() => {
           if (!tc.website_url) return PARIO_LOGO_FALLBACK;
           try { return `https://logo.clearbit.com/${new URL(tc.website_url).hostname}`; }
